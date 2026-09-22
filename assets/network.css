@@ -31,18 +31,20 @@ a { color: var(--node); }
   padding: 16px 24px; flex-wrap: wrap; gap: 12px;
 }
 
-.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); }
+.brand { display: flex; align-items: center; text-decoration: none; color: var(--text); }
 
-.brand-mark {
-  width: 36px; height: 36px; border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, var(--node), var(--node-2));
-  display: flex; align-items: center; justify-content: center;
-  color: #0b0e14; font-weight: 800; font-size: 12px;
-  box-shadow: 0 0 18px rgba(110,231,216,0.35);
-}
+.brand-lockup { display: flex; flex-direction: column; }
 
-.brand-name { font-weight: 700; font-size: 15.5px; letter-spacing: -0.2px; }
-.brand-tagline { display: block; font-size: 10.5px; color: var(--text-soft); font-family: ui-monospace, "JetBrains Mono", monospace; letter-spacing: 0.4px; }
+.brand-logo { position: relative; display: inline-flex; align-items: center; padding: 8px 12px; }
+
+.brand-web { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--node); filter: drop-shadow(0 0 3px rgba(110,231,216,0.5)); }
+.brand-web .web-lines { stroke: currentColor; stroke-width: 1.1; opacity: 0.5; }
+.brand-web .web-nodes circle:nth-child(3n+1) { fill: var(--node); }
+.brand-web .web-nodes circle:nth-child(3n+2) { fill: var(--node-2); }
+.brand-web .web-nodes circle:nth-child(3n) { fill: var(--node-3); }
+
+.brand-name { position: relative; z-index: 1; font-weight: 700; font-size: 15.5px; letter-spacing: -0.2px; white-space: nowrap; }
+.brand-tagline { display: block; padding-left: 12px; font-size: 10.5px; color: var(--text-soft); font-family: ui-monospace, "JetBrains Mono", monospace; letter-spacing: 0.4px; }
 
 nav.main-nav { display: flex; gap: 2px; flex-wrap: wrap; }
 

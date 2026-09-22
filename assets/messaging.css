@@ -41,18 +41,18 @@ a { color: var(--accent); }
   gap: 12px;
 }
 
-.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); }
+.brand { display: flex; align-items: center; text-decoration: none; color: var(--text); }
 
-.brand-mark {
-  width: 34px; height: 34px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-dim));
-  display: flex; align-items: center; justify-content: center;
-  color: #fff; font-weight: 800; font-size: 13px;
-}
+.brand-lockup { display: flex; flex-direction: column; }
 
-.brand-name { font-weight: 700; font-size: 15.5px; letter-spacing: -0.2px; }
-.brand-tagline { display: block; font-size: 10.5px; color: var(--text-soft); text-transform: uppercase; letter-spacing: 0.6px; }
+.brand-logo { position: relative; display: inline-flex; align-items: center; padding: 8px 12px; }
+
+.brand-web { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--accent); }
+.brand-web .web-lines { stroke: currentColor; stroke-width: 1.1; opacity: 0.4; }
+.brand-web .web-nodes { fill: var(--accent); opacity: 0.9; }
+
+.brand-name { position: relative; z-index: 1; font-weight: 800; font-size: 15.5px; letter-spacing: -0.2px; white-space: nowrap; }
+.brand-tagline { display: block; padding-left: 12px; font-size: 10.5px; color: var(--text-soft); text-transform: uppercase; letter-spacing: 0.6px; }
 
 nav.main-nav { display: flex; gap: 2px; flex-wrap: wrap; }
 
