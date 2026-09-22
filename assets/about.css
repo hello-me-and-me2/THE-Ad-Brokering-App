@@ -43,8 +43,10 @@ a { color: var(--rust); }
 .brand-logo { position: relative; display: inline-flex; align-items: center; padding: 8px 14px; }
 
 .brand-web { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--rust); }
-.brand-web .web-lines { stroke: currentColor; stroke-width: 1; opacity: 0.3; }
+.brand-web .web-spokes, .brand-web .web-rings { fill: none; stroke: currentColor; stroke-width: 0.8; opacity: 0.32; }
+.brand-web .web-rings { opacity: 0.22; }
 .brand-web .web-nodes { fill: var(--sage); opacity: 0.75; }
+.brand-web .web-nodes circle:last-child { fill: var(--rust); }
 
 .brand-name { position: relative; z-index: 1; font-family: "Playfair Display", serif; font-weight: 700; font-size: 18px; white-space: nowrap; }
 .brand-tagline { display: block; padding-left: 14px; font-size: 11.5px; color: var(--ink-soft); font-style: italic; }
