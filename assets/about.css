@@ -1,0 +1,149 @@
+/* ABOUT — personal stationery / letter, warm and intimate */
+
+:root {
+  --paper: #fbf6ec;
+  --paper-2: #ffffff;
+  --ink: #3a2f22;
+  --ink-soft: #8a7a63;
+  --rule: #e3d5ba;
+  --rust: #a8532b;
+  --sage: #6c7a5e;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
+body {
+  font-family: "Source Serif 4", Georgia, "Iowan Old Style", serif;
+  background: var(--paper);
+  color: var(--ink);
+  line-height: 1.7;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent 37px,
+    var(--rule) 38px
+  );
+}
+
+a { color: var(--rust); }
+
+.site-header { background: var(--paper-2); border-bottom: 2px solid var(--ink); }
+
+.nav-wrap {
+  max-width: 880px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 24px; flex-wrap: wrap; gap: 12px;
+}
+
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
+
+.brand-mark {
+  width: 40px; height: 40px;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: "Playfair Display", serif;
+  font-weight: 700; font-size: 15px;
+}
+
+.brand-name { font-family: "Playfair Display", serif; font-weight: 700; font-size: 18px; }
+.brand-tagline { display: block; font-size: 11.5px; color: var(--ink-soft); font-style: italic; }
+
+nav.main-nav { display: flex; gap: 18px; flex-wrap: wrap; font-family: "Helvetica Neue", Arial, sans-serif; }
+
+nav.main-nav a {
+  text-decoration: none; color: var(--ink-soft);
+  font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px;
+  padding-bottom: 3px; border-bottom: 2px solid transparent;
+}
+
+nav.main-nav a:hover { color: var(--rust); }
+nav.main-nav a.active { color: var(--ink); border-bottom-color: var(--rust); }
+
+main { max-width: 880px; margin: 0 auto; padding: 50px 24px 100px; background: var(--paper); }
+
+.letterhead { text-align: center; margin-bottom: 44px; }
+.letterhead .eyebrow { font-family: "Helvetica Neue", Arial, sans-serif; text-transform: uppercase; letter-spacing: 2.5px; font-size: 11.5px; color: var(--sage); margin-bottom: 14px; }
+.letterhead h1 { font-family: "Playfair Display", serif; font-size: 40px; margin: 0 0 16px; }
+.letterhead .dateline { font-family: "Helvetica Neue", Arial, sans-serif; font-size: 12.5px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 1px; }
+
+.letter-body p.opening {
+  font-size: 19px;
+  max-width: 66ch;
+  margin: 0 auto 34px;
+}
+
+.letter-body p.opening::first-letter {
+  font-family: "Playfair Display", serif;
+  font-size: 58px;
+  float: left;
+  line-height: 0.8;
+  padding: 6px 8px 0 0;
+  color: var(--rust);
+}
+
+section { padding: 30px 0; max-width: 66ch; margin: 0 auto; }
+section h2 { font-family: "Playfair Display", serif; font-size: 24px; margin-bottom: 14px; }
+section p { font-size: 16.5px; color: var(--ink); }
+
+.values-list { list-style: none; padding: 0; margin: 0; }
+.values-list li { padding: 16px 0; border-top: 1px dashed var(--rule); }
+.values-list li:first-child { border-top: none; }
+.values-list h4 { margin: 0 0 4px; font-family: "Playfair Display", serif; font-size: 17px; }
+.values-list p { margin: 0; color: var(--ink-soft); font-size: 15.5px; }
+
+.signoff {
+  max-width: 66ch;
+  margin: 50px auto 0;
+  padding-top: 30px;
+  border-top: 1px solid var(--rule);
+}
+
+.signoff .closing { font-size: 16.5px; margin-bottom: 6px; }
+.signoff .signature {
+  font-family: "Caveat", "Segoe Script", cursive;
+  font-size: 44px;
+  color: var(--rust);
+  margin: 4px 0 4px;
+}
+.signoff .role { font-family: "Helvetica Neue", Arial, sans-serif; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: var(--ink-soft); }
+
+.card-stamp {
+  max-width: 660px;
+  margin: 46px auto 0;
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 30px 34px;
+  box-shadow: 4px 6px 0 rgba(58,47,34,0.06);
+  position: relative;
+}
+
+.card-stamp::before {
+  content: "CONTACT";
+  position: absolute;
+  top: -11px; left: 28px;
+  background: var(--paper-2);
+  padding: 0 10px;
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+  color: var(--sage);
+}
+
+.contact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px 30px;
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  margin-top: 6px;
+}
+
+.contact-grid .label { font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--ink-soft); margin-bottom: 4px; }
+.contact-grid .value { font-size: 15.5px; font-weight: 600; }
+
+footer { padding: 30px 24px; text-align: center; color: var(--ink-soft); font-size: 13px; font-family: "Helvetica Neue", Arial, sans-serif; border-top: 1px solid var(--rule); background: var(--paper-2); }
+
+@media (max-width: 620px) {
+  .contact-grid { grid-template-columns: 1fr; }
+}

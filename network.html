@@ -4,7 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Network — THE Ad Brokering App</title>
-<link rel="stylesheet" href="assets/style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/network.css">
 </head>
 <body>
 
@@ -14,7 +17,7 @@
       <span class="brand-mark">AB</span>
       <span>
         <span class="brand-name">THE Ad Brokering App</span>
-        <span class="brand-tagline">deals made the honest way</span>
+        <span class="brand-tagline">// the_network</span>
       </span>
     </a>
     <nav class="main-nav">
@@ -29,14 +32,40 @@
 <main>
 
   <div class="page-head">
+    <div class="eyebrow">Directory · Status: Building</div>
     <h1>The Network</h1>
-    <p>A directory of the brands and creators on THE Ad Brokering App.</p>
+    <p>Every brand and creator on THE Ad Brokering App will connect here. We're wiring it up now.</p>
   </div>
 
-  <div class="empty-state">
-    <div class="icon">🌐</div>
-    <h2>The Network is coming soon</h2>
-    <p>This page is reserved for something great. Check back soon.</p>
+  <div class="graph-wrap">
+    <svg viewBox="0 0 720 405" fill="none">
+      <line class="graph-line live" x1="360" y1="200" x2="120" y2="90" />
+      <line class="graph-line live" x1="360" y1="200" x2="600" y2="80" />
+      <line class="graph-line live" x1="360" y1="200" x2="150" y2="320" />
+      <line class="graph-line live" x1="360" y1="200" x2="580" y2="330" />
+      <line class="graph-line" x1="120" y1="90" x2="60" y2="220" />
+      <line class="graph-line" x1="600" y1="80" x2="660" y2="210" />
+      <line class="graph-line" x1="150" y1="320" x2="260" y2="380" />
+      <line class="graph-line" x1="580" y1="330" x2="470" y2="380" />
+      <line class="graph-line" x1="120" y1="90" x2="600" y2="80" />
+      <line class="graph-line" x1="150" y1="320" x2="580" y2="330" />
+
+      <circle class="graph-node accent" cx="360" cy="200" r="16" />
+      <circle class="graph-node accent-2" cx="120" cy="90" r="10" />
+      <circle class="graph-node accent-3" cx="600" cy="80" r="10" />
+      <circle class="graph-node accent-2" cx="150" cy="320" r="10" />
+      <circle class="graph-node accent-3" cx="580" cy="330" r="10" />
+      <circle class="graph-node" cx="60" cy="220" r="6" />
+      <circle class="graph-node" cx="660" cy="210" r="6" />
+      <circle class="graph-node" cx="260" cy="380" r="6" />
+      <circle class="graph-node" cx="470" cy="380" r="6" />
+    </svg>
+  </div>
+
+  <div class="empty-card">
+    <span class="tag">Coming Soon</span>
+    <h2>This page is reserved for something great</h2>
+    <p>Soon you'll browse and connect with every brand and creator in the network right from here.</p>
   </div>
 
 </main>

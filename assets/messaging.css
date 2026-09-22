@@ -1,0 +1,176 @@
+/* MESSAGING & NEGOTIATION — dark, crisp workspace tool */
+
+:root {
+  --bg: #14181c;
+  --panel: #1b2025;
+  --panel-2: #20262c;
+  --line: #2b3238;
+  --text: #e8ecef;
+  --text-soft: #8b96a0;
+  --accent: #3ea6ff;
+  --accent-dim: #235a80;
+  --money: #34c98a;
+  --warn: #e0a941;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
+body {
+  font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+}
+
+a { color: var(--accent); }
+
+.site-header {
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+
+.nav-wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); }
+
+.brand-mark {
+  width: 34px; height: 34px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-weight: 800; font-size: 13px;
+}
+
+.brand-name { font-weight: 700; font-size: 15.5px; letter-spacing: -0.2px; }
+.brand-tagline { display: block; font-size: 10.5px; color: var(--text-soft); text-transform: uppercase; letter-spacing: 0.6px; }
+
+nav.main-nav { display: flex; gap: 2px; flex-wrap: wrap; }
+
+nav.main-nav a {
+  text-decoration: none;
+  color: var(--text-soft);
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+nav.main-nav a:hover { background: var(--panel-2); color: var(--text); }
+nav.main-nav a.active { background: var(--accent-dim); color: #fff; }
+
+main { max-width: 1200px; margin: 0 auto; padding: 28px 24px 70px; }
+
+.page-head { padding: 4px 0 22px; margin-bottom: 22px; display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+.page-head h1 { font-size: 22px; margin: 0 0 4px; font-weight: 700; letter-spacing: -0.3px; }
+.page-head p { color: var(--text-soft); font-size: 14.5px; margin: 0; }
+.status-pill {
+  font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+  background: rgba(52,201,138,0.15); color: var(--money);
+  padding: 6px 12px; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px;
+}
+.status-pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--money); display: inline-block; }
+
+.messenger {
+  display: grid;
+  grid-template-columns: 280px 1fr 300px;
+  gap: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--panel);
+  min-height: 580px;
+}
+
+.thread-list { border-right: 1px solid var(--line); background: var(--panel); }
+
+.thread-list-header {
+  padding: 16px 18px;
+  font-weight: 700;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-soft);
+  border-bottom: 1px solid var(--line);
+}
+
+.thread-item {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  transition: background 0.12s ease;
+  border-left: 3px solid transparent;
+}
+
+.thread-item:hover { background: var(--panel-2); }
+.thread-item.active { background: var(--panel-2); border-left-color: var(--accent); }
+
+.thread-item .t-name { font-weight: 700; font-size: 13.5px; color: var(--text); }
+.thread-item .t-preview { font-size: 12.5px; color: var(--text-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+
+.thread-item .t-tag {
+  display: inline-block; margin-top: 8px; font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.5px; padding: 3px 9px; border-radius: 999px;
+  background: var(--panel); border: 1px solid var(--line); color: var(--text-soft);
+}
+.thread-item .t-tag.negotiating { color: var(--warn); border-color: rgba(224,169,65,0.4); }
+.thread-item .t-tag.new { color: var(--accent); border-color: rgba(62,166,255,0.4); }
+.thread-item .t-tag.closed { color: var(--money); border-color: rgba(52,201,138,0.4); }
+
+.chat-panel { display: flex; flex-direction: column; background: var(--bg); }
+
+.chat-header {
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--panel);
+}
+
+.chat-header h3 { margin: 0; font-size: 14.5px; font-weight: 700; }
+.chat-header .sub { font-size: 12px; color: var(--text-soft); }
+
+.chat-body { flex: 1; padding: 22px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+
+.bubble { max-width: 70%; padding: 11px 15px; border-radius: 10px; font-size: 14px; }
+.bubble.them { background: var(--panel-2); align-self: flex-start; border: 1px solid var(--line); }
+.bubble.me { background: var(--accent-dim); color: #eaf5ff; align-self: flex-end; }
+
+.bubble.offer {
+  align-self: center; background: var(--panel); border: 1px solid rgba(52,201,138,0.35);
+  border-radius: 10px; max-width: 88%; padding: 14px 18px;
+}
+.bubble.offer .offer-title { font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--money); margin-bottom: 6px; }
+.bubble.offer .amount { font-variant-numeric: tabular-nums; font-family: "JetBrains Mono", ui-monospace, monospace; color: var(--money); font-weight: 700; }
+
+.chat-input-row { display: flex; gap: 10px; padding: 14px 16px; border-top: 1px solid var(--line); background: var(--panel); }
+.chat-input-row input { flex: 1; padding: 11px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); font-family: inherit; font-size: 14px; }
+.chat-input-row button { border: none; background: var(--accent); color: #06131c; padding: 0 20px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+.chat-input-row button:hover { background: #62b9ff; }
+
+.deal-panel { border-left: 1px solid var(--line); padding: 20px; background: var(--panel); }
+.deal-panel h4 { margin-top: 0; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-soft); }
+.deal-field { margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+.deal-field:last-of-type { border-bottom: none; }
+.deal-field label { display: block; font-size: 11.5px; color: var(--text-soft); margin-bottom: 5px; }
+.deal-field .val { font-size: 16px; font-weight: 700; }
+.deal-field .val.money { font-family: "JetBrains Mono", ui-monospace, monospace; color: var(--money); }
+
+.progress-track { height: 6px; border-radius: 999px; background: var(--line); overflow: hidden; margin-top: 8px; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--money)); width: 65%; }
+
+footer { padding: 28px 24px; text-align: center; color: var(--text-soft); font-size: 12.5px; border-top: 1px solid var(--line); }
+
+@media (max-width: 900px) {
+  .messenger { grid-template-columns: 1fr; }
+  .thread-list, .deal-panel { border-right: none; border-left: none; border-bottom: 1px solid var(--line); }
+}

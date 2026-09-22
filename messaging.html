@@ -4,7 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Messaging &amp; Negotiation — THE Ad Brokering App</title>
-<link rel="stylesheet" href="assets/style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/messaging.css">
 </head>
 <body>
 
@@ -14,7 +17,7 @@
       <span class="brand-mark">AB</span>
       <span>
         <span class="brand-name">THE Ad Brokering App</span>
-        <span class="brand-tagline">deals made the honest way</span>
+        <span class="brand-tagline">Deal Room</span>
       </span>
     </a>
     <nav class="main-nav">
@@ -29,8 +32,11 @@
 <main>
 
   <div class="page-head">
-    <h1>Messaging &amp; Negotiation</h1>
-    <p>Every deal lives in one thread — the conversation and the terms, side by side, so nothing gets lost.</p>
+    <div>
+      <h1>Messaging &amp; Negotiation</h1>
+      <p>Every deal lives in one thread — the conversation and the terms, side by side.</p>
+    </div>
+    <span class="status-pill">4 active threads</span>
   </div>
 
   <div class="messenger">
@@ -40,25 +46,25 @@
       <div class="thread-item active">
         <div class="t-name">Maren Cole — Skyline Coffee Co.</div>
         <div class="t-preview">Sounds good — can we lock in 3 posts?</div>
-        <span class="t-tag">Negotiating</span>
+        <span class="t-tag negotiating">Negotiating</span>
       </div>
 
       <div class="thread-item">
         <div class="t-name">Riverside Outdoor Gear</div>
         <div class="t-preview">Thanks for sending the media kit!</div>
-        <span class="t-tag">New</span>
+        <span class="t-tag new">New</span>
       </div>
 
       <div class="thread-item">
         <div class="t-name">Jordan Blake (Creator)</div>
         <div class="t-preview">Deal signed — excited to get started</div>
-        <span class="t-tag">Closed</span>
+        <span class="t-tag closed">Closed</span>
       </div>
 
       <div class="thread-item">
         <div class="t-name">Pear &amp; Co. Skincare</div>
         <div class="t-preview">Let's revisit the rate next week</div>
-        <span class="t-tag">Paused</span>
+        <span class="t-tag negotiating">Paused</span>
       </div>
     </div>
 
@@ -76,7 +82,7 @@
 
         <div class="bubble offer">
           <div class="offer-title">Offer Sent</div>
-          2 Instagram posts + 1 TikTok video — $1,800, delivered within 3 weeks.
+          2 Instagram posts + 1 TikTok video — <span class="amount">$1,800</span>, delivered within 3 weeks.
         </div>
 
         <div class="bubble them">That works for us, but could we add a 3rd Instagram post to the package?</div>
@@ -105,7 +111,7 @@
 
       <div class="deal-field">
         <label>Proposed Rate</label>
-        <div class="val">$2,100</div>
+        <div class="val money">$2,100</div>
       </div>
 
       <div class="deal-field">

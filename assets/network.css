@@ -1,0 +1,113 @@
+/* THE NETWORK — dark, node-graph, "something is being built" */
+
+:root {
+  --bg: #0b0e14;
+  --bg-2: #10141c;
+  --line: #232a36;
+  --text: #eef1f6;
+  --text-soft: #8b93a3;
+  --node: #6ee7d8;
+  --node-2: #a78bfa;
+  --node-3: #f4b860;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
+body {
+  font-family: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+a { color: var(--node); }
+
+.site-header { background: rgba(11,14,20,0.9); border-bottom: 1px solid var(--line); backdrop-filter: blur(6px); }
+
+.nav-wrap {
+  max-width: 1100px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 24px; flex-wrap: wrap; gap: 12px;
+}
+
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); }
+
+.brand-mark {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, var(--node), var(--node-2));
+  display: flex; align-items: center; justify-content: center;
+  color: #0b0e14; font-weight: 800; font-size: 12px;
+  box-shadow: 0 0 18px rgba(110,231,216,0.35);
+}
+
+.brand-name { font-weight: 700; font-size: 15.5px; letter-spacing: -0.2px; }
+.brand-tagline { display: block; font-size: 10.5px; color: var(--text-soft); font-family: ui-monospace, "JetBrains Mono", monospace; letter-spacing: 0.4px; }
+
+nav.main-nav { display: flex; gap: 2px; flex-wrap: wrap; }
+
+nav.main-nav a {
+  text-decoration: none; color: var(--text-soft);
+  padding: 8px 14px; border-radius: 999px; font-size: 13.5px; font-weight: 600;
+  border: 1px solid transparent;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+nav.main-nav a:hover { border-color: var(--line); color: var(--text); }
+nav.main-nav a.active { border-color: var(--node); color: var(--node); }
+
+main {
+  max-width: 1100px; margin: 0 auto;
+  padding: 60px 24px 100px;
+  position: relative;
+}
+
+.page-head { text-align: center; margin-bottom: 10px; }
+.page-head .eyebrow {
+  display: inline-block; font-family: ui-monospace, "JetBrains Mono", monospace;
+  font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--node); margin-bottom: 14px;
+}
+.page-head h1 { font-size: 38px; margin: 0 0 12px; letter-spacing: -0.5px; }
+.page-head p { color: var(--text-soft); font-size: 16px; max-width: 52ch; margin: 0 auto; }
+
+.graph-wrap {
+  position: relative;
+  margin: 56px auto 0;
+  max-width: 720px;
+  aspect-ratio: 16 / 9;
+}
+
+.graph-wrap svg { width: 100%; height: 100%; display: block; }
+
+.graph-line { stroke: var(--line); stroke-width: 1.4; }
+.graph-line.live { stroke: var(--node); opacity: 0.55; stroke-dasharray: 4 6; animation: dash 6s linear infinite; }
+
+@keyframes dash { to { stroke-dashoffset: -100; } }
+
+.graph-node { fill: var(--bg-2); stroke: var(--line); stroke-width: 1.5; }
+.graph-node.accent { fill: var(--node); stroke: none; filter: drop-shadow(0 0 8px rgba(110,231,216,0.6)); }
+.graph-node.accent-2 { fill: var(--node-2); stroke: none; filter: drop-shadow(0 0 8px rgba(167,139,250,0.6)); }
+.graph-node.accent-3 { fill: var(--node-3); stroke: none; filter: drop-shadow(0 0 8px rgba(244,184,96,0.6)); }
+
+.empty-card {
+  max-width: 520px;
+  margin: 40px auto 0;
+  text-align: center;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 28px 32px;
+}
+
+.empty-card h2 { font-size: 18px; margin: 0 0 8px; }
+.empty-card p { color: var(--text-soft); font-size: 14.5px; margin: 0; }
+
+.empty-card .tag {
+  display: inline-block; font-family: ui-monospace, "JetBrains Mono", monospace;
+  font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase;
+  color: var(--node-3); border: 1px solid rgba(244,184,96,0.35); background: rgba(244,184,96,0.08);
+  padding: 4px 10px; border-radius: 999px; margin-bottom: 14px;
+}
+
+footer { padding: 30px 24px; text-align: center; color: var(--text-soft); font-size: 12.5px; border-top: 1px solid var(--line); }
