@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign In — THE BROKER APP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="assets/profile-picture.png">
+<link rel="stylesheet" href="assets/signin.css">
+</head>
+<body>
+
+<a class="admin-tab" href="admin-signin.html">ADMIN</a>
+
+<div class="signin-wrap">
+  <div class="signin-card">
+    <a class="signin-logo" href="index.html">
+      <img src="assets/profile-picture.png" alt="THE BROKER APP" class="signin-logo-img">
+    </a>
+
+    <h1>Create your account</h1>
+    <p class="signin-sub">Join THE BROKER APP and start making deals.</p>
+
+    <form id="signin-form" novalidate>
+      <label class="field">
+        Email
+        <input type="email" name="email" required placeholder="you@example.com" autocomplete="email">
+      </label>
+
+      <label class="field">
+        Password
+        <input type="password" name="password" required placeholder="Create a password" minlength="8" autocomplete="new-password">
+      </label>
+
+      <div class="role-select">
+        <span class="role-label">I am a...</span>
+        <div class="role-options">
+          <label class="role-option">
+            <input type="radio" name="role" value="business" checked>
+            <span>Business</span>
+          </label>
+          <label class="role-option">
+            <input type="radio" name="role" value="influencer">
+            <span>Influencer</span>
+          </label>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-submit">Continue</button>
+      <p class="form-note" id="form-note" hidden>This is a demo — account creation isn't connected to anything yet.</p>
+    </form>
+
+    <p class="signin-foot">Already have an account? <a href="#">Sign in</a></p>
+  </div>
+</div>
+
+<script>
+  document.getElementById('signin-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    document.getElementById('form-note').hidden = false;
+  });
+</script>
+
+</body>
+</html>

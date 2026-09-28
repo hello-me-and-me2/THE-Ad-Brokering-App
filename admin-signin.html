@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Sign In — THE BROKER APP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="assets/profile-picture.png">
+<link rel="stylesheet" href="assets/admin.css">
+</head>
+<body>
+
+<div class="admin-signin-wrap">
+  <div class="admin-signin-card">
+    <div class="admin-badge">ADMIN ONLY</div>
+    <h1>Admin Sign In</h1>
+    <p class="admin-sub">Restricted access — THE BROKER APP staff only.</p>
+
+    <form id="admin-form" novalidate>
+      <label class="field">
+        Email
+        <input type="email" id="admin-email" required autocomplete="username">
+      </label>
+      <label class="field">
+        Password
+        <input type="password" id="admin-password" required autocomplete="current-password">
+      </label>
+
+      <button type="submit" class="admin-btn">Sign In</button>
+      <p class="form-error" id="admin-error" hidden>Incorrect email or password.</p>
+    </form>
+
+    <a class="back-link" href="signin.html">&larr; Back to sign in</a>
+  </div>
+</div>
+
+<script>
+  // Demo-only check — see project notes: this runs entirely in the
+  // browser, so it is not real authentication.
+  var ADMIN_EMAIL = "andre.jacob.anderson@gmail.com";
+  var ADMIN_PASSWORD = "messi#1030";
+
+  document.getElementById('admin-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var email = document.getElementById('admin-email').value.trim().toLowerCase();
+    var password = document.getElementById('admin-password').value;
+    var errorEl = document.getElementById('admin-error');
+
+    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+      window.location.href = 'admin.html';
+    } else {
+      errorEl.hidden = false;
+    }
+  });
+</script>
+
+</body>
+</html>

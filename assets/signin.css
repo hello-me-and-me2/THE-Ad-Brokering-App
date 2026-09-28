@@ -1,0 +1,183 @@
+/* SIGN IN — warm welcome, matches the home page's front-door feel */
+
+:root {
+  --cream: #faf3e8;
+  --paper: #fffbf3;
+  --ink: #2e2417;
+  --ink-soft: #7a6d5a;
+  --terracotta: #c1652c;
+  --terracotta-dark: #9b4d1f;
+  --olive: #5c6e4f;
+  --gold: #d9a441;
+  --border: #ecdfc9;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
+body {
+  font-family: "DM Sans", "Helvetica Neue", Arial, sans-serif;
+  background: var(--cream);
+  color: var(--ink);
+  line-height: 1.55;
+  min-height: 100vh;
+  background-image:
+    radial-gradient(circle at 8% 12%, rgba(193,101,44,0.08), transparent 40%),
+    radial-gradient(circle at 92% 85%, rgba(92,110,79,0.08), transparent 40%);
+}
+
+h1 { font-family: "Fraunces", Georgia, serif; font-weight: 700; }
+
+.signin-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  position: relative;
+}
+
+.signin-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 26px;
+  padding: 40px 36px 32px;
+  box-shadow: 0 24px 50px rgba(46,36,23,0.1);
+  position: relative;
+  text-align: center;
+}
+
+.signin-logo { display: inline-block; text-decoration: none; }
+.signin-logo-img { width: 84px; height: 84px; display: block; margin: 0 auto 18px; }
+
+.signin-card h1 { font-size: 26px; margin: 0 0 6px; }
+.signin-sub { color: var(--ink-soft); font-size: 14.5px; margin: 0 0 28px; }
+
+form { text-align: left; }
+
+label.field {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  margin-bottom: 16px;
+}
+
+label.field input {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  background: #fff;
+  font-family: inherit;
+  font-size: 14.5px;
+  color: var(--ink);
+}
+
+label.field input:focus {
+  outline: none;
+  border-color: var(--terracotta);
+}
+
+.role-select { margin-bottom: 22px; }
+
+.role-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+}
+
+.role-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.role-option {
+  position: relative;
+  display: block;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 10px;
+  text-align: center;
+  cursor: pointer;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.role-option input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.role-option:has(input:checked) {
+  border-color: var(--terracotta);
+  background: #fbe9d3;
+  color: var(--terracotta-dark);
+}
+
+.btn-submit {
+  width: 100%;
+  border: none;
+  background: var(--terracotta);
+  color: #fff;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 15px;
+  padding: 13px 0;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(193,101,44,0.28);
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.btn-submit:hover { background: var(--terracotta-dark); transform: translateY(-1px); }
+
+.form-note {
+  margin: 14px 0 0;
+  font-size: 12.5px;
+  color: var(--olive);
+  background: #eef1e6;
+  padding: 10px 12px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.signin-foot {
+  margin-top: 22px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.signin-foot a { color: var(--terracotta-dark); font-weight: 700; text-decoration: none; }
+
+.admin-tab {
+  position: fixed;
+  top: 18px;
+  right: 20px;
+  z-index: 10;
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-decoration: none;
+  color: var(--ink-soft);
+  background: var(--paper);
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  border-radius: 999px;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.admin-tab:hover { color: var(--terracotta-dark); border-color: var(--terracotta); }
