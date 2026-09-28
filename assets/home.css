@@ -67,8 +67,8 @@ h1, h2, h3 { font-family: "Fraunces", Georgia, serif; font-weight: 600; }
 
 .brand-mark-img {
   display: block;
-  width: 56px;
-  height: 56px;
+  width: 112px;
+  height: 112px;
 }
 
 .brand-tagline {
@@ -248,6 +248,7 @@ footer {
 
 @media (max-width: 640px) {
   .nav-wrap { padding: 14px 16px; gap: 10px; }
+  .brand-mark-img { width: 84px; height: 84px; }
   .brand-tagline { display: none; }
   nav.main-nav { width: 100%; justify-content: center; padding: 4px; }
   nav.main-nav a { padding: 8px 12px; font-size: 12.5px; }
