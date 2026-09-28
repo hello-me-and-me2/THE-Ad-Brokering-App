@@ -278,3 +278,30 @@ footer {
   color: var(--ink-soft);
   font-size: 13.5px;
 }
+
+@media (max-width: 640px) {
+  .nav-wrap { padding: 14px 16px; gap: 10px; }
+  .brand-tagline { display: none; }
+  nav.main-nav { width: 100%; justify-content: center; padding: 4px; }
+  nav.main-nav a { padding: 8px 12px; font-size: 12.5px; }
+
+  main { padding: 16px 16px 60px; }
+
+  .hero { padding: 30px 0 24px; gap: 28px; }
+  h1 { font-size: 30px; letter-spacing: -0.3px; }
+  .hero p.lede { font-size: 16px; }
+  .btn { padding: 13px 20px; font-size: 14px; }
+
+  .hero-card { padding: 22px; }
+  .stat-row { gap: 20px; }
+  .stat .num { font-size: 22px; }
+
+  section { padding: 28px 0; }
+  section h2 { font-size: 22px; }
+  section .section-lede { font-size: 15px; margin-bottom: 20px; }
+
+  .card { padding: 20px; }
+
+  .cta-band { padding: 30px 22px; border-radius: 20px; }
+  .cta-band h2 { font-size: 22px; }
+}
