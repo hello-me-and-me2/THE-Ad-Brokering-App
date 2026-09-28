@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script>if(!localStorage.getItem("tba_admin_authed")){location.replace("admin-signin.html");}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin Dashboard — THE BROKER APP</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,7 +22,7 @@
     <a href="admin.html" class="active">Overview</a>
     <a href="#users">Users</a>
     <a href="#reports">Reports</a>
-    <a class="signout" href="signin.html">Sign Out</a>
+    <a class="signout" href="index.html" id="signout-link">Sign Out</a>
   </nav>
 </header>
 
@@ -144,6 +145,13 @@
   </div>
 
 </main>
+
+<script>
+  document.getElementById('signout-link').addEventListener('click', function () {
+    localStorage.removeItem('tba_admin_authed');
+    localStorage.removeItem('tba_authed');
+  });
+</script>
 
 </body>
 </html>
