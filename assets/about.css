@@ -32,18 +32,19 @@ a { color: var(--rust); }
 
 .nav-wrap {
   max-width: 880px; margin: 0 auto;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 20px 24px; flex-wrap: wrap; gap: 12px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 20px 24px; gap: 12px;
+  text-align: center;
 }
 
 .brand { display: flex; align-items: center; text-decoration: none; color: var(--ink); }
 
-.brand-lockup { display: flex; flex-direction: column; }
+.brand-lockup { display: flex; flex-direction: column; align-items: center; }
 
 .brand-logo { display: inline-flex; align-items: center; }
 .brand-mark-img { display: block; width: 48px; height: 48px; }
 
-.brand-tagline { display: block; padding-left: 14px; font-size: 11.5px; color: var(--ink-soft); font-style: italic; }
+.brand-tagline { display: block; margin-top: 4px; font-size: 11.5px; color: var(--ink-soft); font-style: italic; }
 
 nav.main-nav { display: flex; gap: 18px; flex-wrap: wrap; font-family: "Helvetica Neue", Arial, sans-serif; }
 

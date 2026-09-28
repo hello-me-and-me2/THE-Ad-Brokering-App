@@ -34,21 +34,22 @@ a { color: var(--accent); }
   max-width: 1200px;
   margin: 0 auto;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   padding: 14px 24px;
-  flex-wrap: wrap;
   gap: 12px;
+  text-align: center;
 }
 
 .brand { display: flex; align-items: center; text-decoration: none; color: var(--text); }
 
-.brand-lockup { display: flex; flex-direction: column; }
+.brand-lockup { display: flex; flex-direction: column; align-items: center; }
 
 .brand-logo { display: inline-flex; align-items: center; }
 .brand-mark-img { display: block; width: 48px; height: 48px; }
 
-.brand-tagline { display: block; padding-left: 12px; font-size: 10.5px; color: var(--text-soft); text-transform: uppercase; letter-spacing: 0.6px; }
+.brand-tagline { display: block; margin-top: 4px; font-size: 10.5px; color: var(--text-soft); text-transform: uppercase; letter-spacing: 0.6px; }
 
 nav.main-nav { display: flex; gap: 2px; flex-wrap: wrap; }
 
