@@ -40,15 +40,9 @@ a { color: var(--rust); }
 
 .brand-lockup { display: flex; flex-direction: column; }
 
-.brand-logo { position: relative; display: inline-flex; align-items: center; padding: 8px 14px; }
+.brand-logo { display: inline-flex; align-items: center; }
+.brand-mark-img { display: block; width: 48px; height: 48px; }
 
-.brand-web { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--rust); }
-.brand-web .web-spokes, .brand-web .web-rings { fill: none; stroke: currentColor; stroke-width: 1.15; opacity: 0.42; }
-.brand-web .web-rings { opacity: 0.3; }
-.brand-web .web-nodes { fill: var(--sage); opacity: 0.75; }
-.brand-web .web-nodes circle:last-child { fill: var(--rust); }
-
-.brand-name { position: relative; z-index: 1; font-family: "Playfair Display", serif; font-weight: 700; font-size: 18px; white-space: nowrap; }
 .brand-tagline { display: block; padding-left: 14px; font-size: 11.5px; color: var(--ink-soft); font-style: italic; }
 
 nav.main-nav { display: flex; gap: 18px; flex-wrap: wrap; font-family: "Helvetica Neue", Arial, sans-serif; }
