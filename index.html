@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="assets/profile-picture.png">
 <link rel="stylesheet" href="assets/signin.css">
+<script src="assets/users-data.js"></script>
 </head>
 <body>
 
@@ -28,6 +29,12 @@
         Email
         <input type="email" name="email" required placeholder="you@example.com" autocomplete="email">
       </label>
+
+      <label class="field">
+        Username
+        <input type="text" name="username" id="username-input" required placeholder="how people will find you" pattern="[a-zA-Z0-9_]{3,20}" autocomplete="username" autocapitalize="off" spellcheck="false">
+      </label>
+      <p class="field-error" id="username-error" hidden></p>
 
       <label class="field">
         Password
@@ -57,7 +64,32 @@
 <script>
   document.getElementById('signin-form').addEventListener('submit', function (e) {
     e.preventDefault();
+
+    var usernameInput = document.getElementById('username-input');
+    var usernameError = document.getElementById('username-error');
+    var username = usernameInput.value.trim();
+
+    if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
+      usernameError.textContent = 'Usernames are 3–20 characters: letters, numbers, and underscores only.';
+      usernameError.hidden = false;
+      usernameInput.focus();
+      return;
+    }
+
+    if (tbaUsernameTaken(username)) {
+      usernameError.textContent = 'That username is already taken — try another.';
+      usernameError.hidden = false;
+      usernameInput.focus();
+      return;
+    }
+
+    usernameError.hidden = true;
+
+    var role = document.querySelector('input[name="role"]:checked').value;
+
     localStorage.setItem('tba_authed', '1');
+    localStorage.setItem('tba_username', username);
+    localStorage.setItem('tba_role', role);
     window.location.href = 'home.html';
   });
 </script>
