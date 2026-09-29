@@ -10,6 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="assets/profile-picture.png">
 <link rel="stylesheet" href="assets/messaging.css">
+<script src="assets/users-data.js"></script>
 </head>
 <body>
 
@@ -43,6 +44,12 @@
     <span class="status-pill">4 active threads</span>
   </div>
 
+  <div class="msg-tabs">
+    <button type="button" class="msg-tab active" data-tab="conversations">Conversations</button>
+    <button type="button" class="msg-tab" data-tab="find">Find People &amp; Requests</button>
+  </div>
+
+  <div class="tab-panel" id="tab-conversations">
   <div class="messenger">
     <div class="thread-list">
       <div class="thread-list-header">Conversations</div>
@@ -129,6 +136,31 @@
       </div>
     </div>
   </div>
+  </div>
+
+  <div class="tab-panel" id="tab-find" hidden>
+    <div class="find-people-head">
+      <h2>Find People</h2>
+      <p>Search every account on THE BROKER APP by username and request to message them.</p>
+    </div>
+
+    <div class="directory-search">
+      <input type="text" id="user-search" placeholder="Search by username..." autocomplete="off" autocapitalize="off" spellcheck="false">
+      <div class="filter-pills">
+        <button type="button" class="filter-pill active" data-filter="all">All</button>
+        <button type="button" class="filter-pill" data-filter="business">Business</button>
+        <button type="button" class="filter-pill" data-filter="influencer">Influencer</button>
+      </div>
+    </div>
+
+    <div class="user-grid" id="user-grid"></div>
+    <p class="no-results" id="no-results" hidden>No users found for that search.</p>
+
+    <div class="requests-sent-section" id="requests-sent-section" hidden>
+      <h2>Requests Sent</h2>
+      <ul class="requests-sent-list" id="requests-sent-list"></ul>
+    </div>
+  </div>
 
 </main>
 
@@ -141,6 +173,126 @@
   document.getElementById('logout-link').addEventListener('click', function () {
     localStorage.removeItem('tba_authed');
   });
+
+  // Tab switching
+  var tabButtons = document.querySelectorAll('.msg-tab');
+  tabButtons.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      tabButtons.forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      document.getElementById('tab-conversations').hidden = btn.dataset.tab !== 'conversations';
+      document.getElementById('tab-find').hidden = btn.dataset.tab !== 'find';
+    });
+  });
+
+  // Find People directory + message requests
+  var allUsers = tbaGetAllUsers();
+  var sentRequests = tbaGetSentRequests();
+  var activeFilter = 'all';
+  var searchTerm = '';
+
+  var grid = document.getElementById('user-grid');
+  var noResults = document.getElementById('no-results');
+  var requestsSection = document.getElementById('requests-sent-section');
+  var requestsList = document.getElementById('requests-sent-list');
+
+  function initials(name) {
+    return name.replace('@', '').slice(0, 2).toUpperCase();
+  }
+
+  function userByUsername(username) {
+    return allUsers.find(function (u) { return u.username === username; });
+  }
+
+  function renderRequestsSent() {
+    requestsList.innerHTML = '';
+    if (sentRequests.length === 0) {
+      requestsSection.hidden = true;
+      return;
+    }
+    requestsSection.hidden = false;
+    sentRequests.forEach(function (username) {
+      var u = userByUsername(username);
+      var li = document.createElement('li');
+      li.innerHTML =
+        '<span class="req-name">' + (u ? u.name : '@' + username) + '</span>' +
+        '<span class="req-username">@' + username + '</span>' +
+        '<span class="req-status">Pending</span>';
+      requestsList.appendChild(li);
+    });
+  }
+
+  function renderUsers() {
+    var term = searchTerm.trim().toLowerCase();
+    var visible = allUsers.filter(function (u) {
+      var matchesFilter = activeFilter === 'all' || u.role === activeFilter;
+      var matchesSearch = term === '' || u.username.toLowerCase().indexOf(term) !== -1;
+      return matchesFilter && matchesSearch;
+    });
+
+    grid.innerHTML = '';
+    noResults.hidden = visible.length !== 0;
+
+    visible.forEach(function (u) {
+      var card = document.createElement('div');
+      card.className = 'user-card';
+
+      var alreadySent = sentRequests.indexOf(u.username) !== -1;
+
+      card.innerHTML =
+        '<div class="user-avatar">' + initials(u.username) + '</div>' +
+        '<div class="user-info">' +
+        '<div class="user-name-row">' +
+        '<span class="user-name">' + u.name + '</span>' +
+        (u.isYou ? '<span class="you-badge">You</span>' : '') +
+        '</div>' +
+        '<div class="user-username">@' + u.username + '</div>' +
+        '<span class="role-tag ' + u.role + '">' + (u.role === 'business' ? 'Business' : 'Influencer') + '</span>' +
+        '<p class="user-tagline">' + u.tagline + '</p>' +
+        '</div>';
+
+      if (!u.isYou) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'request-btn';
+        if (alreadySent) {
+          btn.textContent = 'Request Sent';
+          btn.classList.add('sent');
+          btn.disabled = true;
+        } else {
+          btn.textContent = 'Request to Message';
+        }
+        btn.addEventListener('click', function () {
+          tbaAddSentRequest(u.username);
+          sentRequests = tbaGetSentRequests();
+          btn.textContent = 'Request Sent';
+          btn.classList.add('sent');
+          btn.disabled = true;
+          renderRequestsSent();
+        });
+        card.appendChild(btn);
+      }
+
+      grid.appendChild(card);
+    });
+  }
+
+  document.getElementById('user-search').addEventListener('input', function (e) {
+    searchTerm = e.target.value;
+    renderUsers();
+  });
+
+  document.querySelectorAll('.filter-pill').forEach(function (pill) {
+    pill.addEventListener('click', function () {
+      document.querySelectorAll('.filter-pill').forEach(function (p) { p.classList.remove('active'); });
+      pill.classList.add('active');
+      activeFilter = pill.getAttribute('data-filter');
+      renderUsers();
+    });
+  });
+
+  renderUsers();
+  renderRequestsSent();
 </script>
 </body>
 </html>
