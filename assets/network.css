@@ -53,6 +53,13 @@ nav.main-nav a {
 nav.main-nav a:hover { border-color: var(--line); color: var(--text); }
 nav.main-nav a.active { border-color: var(--node); color: var(--node); }
 
+nav.main-nav a.nav-logout {
+  border-color: var(--node-3);
+  color: var(--node-3);
+  margin-left: 4px;
+}
+nav.main-nav a.nav-logout:hover { background: rgba(244,184,96,0.12); border-color: var(--node-3); color: var(--node-3); }
+
 main {
   max-width: 1100px; margin: 0 auto;
   padding: 60px 24px 100px;

@@ -66,6 +66,13 @@ nav.main-nav a {
 nav.main-nav a:hover { background: var(--panel-2); color: var(--text); }
 nav.main-nav a.active { background: var(--accent-dim); color: #fff; }
 
+nav.main-nav a.nav-logout {
+  border: 1.5px solid var(--accent);
+  color: var(--accent);
+  margin-left: 4px;
+}
+nav.main-nav a.nav-logout:hover { background: var(--accent); color: #06131c; }
+
 main { max-width: 1200px; margin: 0 auto; padding: 28px 24px 70px; }
 
 .page-head { padding: 4px 0 22px; margin-bottom: 22px; display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 10px; }

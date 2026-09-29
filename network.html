@@ -28,7 +28,7 @@
       <a href="messaging.html">Messaging &amp; Negotiation</a>
       <a href="network.html" class="active">The Network</a>
       <a href="about.html">About</a>
-      <a href="index.html">Sign In</a>
+      <a href="index.html" class="nav-logout" id="logout-link">Log Out</a>
     </nav>
   </div>
 </header>
@@ -78,5 +78,11 @@
   &copy; 2026 THE BROKER APP. Built with care by Andre Anderson &amp; team.
 </footer>
 
+
+<script>
+  document.getElementById('logout-link').addEventListener('click', function () {
+    localStorage.removeItem('tba_authed');
+  });
+</script>
 </body>
 </html>

@@ -102,6 +102,13 @@ nav.main-nav a {
 nav.main-nav a:hover { background: #f3e6d3; color: var(--terracotta-dark); }
 nav.main-nav a.active { background: var(--terracotta); color: #fff; }
 
+nav.main-nav a.nav-logout {
+  border: 1.5px solid var(--terracotta);
+  color: var(--terracotta-dark);
+  margin-left: 4px;
+}
+nav.main-nav a.nav-logout:hover { background: var(--terracotta); color: #fff; }
+
 main { max-width: 1120px; margin: 0 auto; padding: 20px 24px 90px; }
 
 .hero {

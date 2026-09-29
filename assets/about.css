@@ -57,6 +57,18 @@ nav.main-nav a {
 nav.main-nav a:hover { color: var(--rust); }
 nav.main-nav a.active { color: var(--ink); border-bottom-color: var(--rust); }
 
+nav.main-nav a.nav-logout {
+  border: 1px solid var(--rust);
+  border-radius: 999px;
+  padding: 5px 14px;
+  color: var(--rust);
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 700;
+  margin-left: 4px;
+}
+nav.main-nav a.nav-logout:hover { background: var(--rust); color: #fff; }
+
 main { max-width: 880px; margin: 0 auto; padding: 50px 24px 100px; background: var(--paper); }
 
 .letterhead { text-align: center; margin-bottom: 44px; }
