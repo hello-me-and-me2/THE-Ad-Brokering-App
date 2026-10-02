@@ -50,6 +50,13 @@ a { color: var(--accent); }
   text-align: center;
 }
 
+.admin-signin-logo {
+  width: 84px;
+  height: 84px;
+  display: block;
+  margin: 0 auto 18px;
+}
+
 .admin-badge {
   display: inline-block;
   font-size: 11px;
@@ -152,19 +159,17 @@ form { text-align: left; }
   color: var(--text);
 }
 
-.admin-header .brand img { width: 40px; height: 40px; display: block; }
+.admin-header .brand-mark-img { width: 60px; height: 60px; display: block; }
 
-.admin-header .brand-title { font-weight: 800; font-size: 15px; }
-.admin-header .brand-title .badge {
+.admin-header .badge {
   display: inline-block;
-  margin-left: 8px;
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 1px;
   color: var(--accent);
   background: rgba(139,125,251,0.12);
   border: 1px solid rgba(139,125,251,0.35);
-  padding: 2px 8px;
+  padding: 3px 9px;
   border-radius: 999px;
   vertical-align: middle;
 }
@@ -299,8 +304,7 @@ form { text-align: left; }
     text-align: center;
     padding: 14px 16px;
   }
-  .admin-header .brand img { width: 32px; height: 32px; }
-  .admin-header .brand-title { font-size: 13.5px; }
+  .admin-header .brand-mark-img { width: 48px; height: 48px; }
   .admin-header nav {
     width: 100%;
     flex-wrap: wrap;
