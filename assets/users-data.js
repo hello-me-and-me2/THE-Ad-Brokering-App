@@ -1,4 +1,4 @@
-// Shared mock user directory for THE BROKER APP demo.
+// Shared mock user directory for THE INTROductory demo.
 // In a real app this would come from a database — here it's a fixed
 // seed list plus whoever has signed up in this browser.
 
