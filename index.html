@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sign In — THE INTROductory</title>
+<title>THE INTROductory — Where brands and creators make the deal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
@@ -15,53 +15,178 @@
 
 <a class="admin-tab" href="admin-signin.html">ADMIN</a>
 
-<div class="signin-wrap">
-  <div class="signin-card">
-    <span class="signin-logo">
-      <img src="assets/profile-picture.png" alt="THE INTROductory" class="signin-logo-img">
-    </span>
+<div class="landing-wrap">
+  <div class="landing-grid">
 
-    <h1>Create your account</h1>
-    <p class="signin-sub">Join THE INTROductory and start making deals.</p>
+    <div class="pitch-panel">
+      <img src="assets/profile-picture.png" alt="THE INTROductory" class="pitch-logo">
+      <div class="eyebrow">Influencer &amp; Business Deals, Under One Roof</div>
+      <h1>Where brands and creators sit down at the same table.</h1>
+      <p class="lede">
+        THE INTROductory is the place brands and influencers meet, message,
+        and work out a deal that feels fair to everyone — no cold DMs, no
+        guesswork, no disappearing acts.
+      </p>
 
-    <form id="signin-form" novalidate>
-      <label class="field">
-        Email
-        <input type="email" name="email" required placeholder="you@example.com" autocomplete="email">
-      </label>
-
-      <label class="field">
-        Username
-        <input type="text" name="username" id="username-input" required placeholder="how people will find you" pattern="[a-zA-Z0-9_]{3,20}" autocomplete="username" autocapitalize="off" spellcheck="false">
-      </label>
-      <p class="field-error" id="username-error" hidden></p>
-
-      <label class="field">
-        Password
-        <input type="password" name="password" required placeholder="Create a password" minlength="8" autocomplete="new-password">
-      </label>
-
-      <div class="role-select">
-        <span class="role-label">I am a...</span>
-        <div class="role-options">
-          <label class="role-option">
-            <input type="radio" name="role" value="business" checked>
-            <span>Business</span>
-          </label>
-          <label class="role-option">
-            <input type="radio" name="role" value="influencer">
-            <span>Influencer</span>
-          </label>
+      <div class="pitch-stats">
+        <h3>Today on the platform</h3>
+        <div class="stat-row">
+          <div class="stat">
+            <span class="num">1,240+</span>
+            <span class="label">Active Creators</span>
+          </div>
+          <div class="stat">
+            <span class="num">380+</span>
+            <span class="label">Brand Partners</span>
+          </div>
+          <div class="stat">
+            <span class="num">92%</span>
+            <span class="label">Deals Closed Fairly</span>
+          </div>
         </div>
       </div>
+    </div>
 
-      <button type="submit" class="btn-submit">Continue</button>
-    </form>
+    <div class="auth-panel">
+      <div class="signin-card">
+
+        <div class="auth-tabs">
+          <button type="button" class="auth-tab active" data-tab="login">Log In</button>
+          <button type="button" class="auth-tab" data-tab="signup">Sign Up</button>
+        </div>
+
+        <div class="auth-tab-panel" id="tab-login">
+          <h2>Welcome back</h2>
+          <p class="signin-sub">Log in to pick up where you left off.</p>
+
+          <form id="login-form" novalidate>
+            <label class="field">
+              Username
+              <input type="text" id="login-username" required placeholder="your username" autocomplete="username" autocapitalize="off" spellcheck="false">
+            </label>
+            <p class="field-error" id="login-error" hidden></p>
+
+            <label class="field">
+              Password
+              <input type="password" id="login-password" required placeholder="Your password" autocomplete="current-password">
+            </label>
+
+            <button type="submit" class="btn-submit">Log In</button>
+          </form>
+
+          <p class="signin-foot">New here? <a href="#" data-switch-to="signup">Create an account</a></p>
+        </div>
+
+        <div class="auth-tab-panel" id="tab-signup" hidden>
+          <h2>Create your account</h2>
+          <p class="signin-sub">Join THE INTROductory and start making deals.</p>
+
+          <form id="signin-form" novalidate>
+            <label class="field">
+              Email
+              <input type="email" name="email" required placeholder="you@example.com" autocomplete="email">
+            </label>
+
+            <label class="field">
+              Username
+              <input type="text" name="username" id="username-input" required placeholder="how people will find you" pattern="[a-zA-Z0-9_]{3,20}" autocomplete="username" autocapitalize="off" spellcheck="false">
+            </label>
+            <p class="field-error" id="username-error" hidden></p>
+
+            <label class="field">
+              Password
+              <input type="password" name="password" required placeholder="Create a password" minlength="8" autocomplete="new-password">
+            </label>
+
+            <div class="role-select">
+              <span class="role-label">I am a...</span>
+              <div class="role-options">
+                <label class="role-option">
+                  <input type="radio" name="role" value="business" checked>
+                  <span>Business</span>
+                </label>
+                <label class="role-option">
+                  <input type="radio" name="role" value="influencer">
+                  <span>Influencer</span>
+                </label>
+              </div>
+            </div>
+
+            <button type="submit" class="btn-submit">Create Account</button>
+          </form>
+
+          <p class="signin-foot">Already have an account? <a href="#" data-switch-to="login">Log in</a></p>
+        </div>
+
+      </div>
+    </div>
 
   </div>
 </div>
 
+<footer>
+  &copy; 2026 THE INTROductory. Built with care by Andre Anderson &amp; team.
+</footer>
+
 <script>
+  // Tab switching between Log In and Sign Up
+  var tabButtons = document.querySelectorAll('.auth-tab');
+  function showTab(name) {
+    tabButtons.forEach(function (b) { b.classList.toggle('active', b.dataset.tab === name); });
+    document.getElementById('tab-login').hidden = name !== 'login';
+    document.getElementById('tab-signup').hidden = name !== 'signup';
+  }
+  tabButtons.forEach(function (btn) {
+    btn.addEventListener('click', function () { showTab(btn.dataset.tab); });
+  });
+  document.querySelectorAll('[data-switch-to]').forEach(function (link) {
+    link.addEventListener('click', function (e) {
+      e.preventDefault();
+      showTab(link.dataset.switchTo);
+    });
+  });
+
+  // Log in — matches against the current browser's own signup, or
+  // against the seed directory (demo only: no real password check).
+  document.getElementById('login-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    var usernameInput = document.getElementById('login-username');
+    var loginError = document.getElementById('login-error');
+    var username = usernameInput.value.trim();
+
+    var myUsername = localStorage.getItem('tba_username');
+    var matchedUsername = null;
+    var matchedRole = null;
+
+    if (myUsername && myUsername.toLowerCase() === username.toLowerCase()) {
+      matchedUsername = myUsername;
+      matchedRole = localStorage.getItem('tba_role') || 'business';
+    } else {
+      var seedMatch = TBA_SEED_USERS.find(function (u) {
+        return u.username.toLowerCase() === username.toLowerCase();
+      });
+      if (seedMatch) {
+        matchedUsername = seedMatch.username;
+        matchedRole = seedMatch.role;
+      }
+    }
+
+    if (!matchedUsername) {
+      loginError.textContent = "We couldn't find an account with that username.";
+      loginError.hidden = false;
+      usernameInput.focus();
+      return;
+    }
+
+    loginError.hidden = true;
+    localStorage.setItem('tba_authed', '1');
+    localStorage.setItem('tba_username', matchedUsername);
+    localStorage.setItem('tba_role', matchedRole);
+    window.location.href = 'home.html';
+  });
+
+  // Sign up
   document.getElementById('signin-form').addEventListener('submit', function (e) {
     e.preventDefault();
 

@@ -293,6 +293,10 @@
 
   renderUsers();
   renderRequestsSent();
+
+  if (window.location.hash === '#find') {
+    document.querySelector('.msg-tab[data-tab="find"]').click();
+  }
 </script>
 </body>
 </html>

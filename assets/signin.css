@@ -28,14 +28,74 @@ body {
 
 h1 { font-family: "Fraunces", Georgia, serif; font-weight: 700; }
 
-.signin-wrap {
+.landing-wrap {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px 20px;
+  padding: 60px 24px 40px;
   position: relative;
 }
+
+.landing-grid {
+  width: 100%;
+  max-width: 1060px;
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 60px;
+  align-items: center;
+}
+
+.pitch-panel { padding-right: 10px; }
+
+.pitch-logo { width: 72px; height: 72px; display: block; margin-bottom: 22px; }
+
+.pitch-panel .eyebrow {
+  display: inline-block;
+  text-transform: uppercase;
+  letter-spacing: 1.6px;
+  font-size: 12px;
+  color: var(--olive);
+  font-weight: 700;
+  margin-bottom: 14px;
+  padding: 5px 12px;
+  background: #eef1e6;
+  border-radius: 999px;
+}
+
+.pitch-panel h1 {
+  font-size: 38px;
+  line-height: 1.14;
+  margin: 0 0 18px;
+  letter-spacing: -0.4px;
+}
+
+.pitch-panel .lede {
+  font-size: 16.5px;
+  color: var(--ink-soft);
+  margin: 0 0 30px;
+  max-width: 46ch;
+}
+
+.pitch-stats {
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 24px 26px;
+  box-shadow: 0 16px 36px rgba(46,36,23,0.07);
+}
+
+.pitch-stats h3 {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-family: "Fraunces", serif;
+}
+
+.pitch-stats .stat-row { display: flex; gap: 26px; flex-wrap: wrap; }
+.pitch-stats .stat .num { font-family: "Fraunces", serif; font-size: 24px; font-weight: 700; color: var(--terracotta-dark); display: block; }
+.pitch-stats .stat .label { font-size: 12px; color: var(--ink-soft); }
+
+.auth-panel { display: flex; }
 
 .signin-card {
   width: 100%;
@@ -43,17 +103,37 @@ h1 { font-family: "Fraunces", Georgia, serif; font-weight: 700; }
   background: var(--paper);
   border: 1px solid var(--border);
   border-radius: 26px;
-  padding: 40px 36px 32px;
+  padding: 32px 36px 32px;
   box-shadow: 0 24px 50px rgba(46,36,23,0.1);
   position: relative;
   text-align: center;
 }
 
-.signin-logo { display: inline-block; text-decoration: none; }
-.signin-logo-img { width: 84px; height: 84px; display: block; margin: 0 auto 18px; }
+.auth-tabs {
+  display: flex;
+  gap: 24px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 26px;
+}
 
-.signin-card h1 { font-size: 26px; margin: 0 0 6px; }
-.signin-sub { color: var(--ink-soft); font-size: 14.5px; margin: 0 0 28px; }
+.auth-tab {
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  background: none;
+  border: none;
+  padding: 0 2px 12px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.auth-tab:hover { color: var(--ink); }
+.auth-tab.active { color: var(--terracotta-dark); border-bottom-color: var(--terracotta); }
+
+.signin-card h2 { font-size: 24px; margin: 0 0 6px; }
+.signin-sub { color: var(--ink-soft); font-size: 14.5px; margin: 0 0 24px; }
 
 form { text-align: left; }
 
@@ -188,3 +268,26 @@ label.field input:focus {
 }
 
 .admin-tab:hover { color: var(--terracotta-dark); border-color: var(--terracotta); }
+
+footer {
+  padding: 24px 24px 34px;
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .landing-wrap { padding: 36px 20px 30px; }
+  .landing-grid { grid-template-columns: 1fr; gap: 36px; max-width: 480px; }
+  .pitch-panel { padding-right: 0; text-align: center; }
+  .pitch-logo { margin: 0 auto 18px; }
+  .pitch-panel .lede { margin-left: auto; margin-right: auto; }
+  .pitch-panel h1 { font-size: 30px; }
+  .pitch-stats .stat-row { justify-content: center; }
+  .auth-panel { justify-content: center; }
+}
+
+@media (max-width: 480px) {
+  .signin-card { padding: 28px 22px 26px; }
+  .auth-tabs { gap: 18px; }
+}
