@@ -29,6 +29,7 @@
       <a href="messaging.html" class="active">Messaging &amp; Negotiation</a>
       <a href="network.html">The Network</a>
       <a href="about.html">About</a>
+      <a href="profile.html">Profile</a>
       <a href="index.html" class="nav-logout" id="logout-link">Log Out</a>
     </nav>
   </div>
@@ -55,25 +56,25 @@
       <div class="thread-list-header">Conversations</div>
 
       <div class="thread-item active">
-        <div class="t-name">Maren Cole — Skyline Coffee Co.</div>
+        <div class="t-name"><a href="profile.html?u=marencole" style="text-decoration:none;color:inherit;">Maren Cole — Skyline Coffee Co.</a></div>
         <div class="t-preview">Sounds good — can we lock in 3 posts?</div>
         <span class="t-tag negotiating">Negotiating</span>
       </div>
 
       <div class="thread-item">
-        <div class="t-name">Riverside Outdoor Gear</div>
+        <div class="t-name"><a href="profile.html?u=riversidegear" style="text-decoration:none;color:inherit;">Riverside Outdoor Gear</a></div>
         <div class="t-preview">Thanks for sending the media kit!</div>
         <span class="t-tag new">New</span>
       </div>
 
       <div class="thread-item">
-        <div class="t-name">Jordan Blake (Creator)</div>
+        <div class="t-name"><a href="profile.html?u=jordanblake" style="text-decoration:none;color:inherit;">Jordan Blake (Creator)</a></div>
         <div class="t-preview">Deal signed — excited to get started</div>
         <span class="t-tag closed">Closed</span>
       </div>
 
       <div class="thread-item">
-        <div class="t-name">Pear &amp; Co. Skincare</div>
+        <div class="t-name"><a href="profile.html?u=pearandco" style="text-decoration:none;color:inherit;">Pear &amp; Co. Skincare</a></div>
         <div class="t-preview">Let's revisit the rate next week</div>
         <span class="t-tag negotiating">Paused</span>
       </div>
@@ -239,14 +240,16 @@
 
       var alreadySent = sentRequests.indexOf(u.username) !== -1;
 
+      var profileHref = 'profile.html?u=' + encodeURIComponent(u.username);
+
       card.innerHTML =
-        '<div class="user-avatar">' + initials(u.username) + '</div>' +
+        '<a class="user-avatar" href="' + profileHref + '" style="text-decoration:none;">' + initials(u.username) + '</a>' +
         '<div class="user-info">' +
         '<div class="user-name-row">' +
-        '<span class="user-name">' + u.name + '</span>' +
+        '<a class="user-name" href="' + profileHref + '" style="text-decoration:none;color:inherit;">' + u.name + '</a>' +
         (u.isYou ? '<span class="you-badge">You</span>' : '') +
         '</div>' +
-        '<div class="user-username">@' + u.username + '</div>' +
+        '<a class="user-username" href="' + profileHref + '" style="text-decoration:none;color:inherit;">@' + u.username + '</a>' +
         '<span class="role-tag ' + u.role + '">' + (u.role === 'business' ? 'Business' : 'Influencer') + '</span>' +
         '<p class="user-tagline">' + u.tagline + '</p>' +
         '</div>';

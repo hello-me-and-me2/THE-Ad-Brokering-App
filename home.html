@@ -29,6 +29,7 @@
       <a href="messaging.html">Messaging &amp; Negotiation</a>
       <a href="network.html">The Network</a>
       <a href="about.html">About</a>
+      <a href="profile.html">Profile</a>
       <a href="index.html" class="nav-logout" id="logout-link">Log Out</a>
     </nav>
   </div>
@@ -163,10 +164,10 @@
     var alreadySent = sentRequests.indexOf(u.username) !== -1;
 
     card.innerHTML =
-      '<div class="user-avatar">' + initials(u.username) + '</div>' +
+      '<a class="user-avatar" href="profile.html?u=' + encodeURIComponent(u.username) + '" style="text-decoration:none;">' + initials(u.username) + '</a>' +
       '<div class="user-info">' +
-      '<div class="user-name-row"><span class="user-name">' + u.name + '</span></div>' +
-      '<div class="user-username">@' + u.username + '</div>' +
+      '<div class="user-name-row"><a class="user-name" href="profile.html?u=' + encodeURIComponent(u.username) + '" style="text-decoration:none;color:inherit;">' + u.name + '</a></div>' +
+      '<a class="user-username" href="profile.html?u=' + encodeURIComponent(u.username) + '" style="text-decoration:none;color:inherit;">@' + u.username + '</a>' +
       '<span class="role-tag ' + u.role + '">' + (u.role === 'business' ? 'Business' : 'Influencer') + '</span>' +
       '<p class="user-tagline">' + u.tagline + '</p>' +
       '</div>';
