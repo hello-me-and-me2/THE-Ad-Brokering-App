@@ -163,8 +163,12 @@
 
     var alreadySent = sentRequests.indexOf(u.username) !== -1;
 
+    var avatarInner = u.avatar
+      ? '<img src="' + u.avatar + '" alt="" style="width:100%;height:100%;object-fit:cover;">'
+      : initials(u.username);
+
     card.innerHTML =
-      '<a class="user-avatar" href="profile.html?u=' + encodeURIComponent(u.username) + '" style="text-decoration:none;">' + initials(u.username) + '</a>' +
+      '<a class="user-avatar" href="profile.html?u=' + encodeURIComponent(u.username) + '" style="text-decoration:none;">' + avatarInner + '</a>' +
       '<div class="user-info">' +
       '<div class="user-name-row"><a class="user-name" href="profile.html?u=' + encodeURIComponent(u.username) + '" style="text-decoration:none;color:inherit;">' + u.name + '</a></div>' +
       '<a class="user-username" href="profile.html?u=' + encodeURIComponent(u.username) + '" style="text-decoration:none;color:inherit;">@' + u.username + '</a>' +

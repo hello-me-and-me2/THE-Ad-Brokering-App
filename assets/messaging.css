@@ -182,7 +182,10 @@ main { max-width: 1200px; margin: 0 auto; padding: 28px 24px 70px; }
   font-weight: 700;
   font-size: 12.5px;
   flex-shrink: 0;
+  overflow: hidden;
 }
+
+img.user-avatar { object-fit: cover; }
 
 .user-info { display: flex; flex-direction: column; gap: 4px; }
 

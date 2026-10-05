@@ -119,6 +119,18 @@ function tbaSaveMyProfile(bio, links) {
   localStorage.setItem('tba_links', JSON.stringify((links || []).slice(0, TBA_MAX_LINKS)));
 }
 
+function tbaGetMyProfilePic() {
+  return localStorage.getItem('tba_profile_pic') || '';
+}
+
+function tbaSaveMyProfilePic(dataUrl) {
+  if (dataUrl) {
+    localStorage.setItem('tba_profile_pic', dataUrl);
+  } else {
+    localStorage.removeItem('tba_profile_pic');
+  }
+}
+
 function tbaGetAllUsers() {
   var users = TBA_SEED_USERS.slice();
   var myUsername = localStorage.getItem('tba_username');
@@ -130,6 +142,7 @@ function tbaGetAllUsers() {
       tagline: 'This is you.',
       bio: tbaGetMyBio(),
       links: tbaGetMyLinks(),
+      avatar: tbaGetMyProfilePic(),
       isYou: true
     });
   }
@@ -151,6 +164,7 @@ function tbaGetUserByUsername(username) {
       tagline: 'This is you.',
       bio: tbaGetMyBio(),
       links: tbaGetMyLinks(),
+      avatar: tbaGetMyProfilePic(),
       isYou: true
     };
   }

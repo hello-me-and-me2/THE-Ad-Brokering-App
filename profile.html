@@ -86,6 +86,12 @@
     }).join('') + '</div>';
   }
 
+  function avatarMarkup(user, cls) {
+    return user.avatar
+      ? '<img class="' + cls + '" src="' + user.avatar + '" alt="">'
+      : '<div class="' + cls + '">' + initials(user.username) + '</div>';
+  }
+
   function renderEditForm(user) {
     var rows = [];
     for (var i = 0; i < 7; i++) {
@@ -100,6 +106,24 @@
 
     return (
       '<div class="profile-edit-form" id="edit-form" hidden>' +
+      '<div class="edit-field">Profile Picture' +
+      '<div class="avatar-edit-row">' +
+      '<div id="avatar-preview-wrap">' + avatarMarkup(user, 'profile-avatar-lg') + '</div>' +
+      '<div class="avatar-edit-actions">' +
+      '<label class="btn-edit upload-label">Upload Photo<input type="file" id="photo-upload" accept="image/*" hidden></label>' +
+      '<button type="button" class="btn-edit" id="camera-btn">Use Camera</button>' +
+      '<button type="button" class="btn-edit" id="remove-photo-btn"' + (user.avatar ? '' : ' hidden') + '>Remove Photo</button>' +
+      '</div>' +
+      '</div>' +
+      '<div class="camera-panel" id="camera-panel" hidden>' +
+      '<p class="camera-error" id="camera-error" hidden></p>' +
+      '<video id="camera-video" autoplay playsinline muted></video>' +
+      '<div class="camera-actions">' +
+      '<button type="button" class="btn-edit" id="capture-btn">Capture</button>' +
+      '<button type="button" class="btn-edit" id="cancel-camera-btn">Cancel</button>' +
+      '</div>' +
+      '</div>' +
+      '</div>' +
       '<label class="edit-field">Bio' +
       '<textarea id="bio-input" maxlength="400" placeholder="Tell people about your account...">' + escapeHtml(user.bio) + '</textarea>' +
       '</label>' +
@@ -131,7 +155,7 @@
 
     content.innerHTML =
       '<div class="profile-card">' +
-      '<div class="profile-avatar-lg">' + initials(user.username) + '</div>' +
+      avatarMarkup(user, 'profile-avatar-lg') +
       '<h1 class="profile-name">' + escapeHtml(user.name) + (isYou ? '<span class="you-badge">You</span>' : '') + '</h1>' +
       '<div class="profile-username">@' + escapeHtml(user.username) + '</div>' +
       '<span class="role-tag ' + user.role + '">' + (user.role === 'business' ? 'Business' : 'Influencer') + '</span>' +
@@ -151,9 +175,91 @@
 
     if (isYou) {
       var editForm = document.getElementById('edit-form');
+      var pendingAvatar = user.avatar || '';
+      var cameraStream = null;
+
       document.getElementById('edit-toggle-btn').addEventListener('click', function () {
         editForm.hidden = !editForm.hidden;
       });
+
+      function setAvatarPreview(dataUrl) {
+        pendingAvatar = dataUrl || '';
+        var wrap = document.getElementById('avatar-preview-wrap');
+        wrap.innerHTML = pendingAvatar
+          ? '<img class="profile-avatar-lg" src="' + pendingAvatar + '" alt="">'
+          : '<div class="profile-avatar-lg">' + initials(user.username) + '</div>';
+        document.getElementById('remove-photo-btn').hidden = !pendingAvatar;
+      }
+
+      function squareCropDataUrl(source, sw, sh) {
+        var size = 300;
+        var canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        var ctx = canvas.getContext('2d');
+        var side = Math.min(sw, sh);
+        var sx = (sw - side) / 2;
+        var sy = (sh - side) / 2;
+        ctx.drawImage(source, sx, sy, side, side, 0, 0, size, size);
+        return canvas.toDataURL('image/jpeg', 0.85);
+      }
+
+      document.getElementById('photo-upload').addEventListener('change', function (e) {
+        var file = e.target.files && e.target.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function () {
+          var img = new Image();
+          img.onload = function () {
+            setAvatarPreview(squareCropDataUrl(img, img.width, img.height));
+          };
+          img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+      });
+
+      function stopCamera() {
+        if (cameraStream) {
+          cameraStream.getTracks().forEach(function (t) { t.stop(); });
+          cameraStream = null;
+        }
+        document.getElementById('camera-panel').hidden = true;
+      }
+
+      document.getElementById('camera-btn').addEventListener('click', function () {
+        var errorEl = document.getElementById('camera-error');
+        errorEl.hidden = true;
+        document.getElementById('camera-panel').hidden = false;
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          errorEl.textContent = 'Camera access isn\'t supported in this browser.';
+          errorEl.hidden = false;
+          return;
+        }
+        navigator.mediaDevices.getUserMedia({ video: true })
+          .then(function (stream) {
+            cameraStream = stream;
+            var video = document.getElementById('camera-video');
+            video.srcObject = stream;
+          })
+          .catch(function () {
+            errorEl.textContent = 'Camera access was denied or unavailable. You can still upload a photo instead.';
+            errorEl.hidden = false;
+          });
+      });
+
+      document.getElementById('capture-btn').addEventListener('click', function () {
+        var video = document.getElementById('camera-video');
+        if (!video.videoWidth) return;
+        setAvatarPreview(squareCropDataUrl(video, video.videoWidth, video.videoHeight));
+        stopCamera();
+      });
+
+      document.getElementById('cancel-camera-btn').addEventListener('click', stopCamera);
+
+      document.getElementById('remove-photo-btn').addEventListener('click', function () {
+        setAvatarPreview('');
+      });
+
       document.getElementById('save-profile-btn').addEventListener('click', function () {
         var newBio = document.getElementById('bio-input').value.trim();
         var labelInputs = editForm.querySelectorAll('.link-label');
@@ -168,6 +274,8 @@
         }
         newLinks = newLinks.slice(0, 7);
         tbaSaveMyProfile(newBio, newLinks);
+        tbaSaveMyProfilePic(pendingAvatar);
+        stopCamera();
         document.getElementById('save-confirm').hidden = false;
         render();
       });
