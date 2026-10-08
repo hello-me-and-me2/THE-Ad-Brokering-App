@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script>if(!localStorage.getItem("tba_admin_authed")){location.replace("admin-signin.html");}</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>User Detail — Admin — THE INTROductory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="assets/profile-picture.png">
+<link rel="stylesheet" href="assets/admin.css">
+<script src="assets/users-data.js"></script>
+</head>
+<body>
+
+<header class="admin-header">
+  <a class="brand" href="admin.html">
+    <img src="assets/admin-logo.png" alt="THE INTROductory — Admin" class="brand-mark-img">
+    <span class="badge">ADMIN</span>
+  </a>
+  <nav>
+    <a href="admin.html">Overview</a>
+    <a href="admin-users.html" class="active">Users</a>
+    <a href="admin.html#reports">Reports</a>
+    <a class="signout" href="index.html" id="signout-link">Sign Out</a>
+  </nav>
+</header>
+
+<main class="admin-main">
+
+  <a class="admin-back-link" href="admin-users.html">&larr; Back to All Users</a>
+
+  <div id="admin-user-content"></div>
+
+</main>
+
+<script>
+  document.getElementById('signout-link').addEventListener('click', function () {
+    localStorage.removeItem('tba_admin_authed');
+    localStorage.removeItem('tba_authed');
+  });
+
+  function escapeHtml(str) {
+    return String(str || '').replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function normalizeUrl(url) {
+    url = (url || '').trim();
+    if (!url) return '';
+    if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+    return url;
+  }
+
+  function initials(name) {
+    return name.replace('@', '').slice(0, 2).toUpperCase();
+  }
+
+  var params = new URLSearchParams(window.location.search);
+  var viewUsername = params.get('u');
+  var content = document.getElementById('admin-user-content');
+
+  function renderLinks(links) {
+    if (!links || links.length === 0) return '';
+    return '<div class="admin-profile-links">' + links.map(function (l) {
+      var url = normalizeUrl(l.url);
+      if (!url) return '';
+      return '<a class="admin-link-pill" href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer">' +
+        escapeHtml(l.label || url) + '</a>';
+    }).join('') + '</div>';
+  }
+
+  function renderThread(thread) {
+    var tagClass = thread.status === 'negotiating' ? 'negotiating' : (thread.status === 'closed' ? 'closed' : 'new');
+    var tagLabel = thread.status === 'negotiating' ? 'Negotiating' : (thread.status === 'closed' ? 'Closed' : 'New');
+
+    var bubbles = thread.messages.map(function (m) {
+      if (m.from === 'offer') {
+        return '<div class="admin-bubble offer"><div class="offer-title">Offer</div>' + escapeHtml(m.text) + '</div>';
+      }
+      return '<div class="admin-bubble ' + (m.from === 'me' ? 'me' : 'them') + '">' + escapeHtml(m.text) + '</div>';
+    }).join('');
+
+    return (
+      '<div class="thread-block">' +
+      '<div class="thread-block-head">' +
+      '<h3>Conversation with ' + escapeHtml(thread.counterpart) + '</h3>' +
+      '<span class="t-tag ' + tagClass + '">' + tagLabel + '</span>' +
+      '</div>' +
+      '<div class="admin-chat-body">' + bubbles + '</div>' +
+      '<div class="admin-deal-grid">' +
+      '<div class="admin-deal-field"><label>Brand</label><div class="val">' + escapeHtml(thread.deal.brand) + '</div></div>' +
+      '<div class="admin-deal-field"><label>Deliverables</label><div class="val">' + escapeHtml(thread.deal.deliverables) + '</div></div>' +
+      '<div class="admin-deal-field"><label>Rate</label><div class="val money">' + escapeHtml(thread.deal.rate) + '</div></div>' +
+      '<div class="admin-deal-field"><label>Timeline</label><div class="val">' + escapeHtml(thread.deal.timeline) + '</div></div>' +
+      '</div>' +
+      '<div class="admin-deal-field" style="margin-top:12px;"><label>Negotiation Progress</label>' +
+      '<div class="progress-track"><div class="progress-fill" style="width:' + thread.deal.progress + '%;"></div></div>' +
+      '</div>' +
+      '</div>'
+    );
+  }
+
+  function render() {
+    var user = tbaGetUserByUsername(viewUsername);
+
+    if (!user) {
+      content.innerHTML = '<div class="admin-empty">No account found for "@' + escapeHtml(viewUsername || '') + '".</div>';
+      return;
+    }
+
+    var avatarInner = user.avatar
+      ? '<img class="admin-avatar-lg" src="' + user.avatar + '" alt="">'
+      : '<div class="admin-avatar-lg">' + initials(user.username) + '</div>';
+
+    var threads = tbaGetUserThreads(user.username);
+
+    var html =
+      '<div class="panel">' +
+      '<div class="admin-profile-head">' +
+      avatarInner +
+      '<div>' +
+      '<h1 class="admin-profile-name">' + escapeHtml(user.name) + (user.isYou ? '<span class="t-tag new">You</span>' : '') + '</h1>' +
+      '<div class="admin-profile-username">@' + escapeHtml(user.username) + '</div>' +
+      '<span class="role-pill ' + user.role + '">' + (user.role === 'business' ? 'Business' : 'Influencer') + '</span>' +
+      '</div>' +
+      '</div>' +
+      (user.bio
+        ? '<p class="admin-profile-bio">' + escapeHtml(user.bio) + '</p>'
+        : '<p class="admin-profile-bio">No bio written yet.</p>') +
+      renderLinks(user.links) +
+      '</div>' +
+      '<h2 class="admin-section-title">Chats &amp; Deals</h2>' +
+      '<div class="panel">' +
+      (threads.length === 0
+        ? '<div class="admin-empty">No conversations or deals yet for this account.</div>'
+        : threads.map(renderThread).join('')) +
+      '</div>';
+
+    content.innerHTML = html;
+  }
+
+  render();
+</script>
+</body>
+</html>

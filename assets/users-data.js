@@ -173,6 +173,108 @@ function tbaGetUserByUsername(username) {
   return seedMatch || null;
 }
 
+// Mock chat + deal history per seed account, used by the admin
+// dashboard to show "what is this account talking about right now."
+// Freshly signed-up accounts (including "you") start with none.
+var TBA_DEAL_THREADS = {
+  marencole: [{
+    counterpart: "Skyline Coffee Co.", status: "negotiating",
+    messages: [
+      { from: "them", text: "Hi! We love your content and would love to talk about a sponsored post series with Skyline Coffee." },
+      { from: "me", text: "Thanks for reaching out! I'd love to hear more about what you have in mind." },
+      { from: "offer", text: "2 Instagram posts + 1 TikTok video — $1,800, delivered within 3 weeks." },
+      { from: "them", text: "That works for us, but could we add a 3rd Instagram post to the package?" },
+      { from: "me", text: "Happy to! Let's adjust the rate to cover the extra deliverable." },
+      { from: "them", text: "Sounds good — can we lock in 3 posts?" }
+    ],
+    deal: { brand: "Skyline Coffee Co.", deliverables: "3 IG Posts + 1 TikTok", rate: "$2,100", timeline: "3 weeks", progress: 70 }
+  }],
+  riversidegear: [{
+    counterpart: "Jordan Blake", status: "new",
+    messages: [
+      { from: "them", text: "Hey! Sent over our media kit and a few product options for the next gear review." },
+      { from: "me", text: "Thanks for sending the media kit! Taking a look now." }
+    ],
+    deal: { brand: "Riverside Outdoor Gear", deliverables: "1 YouTube Review", rate: "$1,200", timeline: "4 weeks", progress: 20 }
+  }],
+  jordanblake: [{
+    counterpart: "Riverside Outdoor Gear", status: "closed",
+    messages: [
+      { from: "them", text: "Everything looks great on our end — ready to sign when you are." },
+      { from: "me", text: "Signed! Excited to get started on this one." },
+      { from: "offer", text: "Deal signed — 1 YouTube Review, $1,200." }
+    ],
+    deal: { brand: "Riverside Outdoor Gear", deliverables: "1 YouTube Review", rate: "$1,200", timeline: "4 weeks", progress: 100 }
+  }],
+  pearandco: [{
+    counterpart: "Nina Reyes", status: "negotiating",
+    messages: [
+      { from: "me", text: "Thanks for the samples — loved the new serum!" },
+      { from: "them", text: "So glad to hear it! Let's revisit the rate next week once you've tried the full routine." }
+    ],
+    deal: { brand: "Pear & Co. Skincare", deliverables: "2 IG Posts + 3 Stories", rate: "$950", timeline: "2 weeks", progress: 45 }
+  }],
+  skylinecoffee: [{
+    counterpart: "Maren Cole", status: "negotiating",
+    messages: [
+      { from: "me", text: "Hi Maren! We love your content and would love to talk about a sponsored post series." },
+      { from: "them", text: "Thanks for reaching out! I'd love to hear more about what you have in mind." },
+      { from: "offer", text: "2 Instagram posts + 1 TikTok video — $1,800, delivered within 3 weeks." },
+      { from: "me", text: "That works for us, but could we add a 3rd Instagram post to the package?" }
+    ],
+    deal: { brand: "Skyline Coffee Co.", deliverables: "3 IG Posts + 1 TikTok", rate: "$2,100", timeline: "3 weeks", progress: 70 }
+  }],
+  thecraftedtable: [{
+    counterpart: "Ava Qian", status: "new",
+    messages: [
+      { from: "me", text: "Hi Ava! Our tableware line feels like a great fit for your food content — open to a collab?" },
+      { from: "them", text: "Love this! Send over details on what you had in mind." }
+    ],
+    deal: { brand: "The Crafted Table", deliverables: "1 IG Reel", rate: "$700", timeline: "2 weeks", progress: 10 }
+  }],
+  brightlinestudio: [{
+    counterpart: "Leo Ortiz", status: "negotiating",
+    messages: [
+      { from: "them", text: "Could we feature the case study across a short video series instead of just one post?" },
+      { from: "me", text: "We can work with that — let's talk rate for the expanded scope." }
+    ],
+    deal: { brand: "Brightline Studio", deliverables: "3-part Video Series", rate: "$1,500", timeline: "5 weeks", progress: 35 }
+  }],
+  ninareyes: [{
+    counterpart: "Pear & Co. Skincare", status: "negotiating",
+    messages: [
+      { from: "them", text: "Thanks for the samples — loved the new serum!" },
+      { from: "me", text: "So glad to hear it! Let's revisit the rate next week once you've tried the full routine." }
+    ],
+    deal: { brand: "Pear & Co. Skincare", deliverables: "2 IG Posts + 3 Stories", rate: "$950", timeline: "2 weeks", progress: 45 }
+  }],
+  leoortiz: [{
+    counterpart: "Brightline Studio", status: "negotiating",
+    messages: [
+      { from: "me", text: "Could we feature the case study across a short video series instead of just one post?" },
+      { from: "them", text: "We can work with that — let's talk rate for the expanded scope." }
+    ],
+    deal: { brand: "Brightline Studio", deliverables: "3-part Video Series", rate: "$1,500", timeline: "5 weeks", progress: 35 }
+  }],
+  avaqian: [{
+    counterpart: "The Crafted Table", status: "new",
+    messages: [
+      { from: "them", text: "Hi Ava! Our tableware line feels like a great fit for your food content — open to a collab?" },
+      { from: "me", text: "Love this! Send over details on what you had in mind." }
+    ],
+    deal: { brand: "The Crafted Table", deliverables: "1 IG Reel", rate: "$700", timeline: "2 weeks", progress: 10 }
+  }]
+};
+
+// Admin-only lookup: every chat/deal thread involving an account.
+// Freshly signed-up accounts have none yet.
+function tbaGetUserThreads(username) {
+  if (!username) return [];
+  var lower = username.toLowerCase();
+  var key = Object.keys(TBA_DEAL_THREADS).find(function (k) { return k.toLowerCase() === lower; });
+  return key ? TBA_DEAL_THREADS[key] : [];
+}
+
 function tbaGetSentRequests() {
   try {
     return JSON.parse(localStorage.getItem('tba_message_requests') || '[]');

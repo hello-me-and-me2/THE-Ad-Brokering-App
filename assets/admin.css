@@ -293,6 +293,195 @@ form { text-align: left; }
 .report-list .report-title { font-weight: 700; margin-bottom: 3px; }
 .report-list .report-meta { color: var(--text-soft); font-size: 12px; }
 
+/* --- Admin: user directory & account detail --- */
+
+.admin-back-link {
+  display: inline-block;
+  margin-bottom: 18px;
+  color: var(--text-soft);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+}
+.admin-back-link:hover { color: var(--accent); }
+
+.admin-toolbar {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.admin-search-input {
+  flex: 1;
+  min-width: 220px;
+  background: var(--panel-2);
+  border: 1.5px solid var(--line);
+  border-radius: 9px;
+  padding: 11px 14px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+}
+.admin-search-input:focus { outline: none; border-color: var(--accent); }
+
+.admin-filter-pills { display: flex; gap: 6px; }
+.admin-filter-pill {
+  background: var(--panel-2);
+  border: 1.5px solid var(--line);
+  color: var(--text-soft);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 8px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.admin-filter-pill.active { background: var(--accent); border-color: var(--accent); color: #100c24; }
+
+.admin-user-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.admin-user-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--text);
+  transition: border-color 0.15s ease;
+}
+.admin-user-card:hover { border-color: var(--accent); }
+
+.admin-user-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+  color: #100c24;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 13px;
+  overflow: hidden;
+}
+img.admin-user-avatar { object-fit: cover; }
+
+.admin-user-name-row { display: flex; align-items: center; gap: 8px; }
+.admin-user-name { font-weight: 700; font-size: 14.5px; }
+.admin-user-username { font-size: 12px; color: var(--text-soft); }
+.admin-user-tagline { font-size: 12.5px; color: var(--text-soft); margin: 0; }
+.admin-no-results { color: var(--text-soft); font-size: 13.5px; text-align: center; padding: 30px 0; }
+
+.admin-profile-head { display: flex; align-items: center; gap: 18px; margin-bottom: 4px; flex-wrap: wrap; }
+
+.admin-avatar-lg {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+  color: #100c24;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 24px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+img.admin-avatar-lg { object-fit: cover; }
+
+.admin-profile-name { font-size: 20px; margin: 0 0 4px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.admin-profile-username { color: var(--text-soft); font-size: 13.5px; margin-bottom: 8px; }
+.admin-profile-bio { color: var(--text-soft); font-size: 14px; margin: 14px 0 0; max-width: 62ch; }
+
+.admin-profile-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.admin-link-pill {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--accent);
+  background: rgba(139,125,251,0.12);
+  border: 1px solid rgba(139,125,251,0.35);
+  padding: 6px 13px;
+  border-radius: 999px;
+  text-decoration: none;
+}
+
+.admin-section-title { font-size: 17px; font-weight: 700; margin: 34px 0 16px; }
+
+.thread-block { border-top: 1px solid var(--line); padding-top: 18px; margin-top: 18px; }
+.thread-block:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+
+.thread-block-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.thread-block-head h3 { margin: 0; font-size: 15px; }
+
+.t-tag {
+  font-size: 10.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+.t-tag.negotiating { color: var(--warn); background: rgba(224,169,65,0.12); }
+.t-tag.new { color: var(--accent); background: rgba(139,125,251,0.12); }
+.t-tag.closed { color: var(--money); background: rgba(52,201,138,0.12); }
+
+.admin-chat-body {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.admin-bubble { max-width: 80%; padding: 10px 14px; border-radius: 12px; font-size: 13.5px; line-height: 1.5; }
+.admin-bubble.them { align-self: flex-start; background: var(--panel); border: 1px solid var(--line); }
+.admin-bubble.me { align-self: flex-end; background: rgba(139,125,251,0.18); border: 1px solid rgba(139,125,251,0.35); }
+.admin-bubble.offer {
+  align-self: center;
+  background: rgba(52,201,138,0.1);
+  border: 1px solid rgba(52,201,138,0.3);
+  text-align: center;
+  max-width: 90%;
+}
+.admin-bubble .offer-title { font-weight: 800; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--money); margin-bottom: 4px; }
+.admin-bubble .amount { font-weight: 800; color: var(--money); }
+
+.admin-deal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+.admin-deal-field label { display: block; font-size: 11px; color: var(--text-soft); text-transform: uppercase; letter-spacing: 0.4px; font-weight: 700; margin-bottom: 4px; }
+.admin-deal-field .val { font-size: 14px; font-weight: 700; }
+.admin-deal-field .val.money { color: var(--money); }
+
+.progress-track { background: var(--line); border-radius: 999px; height: 8px; overflow: hidden; margin-top: 6px; }
+.progress-fill { background: linear-gradient(90deg, var(--accent), var(--accent-dim)); height: 100%; }
+
+.admin-empty { text-align: center; color: var(--text-soft); padding: 40px 0; font-size: 14px; }
+
 @media (max-width: 860px) {
   .admin-grid { grid-template-columns: 1fr; }
 }
