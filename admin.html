@@ -10,6 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="assets/profile-picture.png">
 <link rel="stylesheet" href="assets/admin.css">
+<script src="assets/users-data.js"></script>
 </head>
 <body>
 
@@ -21,6 +22,7 @@
   <nav>
     <a href="admin.html" class="active">Overview</a>
     <a href="admin-users.html">Users</a>
+    <a href="admin-verifications.html">Verifications</a>
     <a href="#reports">Reports</a>
     <a class="signout" href="index.html" id="signout-link">Sign Out</a>
   </nav>
@@ -58,6 +60,11 @@
       <div class="label">Flagged Deals</div>
       <div class="value">6</div>
       <div class="delta down">Needs review</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Pending Verifications</div>
+      <div class="value" id="pending-verify-stat">0</div>
+      <div class="delta down" id="pending-verify-delta">Needs review</div>
     </div>
   </div>
 
@@ -101,7 +108,10 @@
   <div class="panel" id="users" style="margin-top: 20px;">
     <div class="thread-block-head" style="margin-bottom: 18px;">
       <h2 style="margin: 0;">Recent Signups</h2>
-      <a href="admin-users.html" class="admin-btn" style="width: auto; display: inline-block; padding: 9px 18px; font-size: 13px; text-decoration: none; text-align: center;">View All Users &rarr;</a>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <a href="admin-verifications.html" class="admin-btn" style="width: auto; display: inline-block; padding: 9px 18px; font-size: 13px; text-decoration: none; text-align: center; background: transparent; border: 1.5px solid var(--line); color: var(--text);">Review Verifications</a>
+        <a href="admin-users.html" class="admin-btn" style="width: auto; display: inline-block; padding: 9px 18px; font-size: 13px; text-decoration: none; text-align: center;">View All Users &rarr;</a>
+      </div>
     </div>
     <div class="table-scroll">
     <table class="admin-table">
@@ -156,6 +166,14 @@
     localStorage.removeItem('tba_admin_authed');
     localStorage.removeItem('tba_authed');
   });
+
+  var pendingVerifyCount = tbaGetPendingVerificationRequests().length;
+  document.getElementById('pending-verify-stat').textContent = pendingVerifyCount;
+  document.getElementById('pending-verify-delta').textContent = pendingVerifyCount === 0 ? 'All caught up' : 'Needs review';
+  if (pendingVerifyCount === 0) {
+    document.getElementById('pending-verify-delta').classList.remove('down');
+    document.getElementById('pending-verify-delta').classList.add('up');
+  }
 </script>
 
 </body>

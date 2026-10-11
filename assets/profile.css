@@ -177,6 +177,38 @@ img.profile-avatar-lg { object-fit: cover; }
   gap: 10px;
 }
 
+.verified-badge { display: inline-flex; align-items: center; justify-content: center; color: var(--terracotta); flex-shrink: 0; vertical-align: middle; }
+
+.verify-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 7px 14px;
+  border-radius: 999px;
+  margin: 4px 0 20px;
+}
+.verify-status.pending { color: var(--terracotta-dark); background: #f3e6d3; }
+.verify-status.denied { color: #9b4d1f; background: #f6e3da; }
+
+.verify-apply-form { margin-top: 16px; text-align: left; }
+.verify-apply-form textarea {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 11px 13px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  background: #fff;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--ink);
+  min-height: 80px;
+  resize: vertical;
+}
+.verify-apply-form textarea:focus { outline: none; border-color: var(--terracotta); }
+
 .you-badge {
   font-family: "DM Sans", sans-serif;
   font-size: 11px;

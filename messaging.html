@@ -250,6 +250,7 @@
         '<div class="user-info">' +
         '<div class="user-name-row">' +
         '<a class="user-name" href="' + profileHref + '" style="text-decoration:none;color:inherit;">' + u.name + '</a>' +
+        (u.verified ? tbaVerifiedBadgeHtml() : '') +
         (u.isYou ? '<span class="you-badge">You</span>' : '') +
         '</div>' +
         '<a class="user-username" href="' + profileHref + '" style="text-decoration:none;color:inherit;">@' + u.username + '</a>' +

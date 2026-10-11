@@ -201,6 +201,8 @@ img.user-avatar { object-fit: cover; }
 .user-name-row { display: flex; align-items: center; gap: 8px; }
 .user-name { font-weight: 700; font-size: 14.5px; }
 
+.verified-badge { display: inline-flex; align-items: center; justify-content: center; color: var(--accent); flex-shrink: 0; vertical-align: middle; }
+
 .you-badge {
   font-size: 10px;
   font-weight: 700;

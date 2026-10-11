@@ -132,7 +132,12 @@ function tbaSaveMyProfilePic(dataUrl) {
 }
 
 function tbaGetAllUsers() {
-  var users = TBA_SEED_USERS.slice();
+  var users = TBA_SEED_USERS.map(function (u) {
+    var copy = {};
+    for (var k in u) copy[k] = u[k];
+    copy.verified = tbaIsVerified(u.username);
+    return copy;
+  });
   var myUsername = localStorage.getItem('tba_username');
   if (myUsername) {
     users.unshift({
@@ -143,6 +148,7 @@ function tbaGetAllUsers() {
       bio: tbaGetMyBio(),
       links: tbaGetMyLinks(),
       avatar: tbaGetMyProfilePic(),
+      verified: tbaIsVerified(myUsername),
       isYou: true
     });
   }
@@ -165,12 +171,154 @@ function tbaGetUserByUsername(username) {
       bio: tbaGetMyBio(),
       links: tbaGetMyLinks(),
       avatar: tbaGetMyProfilePic(),
+      verified: tbaIsVerified(myUsername),
       isYou: true
     };
   }
 
   var seedMatch = TBA_SEED_USERS.find(function (u) { return u.username.toLowerCase() === lower; });
-  return seedMatch || null;
+  if (!seedMatch) return null;
+  var copy = {};
+  for (var k in seedMatch) copy[k] = seedMatch[k];
+  copy.verified = tbaIsVerified(seedMatch.username);
+  return copy;
+}
+
+// --- Account verification ---
+// Applications live in localStorage so the admin pages (same browser,
+// different tab) can review and decide on them. A handful of seed
+// accounts ship pre-verified or with a pending application already in
+// the queue, so the admin review page isn't empty on first visit.
+
+var TBA_VERIFIED_SEED_USERNAMES = ["marencole", "skylinecoffee"];
+
+var TBA_SEED_VERIFICATION_REQUESTS = [
+  {
+    username: "jordanblake",
+    reason: "Verified creator on other platforms (YouTube Partner, 85K+ followers) — would help brands trust my deals here.",
+    submittedAt: "2026-09-29T14:20:00Z"
+  },
+  {
+    username: "pearandco",
+    reason: "Established skincare brand with 5+ years in business and a physical storefront — want the badge so creators know we're legit.",
+    submittedAt: "2026-10-01T09:05:00Z"
+  }
+];
+
+function tbaGetVerificationOverrides() {
+  try {
+    return JSON.parse(localStorage.getItem('tba_verification_overrides') || '{}');
+  } catch (e) {
+    return {};
+  }
+}
+
+function tbaIsVerified(username) {
+  if (!username) return false;
+  var lower = username.toLowerCase();
+  var myUsername = localStorage.getItem('tba_username');
+
+  if (myUsername && myUsername.toLowerCase() === lower) {
+    return localStorage.getItem('tba_verification_status') === 'approved';
+  }
+
+  var overrides = tbaGetVerificationOverrides();
+  if (overrides[lower]) return overrides[lower] === 'approved';
+
+  return TBA_VERIFIED_SEED_USERNAMES.some(function (u) { return u.toLowerCase() === lower; });
+}
+
+function tbaGetMyVerificationStatus() {
+  return localStorage.getItem('tba_verification_status') || 'none';
+}
+
+function tbaGetMyVerificationReason() {
+  return localStorage.getItem('tba_verification_reason') || '';
+}
+
+function tbaSubmitVerificationApplication(reason) {
+  localStorage.setItem('tba_verification_status', 'pending');
+  localStorage.setItem('tba_verification_reason', reason || '');
+  localStorage.setItem('tba_verification_submitted_at', new Date().toISOString());
+}
+
+// Admin: every verification application currently awaiting a
+// decision — the seed demo requests (unless this browser's admin
+// already decided them) plus "your" own request, if you've applied
+// and are still pending.
+function tbaGetPendingVerificationRequests() {
+  var overrides = tbaGetVerificationOverrides();
+
+  var requests = TBA_SEED_VERIFICATION_REQUESTS
+    .filter(function (r) { return !overrides[r.username.toLowerCase()]; })
+    .map(function (r) {
+      var user = tbaGetUserByUsername(r.username);
+      return {
+        username: r.username,
+        name: user ? user.name : r.username,
+        role: user ? user.role : 'business',
+        avatar: user ? user.avatar : '',
+        reason: r.reason,
+        submittedAt: r.submittedAt
+      };
+    });
+
+  var myUsername = localStorage.getItem('tba_username');
+  if (myUsername && tbaGetMyVerificationStatus() === 'pending') {
+    requests.unshift({
+      username: myUsername,
+      name: '@' + myUsername,
+      role: localStorage.getItem('tba_role') || 'business',
+      avatar: tbaGetMyProfilePic(),
+      reason: tbaGetMyVerificationReason(),
+      submittedAt: localStorage.getItem('tba_verification_submitted_at') || new Date().toISOString(),
+      isYou: true
+    });
+  }
+
+  return requests;
+}
+
+function tbaGetVerificationDecisionLog() {
+  try {
+    return JSON.parse(localStorage.getItem('tba_verification_log') || '[]');
+  } catch (e) {
+    return [];
+  }
+}
+
+// Admin: approve or deny a pending application (your own account or
+// a seed demo account).
+function tbaDecideVerification(username, decision) {
+  var myUsername = localStorage.getItem('tba_username');
+  var user = tbaGetUserByUsername(username);
+
+  if (myUsername && myUsername.toLowerCase() === username.toLowerCase()) {
+    localStorage.setItem('tba_verification_status', decision);
+  } else {
+    var overrides = tbaGetVerificationOverrides();
+    overrides[username.toLowerCase()] = decision;
+    localStorage.setItem('tba_verification_overrides', JSON.stringify(overrides));
+  }
+
+  var log = tbaGetVerificationDecisionLog();
+  log.unshift({
+    username: username,
+    name: user ? user.name : username,
+    decision: decision,
+    decidedAt: new Date().toISOString()
+  });
+  localStorage.setItem('tba_verification_log', JSON.stringify(log.slice(0, 20)));
+}
+
+// Small seal-style checkmark badge, colored by the calling page's own
+// CSS (`.verified-badge { color: ...; }`) so it matches each theme.
+function tbaVerifiedBadgeHtml() {
+  return '<span class="verified-badge" title="Verified account" aria-label="Verified account">' +
+    '<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true">' +
+    '<path fill="currentColor" d="M10 0l2.27 1.64 2.78-.52 1.1 2.6 2.6 1.1-.52 2.78L20 10l-1.77 2.4.52 2.78-2.6 1.1-1.1 2.6-2.78-.52L10 20l-2.27-1.64-2.78.52-1.1-2.6-2.6-1.1.52-2.78L0 10l1.77-2.4-.52-2.78 2.6-1.1 1.1-2.6 2.78.52L10 0z"/>' +
+    '<path fill="#fff" d="M8.4 13.1L5.7 10.4l1.15-1.15L8.4 10.8l4.3-4.3 1.15 1.15z"/>' +
+    '</svg></span>';
 }
 
 // Mock chat + deal history per seed account, used by the admin

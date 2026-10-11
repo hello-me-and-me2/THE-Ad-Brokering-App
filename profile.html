@@ -92,6 +92,28 @@
       : '<div class="' + cls + '">' + initials(user.username) + '</div>';
   }
 
+  function renderVerifySection(user, status) {
+    if (user.verified) {
+      return '<p class="verify-status" style="color:var(--olive);background:#eef1e6;">' +
+        tbaVerifiedBadgeHtml() + ' Your account is verified.</p>';
+    }
+    if (status === 'pending') {
+      return '<p class="verify-status pending">&#9203; Verification application pending review.</p>';
+    }
+
+    var deniedNote = status === 'denied'
+      ? '<p class="verify-status denied">Your last application wasn\'t approved. You can apply again below.</p>'
+      : '';
+
+    return deniedNote +
+      '<form class="verify-apply-form" id="verify-apply-form">' +
+      '<label class="edit-field">Apply for a verified badge' +
+      '<textarea id="verify-reason-input" maxlength="300" placeholder="Tell the team why your account should be verified..." required></textarea>' +
+      '</label>' +
+      '<button type="submit" class="btn-edit">Submit Application</button>' +
+      '</form>';
+  }
+
   function renderEditForm(user) {
     var rows = [];
     for (var i = 0; i < 7; i++) {
@@ -153,10 +175,14 @@
     var alreadySent = sentRequests.indexOf(user.username) !== -1;
     var bio = user.bio || '';
 
+    var verifyStatus = isYou ? tbaGetMyVerificationStatus() : 'none';
+
     content.innerHTML =
       '<div class="profile-card">' +
       avatarMarkup(user, 'profile-avatar-lg') +
-      '<h1 class="profile-name">' + escapeHtml(user.name) + (isYou ? '<span class="you-badge">You</span>' : '') + '</h1>' +
+      '<h1 class="profile-name">' + escapeHtml(user.name) +
+      (user.verified ? tbaVerifiedBadgeHtml() : '') +
+      (isYou ? '<span class="you-badge">You</span>' : '') + '</h1>' +
       '<div class="profile-username">@' + escapeHtml(user.username) + '</div>' +
       '<span class="role-tag ' + user.role + '">' + (user.role === 'business' ? 'Business' : 'Influencer') + '</span>' +
       (bio
@@ -170,10 +196,22 @@
             ? '<button type="button" class="request-btn sent" disabled>Request Sent</button>'
             : '<button type="button" class="request-btn" id="request-btn">Request to Message</button>')) +
       '</div>' +
+      (isYou ? renderVerifySection(user, verifyStatus) : '') +
       (isYou ? renderEditForm(user) : '') +
       '</div>';
 
     if (isYou) {
+      var verifyForm = document.getElementById('verify-apply-form');
+      if (verifyForm) {
+        verifyForm.addEventListener('submit', function (e) {
+          e.preventDefault();
+          var reason = document.getElementById('verify-reason-input').value.trim();
+          if (!reason) return;
+          tbaSubmitVerificationApplication(reason);
+          render();
+        });
+      }
+
       var editForm = document.getElementById('edit-form');
       var pendingAvatar = user.avatar || '';
       var cameraStream = null;

@@ -406,6 +406,7 @@ img.admin-user-avatar { object-fit: cover; }
 
 .admin-user-name-row { display: flex; align-items: center; gap: 8px; }
 .admin-user-name { font-weight: 700; font-size: 14.5px; }
+.verified-badge { display: inline-flex; align-items: center; justify-content: center; color: var(--accent); flex-shrink: 0; vertical-align: middle; }
 .admin-user-username { font-size: 12px; color: var(--text-soft); }
 .admin-user-tagline { font-size: 12.5px; color: var(--text-soft); margin: 0; }
 .admin-no-results { color: var(--text-soft); font-size: 13.5px; text-align: center; padding: 30px 0; }
@@ -545,3 +546,65 @@ img.admin-avatar-lg { object-fit: cover; }
   .bar-chart { height: 130px; gap: 6px; }
   .bar-chart .bar-label { font-size: 10px; }
 }
+
+/* --- Admin: verification review queue --- */
+
+.verify-request-card {
+  border-top: 1px solid var(--line);
+  padding-top: 18px;
+  margin-top: 18px;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.verify-request-card:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+
+.verify-request-info { flex: 1; min-width: 240px; }
+
+.verify-request-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+.verify-request-head .admin-user-avatar { width: 38px; height: 38px; font-size: 12px; }
+.verify-request-name { font-weight: 700; font-size: 14.5px; }
+.verify-request-meta { font-size: 12px; color: var(--text-soft); margin-bottom: 10px; }
+
+.verify-reason {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 13.5px;
+  color: var(--text);
+  line-height: 1.55;
+}
+
+.verify-actions { display: flex; gap: 8px; align-self: flex-start; flex-shrink: 0; }
+
+.btn-accept, .btn-deny {
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 13px;
+  border-radius: 999px;
+  padding: 10px 18px;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  white-space: nowrap;
+}
+.btn-accept { background: var(--money); color: #063324; }
+.btn-accept:hover { background: #2ab378; }
+.btn-deny { background: transparent; border-color: var(--danger); color: var(--danger); }
+.btn-deny:hover { background: rgba(241,101,101,0.12); }
+
+.verify-log-list { list-style: none; margin: 0; padding: 0; }
+.verify-log-list li {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.verify-log-list li:last-child { border-bottom: none; }
+.verify-log-decision { font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; padding: 3px 9px; border-radius: 999px; }
+.verify-log-decision.approved { color: var(--money); background: rgba(52,201,138,0.12); }
+.verify-log-decision.denied { color: var(--danger); background: rgba(241,101,101,0.12); }

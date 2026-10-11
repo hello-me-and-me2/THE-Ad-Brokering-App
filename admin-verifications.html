@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script>if(!localStorage.getItem("tba_admin_authed")){location.replace("admin-signin.html");}</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verification Requests — Admin — THE INTROductory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="assets/profile-picture.png">
+<link rel="stylesheet" href="assets/admin.css">
+<script src="assets/users-data.js"></script>
+</head>
+<body>
+
+<header class="admin-header">
+  <a class="brand" href="admin.html">
+    <img src="assets/admin-logo.png" alt="THE INTROductory — Admin" class="brand-mark-img">
+    <span class="badge">ADMIN</span>
+  </a>
+  <nav>
+    <a href="admin.html">Overview</a>
+    <a href="admin-users.html">Users</a>
+    <a href="admin-verifications.html" class="active">Verifications</a>
+    <a href="admin.html#reports">Reports</a>
+    <a class="signout" href="index.html" id="signout-link">Sign Out</a>
+  </nav>
+</header>
+
+<main class="admin-main">
+
+  <a class="admin-back-link" href="admin.html">&larr; Back to Overview</a>
+
+  <div class="admin-page-head">
+    <h1>Verification Requests</h1>
+    <p>Review applications for the verified account badge.</p>
+  </div>
+
+  <div class="panel" id="pending-panel">
+    <h2>Pending <span id="pending-count"></span></h2>
+    <div id="pending-list"></div>
+  </div>
+
+  <div class="panel" id="log-panel" style="margin-top: 20px;">
+    <h2>Recently Reviewed</h2>
+    <ul class="verify-log-list" id="log-list"></ul>
+    <p class="admin-empty" id="log-empty" hidden>No decisions made yet.</p>
+  </div>
+
+</main>
+
+<script>
+  document.getElementById('signout-link').addEventListener('click', function () {
+    localStorage.removeItem('tba_admin_authed');
+    localStorage.removeItem('tba_authed');
+  });
+
+  function escapeHtml(str) {
+    return String(str || '').replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function initials(name) {
+    return name.replace('@', '').slice(0, 2).toUpperCase();
+  }
+
+  function formatDate(iso) {
+    return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  var pendingList = document.getElementById('pending-list');
+  var pendingCount = document.getElementById('pending-count');
+  var logList = document.getElementById('log-list');
+  var logEmpty = document.getElementById('log-empty');
+
+  function renderPending() {
+    var requests = tbaGetPendingVerificationRequests();
+    pendingCount.textContent = '(' + requests.length + ')';
+
+    if (requests.length === 0) {
+      pendingList.innerHTML = '<div class="admin-empty">No pending verification applications.</div>';
+      return;
+    }
+
+    pendingList.innerHTML = requests.map(function (r) {
+      var avatarInner = r.avatar
+        ? '<img src="' + r.avatar + '" alt="" style="width:100%;height:100%;object-fit:cover;">'
+        : initials(r.username);
+
+      return (
+        '<div class="verify-request-card" data-username="' + escapeHtml(r.username) + '">' +
+        '<div class="verify-request-info">' +
+        '<div class="verify-request-head">' +
+        '<div class="admin-user-avatar">' + avatarInner + '</div>' +
+        '<div>' +
+        '<div class="verify-request-name">' + escapeHtml(r.name) + (r.isYou ? ' <span class="t-tag new">You</span>' : '') + '</div>' +
+        '<div class="admin-user-username">@' + escapeHtml(r.username) + '</div>' +
+        '</div>' +
+        '</div>' +
+        '<div class="verify-request-meta">Applied ' + formatDate(r.submittedAt) + ' · <span class="role-pill ' + r.role + '">' + (r.role === 'business' ? 'Business' : 'Influencer') + '</span></div>' +
+        '<div class="verify-reason">' + escapeHtml(r.reason || 'No reason given.') + '</div>' +
+        '</div>' +
+        '<div class="verify-actions">' +
+        '<button type="button" class="btn-accept" data-action="approved">Accept</button>' +
+        '<button type="button" class="btn-deny" data-action="denied">Deny</button>' +
+        '</div>' +
+        '</div>'
+      );
+    }).join('');
+
+    pendingList.querySelectorAll('button[data-action]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var card = btn.closest('.verify-request-card');
+        var username = card.getAttribute('data-username');
+        tbaDecideVerification(username, btn.getAttribute('data-action'));
+        renderPending();
+        renderLog();
+      });
+    });
+  }
+
+  function renderLog() {
+    var log = tbaGetVerificationDecisionLog();
+    logEmpty.hidden = log.length !== 0;
+    logList.innerHTML = log.map(function (entry) {
+      return (
+        '<li>' +
+        '<span>' + escapeHtml(entry.name) + ' <span class="admin-user-username">@' + escapeHtml(entry.username) + '</span></span>' +
+        '<span class="verify-log-decision ' + entry.decision + '">' + (entry.decision === 'approved' ? 'Accepted' : 'Denied') + '</span>' +
+        '</li>'
+      );
+    }).join('');
+  }
+
+  renderPending();
+  renderLog();
+</script>
+</body>
+</html>

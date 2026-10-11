@@ -290,6 +290,8 @@ img.user-avatar { object-fit: cover; }
 .user-info { display: flex; flex-direction: column; gap: 4px; }
 .user-name-row { display: flex; align-items: center; gap: 8px; }
 .user-name { font-weight: 700; font-size: 15px; }
+
+.verified-badge { display: inline-flex; align-items: center; justify-content: center; color: var(--terracotta); flex-shrink: 0; vertical-align: middle; }
 .user-username { font-size: 12.5px; color: var(--ink-soft); }
 
 .role-tag {

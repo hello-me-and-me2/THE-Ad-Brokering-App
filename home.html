@@ -149,7 +149,7 @@
   // Suggest accounts of the opposite type — a business sees
   // suggested influencers, and vice versa.
   var suggestRole = myRole === 'business' ? 'influencer' : 'business';
-  var suggestions = TBA_SEED_USERS.filter(function (u) { return u.role === suggestRole; }).slice(0, 4);
+  var suggestions = tbaGetAllUsers().filter(function (u) { return u.role === suggestRole; }).slice(0, 4);
 
   var grid = document.getElementById('suggested-grid');
 
@@ -170,7 +170,8 @@
     card.innerHTML =
       '<a class="user-avatar" href="profile.html?u=' + encodeURIComponent(u.username) + '" style="text-decoration:none;">' + avatarInner + '</a>' +
       '<div class="user-info">' +
-      '<div class="user-name-row"><a class="user-name" href="profile.html?u=' + encodeURIComponent(u.username) + '" style="text-decoration:none;color:inherit;">' + u.name + '</a></div>' +
+      '<div class="user-name-row"><a class="user-name" href="profile.html?u=' + encodeURIComponent(u.username) + '" style="text-decoration:none;color:inherit;">' + u.name + '</a>' +
+      (u.verified ? tbaVerifiedBadgeHtml() : '') + '</div>' +
       '<a class="user-username" href="profile.html?u=' + encodeURIComponent(u.username) + '" style="text-decoration:none;color:inherit;">@' + u.username + '</a>' +
       '<span class="role-tag ' + u.role + '">' + (u.role === 'business' ? 'Business' : 'Influencer') + '</span>' +
       '<p class="user-tagline">' + u.tagline + '</p>' +
