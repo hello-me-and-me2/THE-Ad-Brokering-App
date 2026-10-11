@@ -18,12 +18,18 @@ body {
   background: var(--paper);
   color: var(--ink);
   line-height: 1.7;
-  background-image: repeating-linear-gradient(
-    to bottom,
-    transparent,
-    transparent 37px,
-    var(--rule) 38px
-  );
+  background-image:
+    radial-gradient(circle at 12% 6%, rgba(168,83,43,0.07), transparent 36%),
+    radial-gradient(circle at 88% 94%, rgba(108,122,94,0.07), transparent 38%),
+    repeating-linear-gradient(
+      to bottom,
+      transparent,
+      transparent 37px,
+      var(--rule) 38px
+    ),
+    radial-gradient(rgba(138,122,99,0.14) 1px, transparent 1px);
+  background-size: auto, auto, auto, 3px 3px;
+  background-repeat: no-repeat, no-repeat, repeat, repeat;
 }
 
 a { color: var(--rust); }

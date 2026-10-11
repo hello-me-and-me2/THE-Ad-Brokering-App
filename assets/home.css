@@ -21,8 +21,15 @@ body {
   color: var(--ink);
   line-height: 1.65;
   background-image:
-    radial-gradient(circle at 8% 12%, rgba(193,101,44,0.08), transparent 40%),
-    radial-gradient(circle at 92% 85%, rgba(92,110,79,0.08), transparent 40%);
+    radial-gradient(circle at 8% 10%, rgba(193,101,44,0.11), transparent 38%),
+    radial-gradient(circle at 93% 82%, rgba(92,110,79,0.10), transparent 40%),
+    radial-gradient(circle at 55% -6%, rgba(217,164,65,0.12), transparent 48%),
+    radial-gradient(circle at 18% 68%, transparent 42px, rgba(193,101,44,0.07) 43px, rgba(193,101,44,0.07) 45px, transparent 46px),
+    radial-gradient(circle at 15% 68%, transparent 58px, rgba(193,101,44,0.05) 59px, rgba(193,101,44,0.05) 61px, transparent 62px),
+    radial-gradient(circle at 88% 28%, transparent 34px, rgba(217,164,65,0.08) 35px, rgba(217,164,65,0.08) 37px, transparent 38px),
+    radial-gradient(rgba(122,109,90,0.14) 1px, transparent 1px);
+  background-size: auto, auto, auto, auto, auto, auto, 24px 24px;
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, repeat;
 }
 
 a { color: var(--terracotta-dark); }

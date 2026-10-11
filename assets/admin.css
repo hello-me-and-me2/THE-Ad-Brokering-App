@@ -22,6 +22,35 @@ body {
   background: var(--bg);
   color: var(--text);
   line-height: 1.5;
+  position: relative;
+  background-image:
+    radial-gradient(circle at 16% 12%, rgba(139,125,251,0.12), transparent 40%),
+    radial-gradient(circle at 84% 88%, rgba(139,125,251,0.08), transparent 42%),
+    radial-gradient(circle at 50% 50%, rgba(139,125,251,0.04), transparent 60%);
+  background-repeat: no-repeat, no-repeat, no-repeat;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.9;
+  background-image:
+    linear-gradient(rgba(139,125,251,0.10) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(139,125,251,0.10) 1px, transparent 1px);
+  background-size: 42px 42px, 42px 42px;
+  animation: gridDrift 100s linear infinite;
+}
+
+@keyframes gridDrift {
+  from { background-position: 0 0, 0 0; }
+  to { background-position: 42px 42px, 42px 42px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::before { animation: none; }
 }
 
 a { color: var(--accent); }
