@@ -103,26 +103,109 @@ main {
 .page-head h1 { font-size: 38px; margin: 0 0 12px; letter-spacing: -0.5px; }
 .page-head p { color: var(--text-soft); font-size: 16px; max-width: 52ch; margin: 0 auto; }
 
-.graph-wrap {
-  position: relative;
-  margin: 56px auto 0;
-  max-width: 720px;
-  aspect-ratio: 16 / 9;
-}
-
-.graph-wrap svg { width: 100%; height: 100%; display: block; }
-
-.graph-line { stroke: var(--line); stroke-width: 1.4; }
-.graph-line.live { stroke: var(--node); opacity: 0.55; stroke-dasharray: 4 6; animation: dash 6s linear infinite; }
-
 @keyframes dash { to { stroke-dashoffset: -100; } }
 
-.graph-node { fill: var(--bg-2); stroke: var(--line); stroke-width: 1.5; }
-.graph-node.accent { fill: var(--node); stroke: none; filter: drop-shadow(0 0 8px rgba(110,231,216,0.6)); }
-.graph-node.accent-2 { fill: var(--node-2); stroke: none; filter: drop-shadow(0 0 8px rgba(167,139,250,0.6)); }
-.graph-node.accent-3 { fill: var(--node-3); stroke: none; filter: drop-shadow(0 0 8px rgba(244,184,96,0.6)); }
+/* --- The Network: requests, my network diagram, find & connect --- */
 
-/* --- The Network: requests, my network, find & connect --- */
+.diagram-wrap {
+  margin: 10px auto 0;
+  max-width: 560px;
+}
+
+.diagram-canvas {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+}
+
+.diagram-lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.diagram-line { stroke: var(--line); stroke-width: 0.6; }
+.diagram-line.live { stroke: var(--node); opacity: 0.55; stroke-dasharray: 1.5 2.2; animation: dash 6s linear infinite; }
+
+.diagram-node-wrap {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 92px;
+}
+
+.diagram-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  color: var(--text);
+}
+
+.diagram-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--bg-2);
+  border: 1.5px solid var(--line);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+  overflow: hidden;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.diagram-node:hover .diagram-avatar { border-color: var(--node); transform: scale(1.06); }
+
+.diagram-node.center .diagram-avatar {
+  width: 60px;
+  height: 60px;
+  background: var(--node);
+  color: #06131c;
+  border: none;
+  font-size: 16px;
+  filter: drop-shadow(0 0 10px rgba(110,231,216,0.55));
+}
+.diagram-node.center:hover .diagram-avatar { transform: none; }
+
+.diagram-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.25;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.diagram-node.center .diagram-label { font-weight: 700; }
+.diagram-node:hover .diagram-label { color: var(--node); }
+
+.verified-badge svg { display: block; }
+
+.diagram-remove {
+  position: absolute;
+  top: -2px;
+  right: 2px;
+  width: 18px;
+  height: 18px;
+  line-height: 16px;
+  border-radius: 50%;
+  background: var(--bg-2);
+  border: 1.5px solid var(--line);
+  color: var(--text-soft);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+}
+.diagram-remove:hover { border-color: #e2695f; color: #e2695f; }
 
 .network-section { margin-top: 56px; }
 
@@ -261,10 +344,14 @@ footer { padding: 30px 24px; text-align: center; color: var(--text-soft); font-s
   .page-head h1 { font-size: 27px; }
   .page-head p { font-size: 14.5px; }
 
-  .graph-wrap { margin-top: 34px; }
-
   .network-section { margin-top: 38px; }
   .net-grid { grid-template-columns: 1fr; }
   .net-toolbar { flex-direction: column; align-items: stretch; }
   .net-search-input { max-width: none; }
+
+  .diagram-wrap { max-width: 340px; }
+  .diagram-node-wrap { width: 66px; }
+  .diagram-avatar { width: 34px; height: 34px; font-size: 10.5px; }
+  .diagram-node.center .diagram-avatar { width: 44px; height: 44px; font-size: 13px; }
+  .diagram-label { font-size: 10px; }
 }

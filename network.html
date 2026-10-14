@@ -43,31 +43,6 @@
     <p>When a deal closes, both sides can add each other here. Build your network, and choose who's in it.</p>
   </div>
 
-  <div class="graph-wrap">
-    <svg viewBox="0 0 720 405" fill="none">
-      <line class="graph-line live" x1="360" y1="200" x2="120" y2="90" />
-      <line class="graph-line live" x1="360" y1="200" x2="600" y2="80" />
-      <line class="graph-line live" x1="360" y1="200" x2="150" y2="320" />
-      <line class="graph-line live" x1="360" y1="200" x2="580" y2="330" />
-      <line class="graph-line" x1="120" y1="90" x2="60" y2="220" />
-      <line class="graph-line" x1="600" y1="80" x2="660" y2="210" />
-      <line class="graph-line" x1="150" y1="320" x2="260" y2="380" />
-      <line class="graph-line" x1="580" y1="330" x2="470" y2="380" />
-      <line class="graph-line" x1="120" y1="90" x2="600" y2="80" />
-      <line class="graph-line" x1="150" y1="320" x2="580" y2="330" />
-
-      <circle class="graph-node accent" cx="360" cy="200" r="16" />
-      <circle class="graph-node accent-2" cx="120" cy="90" r="10" />
-      <circle class="graph-node accent-3" cx="600" cy="80" r="10" />
-      <circle class="graph-node accent-2" cx="150" cy="320" r="10" />
-      <circle class="graph-node accent-3" cx="580" cy="330" r="10" />
-      <circle class="graph-node" cx="60" cy="220" r="6" />
-      <circle class="graph-node" cx="660" cy="210" r="6" />
-      <circle class="graph-node" cx="260" cy="380" r="6" />
-      <circle class="graph-node" cx="470" cy="380" r="6" />
-    </svg>
-  </div>
-
   <div class="network-section" id="requests-section" hidden>
     <div class="section-head">
       <h2>Network Requests</h2>
@@ -79,9 +54,11 @@
   <div class="network-section">
     <div class="section-head">
       <h2>My Network</h2>
-      <p class="section-lede">The people and brands you're connected with. Remove anyone, anytime.</p>
+      <p class="section-lede">The people and brands you're connected with. Click anyone to see their profile, or remove them, anytime.</p>
     </div>
-    <div class="net-grid" id="my-network-grid"></div>
+    <div class="diagram-wrap">
+      <div class="diagram-canvas" id="network-diagram"></div>
+    </div>
     <p class="network-empty" id="my-network-empty" hidden>Your network is empty. Close a deal or connect with someone below to get started.</p>
   </div>
 
@@ -177,24 +154,61 @@
     });
   }
 
-  // --- My network ---
+  // --- My network diagram ---
+  // "You" sit at the center; every connection is placed around you in
+  // a circle, with a line drawn from you to each one.
+
+  function diagramNodeHtml(u, x, y, isCenter) {
+    var href = 'profile.html?u=' + encodeURIComponent(u.username);
+    var cls = 'diagram-node' + (isCenter ? ' center' : '');
+    return (
+      '<div class="diagram-node-wrap" style="left:' + x + '%;top:' + y + '%;">' +
+      '<a class="' + cls + '" href="' + href + '">' +
+      '<span class="diagram-avatar">' + avatarInner(u) + '</span>' +
+      '<span class="diagram-label">' + (isCenter ? 'You' : escapeNetHtml(u.name)) +
+      (u.verified ? tbaVerifiedBadgeHtml() : '') +
+      '</span>' +
+      '</a>' +
+      (isCenter ? '' : '<button type="button" class="diagram-remove" data-username="' + u.username + '" title="Remove from network" aria-label="Remove ' + escapeNetHtml(u.name) + ' from network">&times;</button>') +
+      '</div>'
+    );
+  }
+
+  function escapeNetHtml(str) {
+    return String(str || '').replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
 
   function renderMyNetwork() {
-    var members = tbaGetNetworkFor(localStorage.getItem('tba_username'));
-    var grid = document.getElementById('my-network-grid');
+    var myUsername = localStorage.getItem('tba_username');
+    var me = tbaGetUserByUsername(myUsername);
+    var members = tbaGetNetworkFor(myUsername);
+    var canvas = document.getElementById('network-diagram');
     var empty = document.getElementById('my-network-empty');
 
     empty.hidden = members.length !== 0;
-    grid.innerHTML = members.map(function (u) {
-      return netCardShell(u,
-        '<div class="net-actions">' +
-        '<button type="button" class="btn-remove-net" data-username="' + u.username + '">Remove</button>' +
-        '</div>'
-      );
-    }).join('');
 
-    grid.querySelectorAll('.btn-remove-net').forEach(function (btn) {
-      btn.addEventListener('click', function () {
+    var radius = 38;
+    var lines = '';
+    var nodes = diagramNodeHtml(me, 50, 50, true);
+
+    members.forEach(function (u, i) {
+      var angle = (360 / members.length) * i - 90;
+      var rad = angle * Math.PI / 180;
+      var x = 50 + radius * Math.cos(rad);
+      var y = 50 + radius * Math.sin(rad);
+      lines += '<line x1="50" y1="50" x2="' + x + '" y2="' + y + '" class="diagram-line live" />';
+      nodes += diagramNodeHtml(u, x, y, false);
+    });
+
+    canvas.innerHTML =
+      '<svg class="diagram-lines" viewBox="0 0 100 100" preserveAspectRatio="none">' + lines + '</svg>' +
+      nodes;
+
+    canvas.querySelectorAll('.diagram-remove').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.preventDefault();
         tbaRemoveFromMyNetwork(btn.getAttribute('data-username'));
         renderAll();
       });
