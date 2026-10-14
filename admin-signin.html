@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script>if("scrollRestoration" in history){history.scrollRestoration="manual";}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin Sign In — THE INTROductory</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -51,6 +52,8 @@
 
     if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
       localStorage.setItem('tba_admin_authed', '1');
+      document.activeElement.blur();
+      window.scrollTo(0, 0);
       window.location.href = 'admin.html';
     } else {
       errorEl.hidden = false;

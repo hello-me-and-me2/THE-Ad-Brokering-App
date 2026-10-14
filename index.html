@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script>if("scrollRestoration" in history){history.scrollRestoration="manual";}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>THE INTROductory — Where brands and creators make the deal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -183,6 +184,12 @@
     localStorage.setItem('tba_authed', '1');
     localStorage.setItem('tba_username', matchedUsername);
     localStorage.setItem('tba_role', matchedRole);
+
+    // Blur the focused field first — on mobile, navigating away while
+    // an input is still focused can leave the next page scrolled down
+    // to wherever the on-screen keyboard had pushed the viewport.
+    document.activeElement.blur();
+    window.scrollTo(0, 0);
     window.location.href = 'home.html';
   });
 
@@ -215,6 +222,9 @@
     localStorage.setItem('tba_authed', '1');
     localStorage.setItem('tba_username', username);
     localStorage.setItem('tba_role', role);
+
+    document.activeElement.blur();
+    window.scrollTo(0, 0);
     window.location.href = 'home.html';
   });
 </script>
