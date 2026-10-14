@@ -114,6 +114,33 @@
       '</form>';
   }
 
+  function renderNetworkSection(user) {
+    var members = tbaGetNetworkFor(user.username);
+    var isYou = !!user.isYou;
+
+    var chips = members.length === 0
+      ? '<p class="no-links">' + (isYou ? 'Your network is empty. Close a deal or connect with someone in ' : 'This account hasn\'t connected with anyone in ') +
+        '<a href="network.html">The Network</a> yet.</p>'
+      : '<div class="network-chip-list">' + members.map(function (m) {
+          var href = 'profile.html?u=' + encodeURIComponent(m.username);
+          var avatarHtml = m.avatar
+            ? '<img src="' + m.avatar + '" alt="" style="width:100%;height:100%;object-fit:cover;">'
+            : initials(m.username);
+          return '<a class="network-chip" href="' + href + '">' +
+            '<span class="network-chip-avatar">' + avatarHtml + '</span>' +
+            '<span>' + escapeHtml(m.name) + (m.isYou ? ' (You)' : '') + '</span>' +
+            (m.verified ? tbaVerifiedBadgeHtml() : '') +
+            '</a>';
+        }).join('') + '</div>';
+
+    return (
+      '<div class="profile-network-section">' +
+      '<h3>Network <span class="network-count">(' + members.length + ')</span></h3>' +
+      chips +
+      '</div>'
+    );
+  }
+
   function renderEditForm(user) {
     var rows = [];
     for (var i = 0; i < 7; i++) {
@@ -196,6 +223,7 @@
             ? '<button type="button" class="request-btn sent" disabled>Request Sent</button>'
             : '<button type="button" class="request-btn" id="request-btn">Request to Message</button>')) +
       '</div>' +
+      renderNetworkSection(user) +
       (isYou ? renderVerifySection(user, verifyStatus) : '') +
       (isYou ? renderEditForm(user) : '') +
       '</div>';

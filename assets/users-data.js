@@ -338,12 +338,13 @@ var TBA_DEAL_THREADS = {
     deal: { brand: "Skyline Coffee Co.", deliverables: "3 IG Posts + 1 TikTok", rate: "$2,100", timeline: "3 weeks", progress: 70 }
   }],
   riversidegear: [{
-    counterpart: "Jordan Blake", status: "new",
+    counterpart: "Jordan Blake", status: "closed",
     messages: [
-      { from: "them", text: "Hey! Sent over our media kit and a few product options for the next gear review." },
-      { from: "me", text: "Thanks for sending the media kit! Taking a look now." }
+      { from: "me", text: "Everything looks great on our end — ready to sign when you are." },
+      { from: "them", text: "Signed! Excited to get started on this one." },
+      { from: "offer", text: "Deal signed — 1 YouTube Review, $1,200." }
     ],
-    deal: { brand: "Riverside Outdoor Gear", deliverables: "1 YouTube Review", rate: "$1,200", timeline: "4 weeks", progress: 20 }
+    deal: { brand: "Riverside Outdoor Gear", deliverables: "1 YouTube Review", rate: "$1,200", timeline: "4 weeks", progress: 100 }
   }],
   jordanblake: [{
     counterpart: "Riverside Outdoor Gear", status: "closed",
@@ -437,4 +438,126 @@ function tbaAddSentRequest(username) {
     sent.push(username);
     localStorage.setItem('tba_message_requests', JSON.stringify(sent));
   }
+}
+
+// --- The Network ---
+// Landing a deal (a thread whose status is "closed") lets both sides
+// add each other to their network, but only once both accept. Seed
+// accounts already paired off this way ship pre-connected so the
+// directory isn't empty; "you" always close your one deal with Jordan
+// Blake (matching the Home dashboard and Messaging's static
+// Conversations list), which is what generates your own incoming
+// network request to accept or decline.
+
+var TBA_SEED_NETWORK_CONNECTIONS = {
+  jordanblake: ["riversidegear"],
+  riversidegear: ["jordanblake"]
+};
+
+function tbaGetMyNetwork() {
+  try {
+    return JSON.parse(localStorage.getItem('tba_network') || '[]');
+  } catch (e) {
+    return [];
+  }
+}
+
+function tbaIsInMyNetwork(username) {
+  if (!username) return false;
+  var lower = username.toLowerCase();
+  return tbaGetMyNetwork().some(function (u) { return u.toLowerCase() === lower; });
+}
+
+function tbaAddToMyNetwork(username) {
+  var network = tbaGetMyNetwork();
+  if (network.indexOf(username) === -1) {
+    network.push(username);
+    localStorage.setItem('tba_network', JSON.stringify(network));
+  }
+}
+
+function tbaRemoveFromMyNetwork(username) {
+  var lower = username.toLowerCase();
+  var network = tbaGetMyNetwork().filter(function (u) { return u.toLowerCase() !== lower; });
+  localStorage.setItem('tba_network', JSON.stringify(network));
+}
+
+function tbaGetNetworkRequestDecisions() {
+  try {
+    return JSON.parse(localStorage.getItem('tba_network_request_decisions') || '{}');
+  } catch (e) {
+    return {};
+  }
+}
+
+// Every closed deal of yours that hasn't yet been accepted/declined —
+// in this demo, that's always just Jordan Blake, mirroring the one
+// closed deal shown elsewhere in the app (Home's Recent Activity and
+// Messaging's Conversations list both already say this deal is done).
+function tbaGetIncomingNetworkRequests() {
+  var myUsername = localStorage.getItem('tba_username');
+  if (!myUsername) return [];
+
+  var decisions = tbaGetNetworkRequestDecisions();
+  if (decisions.jordanblake || tbaIsInMyNetwork('jordanblake')) return [];
+
+  var user = tbaGetUserByUsername('jordanblake');
+  return [{
+    username: 'jordanblake',
+    name: user ? user.name : 'Jordan Blake',
+    role: user ? user.role : 'influencer',
+    avatar: user ? user.avatar : ''
+  }];
+}
+
+function tbaDecideNetworkRequest(username, decision) {
+  var decisions = tbaGetNetworkRequestDecisions();
+  decisions[username.toLowerCase()] = decision;
+  localStorage.setItem('tba_network_request_decisions', JSON.stringify(decisions));
+  if (decision === 'accepted') tbaAddToMyNetwork(username);
+}
+
+// Manual, non-deal network requests you send from the directory —
+// these just sit as "sent, awaiting their response," the same honest
+// limitation as the Find People message requests (no backend to
+// actually deliver and answer them).
+function tbaGetSentNetworkRequests() {
+  try {
+    return JSON.parse(localStorage.getItem('tba_sent_network_requests') || '[]');
+  } catch (e) {
+    return [];
+  }
+}
+
+function tbaSendNetworkRequest(username) {
+  var sent = tbaGetSentNetworkRequests();
+  if (sent.indexOf(username) === -1) {
+    sent.push(username);
+    localStorage.setItem('tba_sent_network_requests', JSON.stringify(sent));
+  }
+}
+
+// The network shown on any account's profile page — seed demo
+// connections, plus "you" if you've accepted a connection with them.
+function tbaGetNetworkFor(username) {
+  if (!username) return [];
+  var lower = username.toLowerCase();
+  var myUsername = localStorage.getItem('tba_username');
+
+  if (myUsername && myUsername.toLowerCase() === lower) {
+    return tbaGetMyNetwork()
+      .map(function (u) { return tbaGetUserByUsername(u); })
+      .filter(Boolean);
+  }
+
+  var seedKey = Object.keys(TBA_SEED_NETWORK_CONNECTIONS).find(function (k) { return k.toLowerCase() === lower; });
+  var usernames = seedKey ? TBA_SEED_NETWORK_CONNECTIONS[seedKey].slice() : [];
+
+  if (myUsername && tbaIsInMyNetwork(lower)) {
+    usernames.push(myUsername);
+  }
+
+  return usernames
+    .map(function (u) { return tbaGetUserByUsername(u); })
+    .filter(Boolean);
 }

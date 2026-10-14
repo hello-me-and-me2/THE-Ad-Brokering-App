@@ -179,6 +179,48 @@ img.profile-avatar-lg { object-fit: cover; }
 
 .verified-badge { display: inline-flex; align-items: center; justify-content: center; color: var(--terracotta); flex-shrink: 0; vertical-align: middle; }
 
+.profile-network-section {
+  margin-top: 30px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  text-align: left;
+}
+.profile-network-section h3 { font-size: 15px; margin: 0 0 14px; font-weight: 700; color: var(--ink); }
+.profile-network-section .network-count { color: var(--ink-soft); font-weight: 500; }
+
+.network-chip-list { display: flex; flex-wrap: wrap; gap: 10px; }
+
+.network-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--ink);
+  background: #f3e6d3;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 14px 6px 6px;
+  font-size: 13.5px;
+  font-weight: 600;
+  transition: border-color 0.15s ease;
+}
+.network-chip:hover { border-color: var(--terracotta); }
+
+.network-chip-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--terracotta), var(--gold));
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 10.5px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
 .verify-status {
   display: inline-flex;
   align-items: center;

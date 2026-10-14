@@ -10,6 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="assets/profile-picture.png">
 <link rel="stylesheet" href="assets/network.css">
+<script src="assets/users-data.js"></script>
 </head>
 <body>
 
@@ -37,9 +38,9 @@
 <main>
 
   <div class="page-head">
-    <div class="eyebrow">Directory · Status: Building</div>
+    <div class="eyebrow">Directory · Status: Live</div>
     <h1>The Network</h1>
-    <p>Every brand and creator on THE INTROductory will connect here. We're wiring it up now.</p>
+    <p>When a deal closes, both sides can add each other here. Build your network, and choose who's in it.</p>
   </div>
 
   <div class="graph-wrap">
@@ -67,10 +68,40 @@
     </svg>
   </div>
 
-  <div class="empty-card">
-    <span class="tag">Coming Soon</span>
-    <h2>This page is reserved for something great</h2>
-    <p>Soon you'll browse and connect with every brand and creator in the network right from here.</p>
+  <div class="network-section" id="requests-section" hidden>
+    <div class="section-head">
+      <h2>Network Requests</h2>
+      <p class="section-lede">Your deal closed — accept to add each other to your networks.</p>
+    </div>
+    <div class="net-grid" id="requests-grid"></div>
+  </div>
+
+  <div class="network-section">
+    <div class="section-head">
+      <h2>My Network</h2>
+      <p class="section-lede">The people and brands you're connected with. Remove anyone, anytime.</p>
+    </div>
+    <div class="net-grid" id="my-network-grid"></div>
+    <p class="network-empty" id="my-network-empty" hidden>Your network is empty. Close a deal or connect with someone below to get started.</p>
+  </div>
+
+  <div class="network-section">
+    <div class="section-head">
+      <h2>Find &amp; Connect</h2>
+      <p class="section-lede">Browse everyone on THE INTROductory and choose who to add to your network.</p>
+    </div>
+
+    <div class="net-toolbar">
+      <input type="text" id="net-search" class="net-search-input" placeholder="Search by username..." autocomplete="off" autocapitalize="off" spellcheck="false">
+      <div class="net-filter-pills">
+        <button type="button" class="net-filter-pill active" data-filter="all">All</button>
+        <button type="button" class="net-filter-pill" data-filter="business">Business</button>
+        <button type="button" class="net-filter-pill" data-filter="influencer">Influencer</button>
+      </div>
+    </div>
+
+    <div class="net-grid" id="directory-grid"></div>
+    <p class="network-empty" id="directory-empty" hidden>No users found for that search.</p>
   </div>
 
 </main>
@@ -84,6 +115,163 @@
   document.getElementById('logout-link').addEventListener('click', function () {
     localStorage.removeItem('tba_authed');
   });
+
+  function initials(name) {
+    return name.replace('@', '').slice(0, 2).toUpperCase();
+  }
+
+  function avatarInner(u) {
+    return u.avatar
+      ? '<img src="' + u.avatar + '" alt="" style="width:100%;height:100%;object-fit:cover;">'
+      : initials(u.username);
+  }
+
+  function netCardShell(u, bodyHtml) {
+    var href = 'profile.html?u=' + encodeURIComponent(u.username);
+    return (
+      '<div class="net-card">' +
+      '<a class="net-avatar" href="' + href + '">' + avatarInner(u) + '</a>' +
+      '<div class="net-info">' +
+      '<div class="net-name-row">' +
+      '<a class="net-name" href="' + href + '">' + u.name + '</a>' +
+      (u.verified ? tbaVerifiedBadgeHtml() : '') +
+      '</div>' +
+      '<a class="net-username" href="' + href + '">@' + u.username + '</a>' +
+      '<span class="net-role-tag ' + u.role + '">' + (u.role === 'business' ? 'Business' : 'Influencer') + '</span>' +
+      '</div>' +
+      bodyHtml +
+      '</div>'
+    );
+  }
+
+  // --- Network requests (from closed deals) ---
+
+  function renderRequests() {
+    var requests = tbaGetIncomingNetworkRequests();
+    var section = document.getElementById('requests-section');
+    var grid = document.getElementById('requests-grid');
+
+    section.hidden = requests.length === 0;
+    if (requests.length === 0) return;
+
+    grid.innerHTML = requests.map(function (r) {
+      return netCardShell(r,
+        '<div class="net-actions">' +
+        '<button type="button" class="btn-accept-net" data-username="' + r.username + '">Accept</button>' +
+        '<button type="button" class="btn-decline-net" data-username="' + r.username + '">Decline</button>' +
+        '</div>'
+      );
+    }).join('');
+
+    grid.querySelectorAll('.btn-accept-net').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        tbaDecideNetworkRequest(btn.getAttribute('data-username'), 'accepted');
+        renderAll();
+      });
+    });
+    grid.querySelectorAll('.btn-decline-net').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        tbaDecideNetworkRequest(btn.getAttribute('data-username'), 'declined');
+        renderAll();
+      });
+    });
+  }
+
+  // --- My network ---
+
+  function renderMyNetwork() {
+    var members = tbaGetNetworkFor(localStorage.getItem('tba_username'));
+    var grid = document.getElementById('my-network-grid');
+    var empty = document.getElementById('my-network-empty');
+
+    empty.hidden = members.length !== 0;
+    grid.innerHTML = members.map(function (u) {
+      return netCardShell(u,
+        '<div class="net-actions">' +
+        '<button type="button" class="btn-remove-net" data-username="' + u.username + '">Remove</button>' +
+        '</div>'
+      );
+    }).join('');
+
+    grid.querySelectorAll('.btn-remove-net').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        tbaRemoveFromMyNetwork(btn.getAttribute('data-username'));
+        renderAll();
+      });
+    });
+  }
+
+  // --- Find & Connect directory ---
+
+  var allUsers = tbaGetAllUsers().filter(function (u) { return !u.isYou; });
+  var sentNetworkRequests = tbaGetSentNetworkRequests();
+  var directoryFilter = 'all';
+  var directorySearch = '';
+
+  function renderDirectory() {
+    var term = directorySearch.trim().toLowerCase();
+    var visible = allUsers.filter(function (u) {
+      var matchesFilter = directoryFilter === 'all' || u.role === directoryFilter;
+      var matchesSearch = term === '' || u.username.toLowerCase().indexOf(term) !== -1;
+      return matchesFilter && matchesSearch;
+    });
+
+    var grid = document.getElementById('directory-grid');
+    var empty = document.getElementById('directory-empty');
+    empty.hidden = visible.length !== 0;
+
+    grid.innerHTML = visible.map(function (u) {
+      var inNetwork = tbaIsInMyNetwork(u.username);
+      var alreadySent = sentNetworkRequests.indexOf(u.username) !== -1;
+
+      var action;
+      if (inNetwork) {
+        action = '<button type="button" class="btn-remove-net" data-username="' + u.username + '">Remove from Network</button>';
+      } else if (alreadySent) {
+        action = '<button type="button" class="btn-connect-net sent" disabled>Request Sent</button>';
+      } else {
+        action = '<button type="button" class="btn-connect-net" data-username="' + u.username + '">Add to Network</button>';
+      }
+
+      return netCardShell(u, '<div class="net-actions">' + action + '</div>');
+    }).join('');
+
+    grid.querySelectorAll('.btn-connect-net:not(.sent)').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        tbaSendNetworkRequest(btn.getAttribute('data-username'));
+        sentNetworkRequests = tbaGetSentNetworkRequests();
+        renderDirectory();
+      });
+    });
+    grid.querySelectorAll('.btn-remove-net').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        tbaRemoveFromMyNetwork(btn.getAttribute('data-username'));
+        renderAll();
+      });
+    });
+  }
+
+  document.getElementById('net-search').addEventListener('input', function (e) {
+    directorySearch = e.target.value;
+    renderDirectory();
+  });
+
+  document.querySelectorAll('.net-filter-pill').forEach(function (pill) {
+    pill.addEventListener('click', function () {
+      document.querySelectorAll('.net-filter-pill').forEach(function (p) { p.classList.remove('active'); });
+      pill.classList.add('active');
+      directoryFilter = pill.getAttribute('data-filter');
+      renderDirectory();
+    });
+  });
+
+  function renderAll() {
+    renderRequests();
+    renderMyNetwork();
+    renderDirectory();
+  }
+
+  renderAll();
 </script>
 </body>
 </html>
