@@ -60,6 +60,32 @@
       <div class="diagram-canvas" id="network-diagram"></div>
     </div>
     <p class="network-empty" id="my-network-empty" hidden>Your network is empty. Close a deal or connect with someone below to get started.</p>
+
+    <div class="share-network-row">
+      <button type="button" class="btn-share-net" id="share-network-btn">Share My Network</button>
+    </div>
+
+    <div class="share-panel" id="share-panel" hidden>
+      <div class="share-panel-grid">
+        <div class="share-preview-wrap">
+          <canvas id="share-canvas" class="share-canvas-preview"></canvas>
+        </div>
+        <div class="share-controls">
+          <label class="share-caption-label" for="share-caption">Caption</label>
+          <textarea id="share-caption" class="share-caption-input" maxlength="280"></textarea>
+
+          <div class="share-buttons">
+            <button type="button" class="share-btn share-btn-native" id="share-native-btn">Share&hellip;</button>
+            <a class="share-btn share-btn-x" id="share-x-link" target="_blank" rel="noopener noreferrer">Post to X</a>
+            <a class="share-btn share-btn-linkedin" id="share-linkedin-link" target="_blank" rel="noopener noreferrer">Share on LinkedIn</a>
+            <a class="share-btn share-btn-facebook" id="share-facebook-link" target="_blank" rel="noopener noreferrer">Share on Facebook</a>
+            <button type="button" class="share-btn share-btn-copy" id="share-copy-btn">Copy Caption</button>
+            <button type="button" class="share-btn share-btn-download" id="share-download-btn">Download Image</button>
+          </div>
+          <p class="share-status" id="share-status" hidden></p>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="network-section">
@@ -283,7 +309,255 @@
     renderRequests();
     renderMyNetwork();
     renderDirectory();
+    updateShareAvailability();
   }
+
+  // --- Share My Network ---
+
+  function updateShareAvailability() {
+    var members = tbaGetNetworkFor(localStorage.getItem('tba_username'));
+    var btn = document.getElementById('share-network-btn');
+    btn.disabled = members.length === 0;
+    btn.title = members.length === 0 ? 'Connect with someone first' : '';
+    if (members.length === 0) {
+      document.getElementById('share-panel').hidden = true;
+    }
+  }
+
+  function buildShareCaption() {
+    var myUsername = localStorage.getItem('tba_username');
+    var members = tbaGetNetworkFor(myUsername);
+    if (members.length === 0) return '';
+
+    var names = members.map(function (m) { return '@' + m.username; });
+    var list = names.length === 1
+      ? names[0]
+      : (names.slice(0, -1).join(', ') + ' & ' + names[names.length - 1]);
+
+    return 'My network on THE INTROductory 🤝 ' + list +
+      ' — where brands and creators make the deal. #TheINTROductory';
+  }
+
+  function buildShareUrl() {
+    var myUsername = localStorage.getItem('tba_username');
+    return window.location.origin + window.location.pathname.replace(/network\.html$/, 'profile.html') +
+      '?u=' + encodeURIComponent(myUsername);
+  }
+
+  function loadImageAsync(src) {
+    return new Promise(function (resolve) {
+      var img = new Image();
+      img.onload = function () { resolve(img); };
+      img.onerror = function () { resolve(null); };
+      img.src = src;
+    });
+  }
+
+  function drawAvatarCircle(ctx, img, initialsText, x, y, r, colors) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.clip();
+    if (img) {
+      ctx.drawImage(img, x - r, y - r, r * 2, r * 2);
+    } else {
+      var grad = ctx.createLinearGradient(x - r, y - r, x + r, y + r);
+      grad.addColorStop(0, colors[0]);
+      grad.addColorStop(1, colors[1]);
+      ctx.fillStyle = grad;
+      ctx.fillRect(x - r, y - r, r * 2, r * 2);
+      ctx.fillStyle = '#06131c';
+      ctx.font = '700 ' + Math.round(r * 0.68) + 'px "Space Grotesk", ui-sans-serif, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(initialsText, x, y + r * 0.05);
+    }
+    ctx.restore();
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(238,241,246,0.18)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  var AVATAR_COLOR_PAIRS = [
+    ['#a78bfa', '#6ee7d8'],
+    ['#f4b860', '#a78bfa'],
+    ['#6ee7d8', '#3ea6ff'],
+    ['#f4b860', '#6ee7d8']
+  ];
+
+  async function renderShareImage() {
+    var myUsername = localStorage.getItem('tba_username');
+    var me = tbaGetUserByUsername(myUsername);
+    var members = tbaGetNetworkFor(myUsername);
+
+    var canvas = document.getElementById('share-canvas');
+    canvas.width = 1200;
+    canvas.height = 630;
+    var ctx = canvas.getContext('2d');
+
+    var bgGrad = ctx.createLinearGradient(0, 0, 1200, 630);
+    bgGrad.addColorStop(0, '#0b0e14');
+    bgGrad.addColorStop(1, '#171f30');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, 1200, 630);
+
+    ctx.fillStyle = 'rgba(110,231,216,0.10)';
+    for (var gx = 36; gx < 1200; gx += 42) {
+      for (var gy = 36; gy < 630; gy += 42) {
+        ctx.beginPath();
+        ctx.arc(gx, gy, 1.3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#6ee7d8';
+    ctx.font = '700 20px ui-monospace, "JetBrains Mono", monospace';
+    ctx.fillText('// the_network', 64, 68);
+
+    ctx.fillStyle = '#eef1f6';
+    ctx.font = '700 54px "Space Grotesk", ui-sans-serif, sans-serif';
+    ctx.fillText('My Network', 64, 132);
+
+    ctx.fillStyle = '#8b93a3';
+    ctx.font = '400 22px "Space Grotesk", ui-sans-serif, sans-serif';
+    ctx.fillText(
+      members.length + (members.length === 1 ? ' connection' : ' connections') + ' on THE INTROductory',
+      64, 170
+    );
+
+    var displayMembers = members.slice(0, 5);
+    var count = displayMembers.length + 1;
+    var usableWidth = 1200 - 128;
+    var spacing = Math.min(190, usableWidth / count);
+    var rowWidth = spacing * count;
+    var startX = 64 + (usableWidth - rowWidth) / 2 + spacing / 2;
+    var y = 360;
+    var r = 62;
+
+    var meImg = me.avatar ? await loadImageAsync(me.avatar) : null;
+    drawAvatarCircle(ctx, meImg, initials(me.username), startX, y, r, ['#6ee7d8', '#3ea6ff']);
+    ctx.fillStyle = '#eef1f6';
+    ctx.font = '700 22px "Space Grotesk", ui-sans-serif, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('You', startX, y + r + 36);
+
+    for (var i = 0; i < displayMembers.length; i++) {
+      var m = displayMembers[i];
+      var cx = startX + spacing * (i + 1);
+      var img = m.avatar ? await loadImageAsync(m.avatar) : null;
+      drawAvatarCircle(ctx, img, initials(m.username), cx, y, r, AVATAR_COLOR_PAIRS[i % AVATAR_COLOR_PAIRS.length]);
+      ctx.fillStyle = '#eef1f6';
+      ctx.font = '600 19px "Space Grotesk", ui-sans-serif, sans-serif';
+      var label = m.name.length > 15 ? m.name.slice(0, 14) + '…' : m.name;
+      ctx.fillText(label, cx, y + r + 36);
+    }
+
+    if (members.length > displayMembers.length) {
+      ctx.fillStyle = '#8b93a3';
+      ctx.font = '600 18px "Space Grotesk", ui-sans-serif, sans-serif';
+      ctx.fillText('+' + (members.length - displayMembers.length) + ' more', startX + spacing * (displayMembers.length + 1), y + 6);
+    }
+
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#8b93a3';
+    ctx.font = '400 18px "Space Grotesk", ui-sans-serif, sans-serif';
+    ctx.fillText('THE INTROductory — where brands and creators make the deal', 64, 580);
+
+    return canvas;
+  }
+
+  function canvasToBlob(canvas) {
+    return new Promise(function (resolve) {
+      canvas.toBlob(function (blob) { resolve(blob); }, 'image/png');
+    });
+  }
+
+  function showShareStatus(text) {
+    var status = document.getElementById('share-status');
+    status.textContent = text;
+    status.hidden = false;
+  }
+
+  function updateShareLinks() {
+    var caption = document.getElementById('share-caption').value;
+    var url = buildShareUrl();
+
+    document.getElementById('share-x-link').href =
+      'https://twitter.com/intent/tweet?text=' + encodeURIComponent(caption) + '&url=' + encodeURIComponent(url);
+    document.getElementById('share-linkedin-link').href =
+      'https://www.linkedin.com/sharing/share-offsite/?url=' + encodeURIComponent(url);
+    document.getElementById('share-facebook-link').href =
+      'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(url) + '&quote=' + encodeURIComponent(caption);
+  }
+
+  document.getElementById('share-network-btn').addEventListener('click', async function () {
+    var panel = document.getElementById('share-panel');
+    panel.hidden = !panel.hidden;
+    if (panel.hidden) return;
+
+    document.getElementById('share-caption').value = buildShareCaption();
+    updateShareLinks();
+    document.getElementById('share-status').hidden = true;
+    await renderShareImage();
+  });
+
+  document.getElementById('share-caption').addEventListener('input', updateShareLinks);
+
+  document.getElementById('share-copy-btn').addEventListener('click', async function () {
+    var caption = document.getElementById('share-caption').value;
+    try {
+      await navigator.clipboard.writeText(caption);
+      showShareStatus('Caption copied to clipboard.');
+    } catch (e) {
+      showShareStatus('Couldn\'t copy automatically — select the caption text and copy it manually.');
+    }
+  });
+
+  document.getElementById('share-download-btn').addEventListener('click', async function () {
+    var canvas = await renderShareImage();
+    var blob = await canvasToBlob(canvas);
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'my-network-the-introductory.png';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    showShareStatus('Image downloaded — attach it to your post.');
+  });
+
+  document.getElementById('share-native-btn').addEventListener('click', async function () {
+    var caption = document.getElementById('share-caption').value;
+    var url = buildShareUrl();
+    var canvas = await renderShareImage();
+    var blob = await canvasToBlob(canvas);
+    var file = blob ? new File([blob], 'my-network.png', { type: 'image/png' }) : null;
+
+    if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ title: 'My Network on THE INTROductory', text: caption, url: url, files: [file] });
+        return;
+      } catch (e) {
+        return;
+      }
+    }
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'My Network on THE INTROductory', text: caption, url: url });
+        return;
+      } catch (e) {
+        return;
+      }
+    }
+
+    showShareStatus('Direct sharing isn\'t supported in this browser — use a platform button below, or copy the caption.');
+  });
 
   renderAll();
 </script>
