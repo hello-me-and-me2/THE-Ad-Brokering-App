@@ -79,9 +79,13 @@
             <a class="share-btn share-btn-x" id="share-x-link" target="_blank" rel="noopener noreferrer">Post to X</a>
             <a class="share-btn share-btn-linkedin" id="share-linkedin-link" target="_blank" rel="noopener noreferrer">Share on LinkedIn</a>
             <a class="share-btn share-btn-facebook" id="share-facebook-link" target="_blank" rel="noopener noreferrer">Share on Facebook</a>
+            <button type="button" class="share-btn share-btn-instagram" id="share-instagram-btn">Share to Instagram</button>
+            <button type="button" class="share-btn share-btn-tiktok" id="share-tiktok-btn">Share to TikTok</button>
+            <button type="button" class="share-btn share-btn-youtube" id="share-youtube-btn">Share to YouTube</button>
             <button type="button" class="share-btn share-btn-copy" id="share-copy-btn">Copy Caption</button>
             <button type="button" class="share-btn share-btn-download" id="share-download-btn">Download Image</button>
           </div>
+          <p class="share-hint">Instagram, TikTok, and YouTube don't accept pre-filled posts from a website — on mobile, "Share&hellip;" and these buttons hand the image straight to their app if it's installed; everywhere else, they copy the caption and download the image for you to post manually.</p>
           <p class="share-status" id="share-status" hidden></p>
         </div>
       </div>
@@ -562,6 +566,11 @@
   document.getElementById('share-download-btn').addEventListener('click', async function () {
     var canvas = await renderShareImage();
     var blob = await canvasToBlob(canvas);
+    downloadShareImage(blob);
+    showShareStatus('Image downloaded — attach it to your post.');
+  });
+
+  function downloadShareImage(blob) {
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
     a.href = url;
@@ -570,10 +579,17 @@
     a.click();
     a.remove();
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-    showShareStatus('Image downloaded — attach it to your post.');
-  });
+  }
 
-  document.getElementById('share-native-btn').addEventListener('click', async function () {
+  // Shared by "Share…" and the Instagram/TikTok/YouTube buttons. None
+  // of those three have a web "post with this image and caption"
+  // intent the way X/LinkedIn/Facebook do — on mobile, handing the
+  // image to the OS share sheet via the Web Share API is the only
+  // real way a website can reach their apps, so that's tried first.
+  // Everywhere else (desktop, or no Web Share support), it preps the
+  // post for you instead: caption copied, image downloaded, with a
+  // clear next step.
+  async function shareOrPrepareManualPost(platformLabel, manualHint) {
     var caption = document.getElementById('share-caption').value;
     var url = buildShareUrl();
     var canvas = await renderShareImage();
@@ -589,7 +605,7 @@
       }
     }
 
-    if (navigator.share) {
+    if (!platformLabel && navigator.share) {
       try {
         await navigator.share({ title: 'My Network on THE INTROductory', text: caption, url: url });
         return;
@@ -598,7 +614,33 @@
       }
     }
 
-    showShareStatus('Direct sharing isn\'t supported in this browser — use a platform button below, or copy the caption.');
+    if (!platformLabel) {
+      showShareStatus('Direct sharing isn\'t supported in this browser — use a platform button below, or copy the caption.');
+      return;
+    }
+
+    try { await navigator.clipboard.writeText(caption); } catch (e) { /* clipboard not available — image download still helps */ }
+    if (blob) downloadShareImage(blob);
+    showShareStatus(
+      'Caption copied and image downloaded — open ' + platformLabel + ' and attach them to a new post.' +
+      (manualHint ? ' ' + manualHint : '')
+    );
+  }
+
+  document.getElementById('share-native-btn').addEventListener('click', function () {
+    shareOrPrepareManualPost(null);
+  });
+
+  document.getElementById('share-instagram-btn').addEventListener('click', function () {
+    shareOrPrepareManualPost('Instagram');
+  });
+
+  document.getElementById('share-tiktok-btn').addEventListener('click', function () {
+    shareOrPrepareManualPost('TikTok');
+  });
+
+  document.getElementById('share-youtube-btn').addEventListener('click', function () {
+    shareOrPrepareManualPost('YouTube', 'YouTube is video-first — use it as a Community post or video thumbnail.');
   });
 
   renderAll();

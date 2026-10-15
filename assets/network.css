@@ -426,10 +426,14 @@ main {
 .share-btn-x:hover { border-color: #eef1f6; color: #eef1f6; }
 .share-btn-linkedin:hover { border-color: #3ea6ff; color: #3ea6ff; }
 .share-btn-facebook:hover { border-color: #5b8def; color: #5b8def; }
+.share-btn-instagram:hover { border-color: #e1306c; color: #e1306c; }
+.share-btn-tiktok:hover { border-color: #25f4ee; color: #25f4ee; }
+.share-btn-youtube:hover { border-color: #ff4040; color: #ff4040; }
 .share-btn-copy:hover,
 .share-btn-download:hover { border-color: var(--node-3); color: var(--node-3); }
 
 .share-status { font-size: 12.5px; color: var(--text-soft); margin: 2px 0 0; }
+.share-hint { font-size: 12px; color: var(--text-soft); margin: 10px 0 0; line-height: 1.5; }
 
 footer { padding: 30px 24px; text-align: center; color: var(--text-soft); font-size: 12.5px; border-top: 1px solid var(--line); }
 
