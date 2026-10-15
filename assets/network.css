@@ -326,7 +326,6 @@ main {
 
 .btn-connect-net { background: var(--node-2); color: #16102e; }
 .btn-connect-net:hover { background: #bcaafd; }
-.btn-connect-net.sent { background: transparent; border-color: var(--line); color: var(--text-soft); cursor: default; }
 
 .network-empty { color: var(--text-soft); font-size: 14px; text-align: center; padding: 20px 0; }
 

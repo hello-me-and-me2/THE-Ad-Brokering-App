@@ -517,10 +517,11 @@ function tbaDecideNetworkRequest(username, decision) {
   if (decision === 'accepted') tbaAddToMyNetwork(username);
 }
 
-// Manual, non-deal network requests you send from the directory —
-// these just sit as "sent, awaiting their response," the same honest
-// limitation as the Find People message requests (no backend to
-// actually deliver and answer them).
+// Manual, non-deal network requests you send from the directory.
+// There's no backend to actually deliver these to another real
+// account and get a reply, so — while the app is still in testing —
+// sending one adds them to your network immediately instead of
+// leaving it stuck pending forever.
 function tbaGetSentNetworkRequests() {
   try {
     return JSON.parse(localStorage.getItem('tba_sent_network_requests') || '[]');
@@ -535,6 +536,7 @@ function tbaSendNetworkRequest(username) {
     sent.push(username);
     localStorage.setItem('tba_sent_network_requests', JSON.stringify(sent));
   }
+  tbaAddToMyNetwork(username);
 }
 
 // The network shown on any account's profile page — seed demo

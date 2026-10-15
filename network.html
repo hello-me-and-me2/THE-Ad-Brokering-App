@@ -244,7 +244,6 @@
   // --- Find & Connect directory ---
 
   var allUsers = tbaGetAllUsers().filter(function (u) { return !u.isYou; });
-  var sentNetworkRequests = tbaGetSentNetworkRequests();
   var directoryFilter = 'all';
   var directorySearch = '';
 
@@ -262,25 +261,17 @@
 
     grid.innerHTML = visible.map(function (u) {
       var inNetwork = tbaIsInMyNetwork(u.username);
-      var alreadySent = sentNetworkRequests.indexOf(u.username) !== -1;
-
-      var action;
-      if (inNetwork) {
-        action = '<button type="button" class="btn-remove-net" data-username="' + u.username + '">Remove from Network</button>';
-      } else if (alreadySent) {
-        action = '<button type="button" class="btn-connect-net sent" disabled>Request Sent</button>';
-      } else {
-        action = '<button type="button" class="btn-connect-net" data-username="' + u.username + '">Add to Network</button>';
-      }
+      var action = inNetwork
+        ? '<button type="button" class="btn-remove-net" data-username="' + u.username + '">Remove from Network</button>'
+        : '<button type="button" class="btn-connect-net" data-username="' + u.username + '">Add to Network</button>';
 
       return netCardShell(u, '<div class="net-actions">' + action + '</div>');
     }).join('');
 
-    grid.querySelectorAll('.btn-connect-net:not(.sent)').forEach(function (btn) {
+    grid.querySelectorAll('.btn-connect-net').forEach(function (btn) {
       btn.addEventListener('click', function () {
         tbaSendNetworkRequest(btn.getAttribute('data-username'));
-        sentNetworkRequests = tbaGetSentNetworkRequests();
-        renderDirectory();
+        renderAll();
       });
     });
     grid.querySelectorAll('.btn-remove-net').forEach(function (btn) {
