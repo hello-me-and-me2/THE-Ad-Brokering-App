@@ -453,11 +453,11 @@ var TBA_MY_THREADS_SEED = [
     subtitle: "Sponsored post campaign · Instagram & TikTok",
     status: "negotiating",
     statusLabel: "Negotiating",
-    deal: { brand: "Skyline Coffee Co.", deliverables: "3 IG Posts + 1 TikTok", rate: "$2,100", timeline: "3 weeks", progress: 70 },
+    deal: { brand: "Skyline Coffee Co.", amount: 2100, videos: 3, offerBy: "me", timeline: "3 weeks", progress: 70 },
     messages: [
       { from: "them", text: "Hi! We love your content and would love to talk about a sponsored post series with Skyline Coffee." },
       { from: "me", text: "Thanks for reaching out! I'd love to hear more about what you have in mind." },
-      { from: "offer", text: "2 Instagram posts + 1 TikTok video — $1,800, delivered within 3 weeks." },
+      { from: "me", type: "offer", amount: 1800, videos: 3 },
       { from: "them", text: "That works for us, but could we add a 3rd Instagram post to the package?" },
       { from: "me", text: "Happy to! Let's adjust the rate to cover the extra deliverable." },
       { from: "them", text: "Sounds good — can we lock in 3 posts?" }
@@ -469,7 +469,7 @@ var TBA_MY_THREADS_SEED = [
     subtitle: "Gear review collaboration",
     status: "new",
     statusLabel: "New",
-    deal: { brand: "Riverside Outdoor Gear", deliverables: "1 YouTube Review", rate: "$1,200", timeline: "4 weeks", progress: 20 },
+    deal: { brand: "Riverside Outdoor Gear", amount: 1200, videos: 1, offerBy: "them", timeline: "4 weeks", progress: 20 },
     messages: [
       { from: "them", text: "Hey! Sent over our media kit and a few product options for the next gear review." },
       { from: "me", text: "Thanks for sending the media kit! Taking a look now." }
@@ -481,11 +481,11 @@ var TBA_MY_THREADS_SEED = [
     subtitle: "YouTube gear review — signed",
     status: "closed",
     statusLabel: "Closed",
-    deal: { brand: "Riverside Outdoor Gear", deliverables: "1 YouTube Review", rate: "$1,200", timeline: "4 weeks", progress: 100 },
+    deal: { brand: "Riverside Outdoor Gear", amount: 1200, videos: 1, offerBy: "me", timeline: "4 weeks", progress: 100 },
     messages: [
       { from: "them", text: "Everything looks great on our end — ready to sign when you are." },
       { from: "me", text: "Signed! Excited to get started on this one." },
-      { from: "offer", text: "Deal signed — 1 YouTube Review, $1,200." }
+      { from: "me", type: "offer", amount: 1200, videos: 1 }
     ]
   },
   {
@@ -494,7 +494,7 @@ var TBA_MY_THREADS_SEED = [
     subtitle: "Skincare collab · rate under discussion",
     status: "negotiating",
     statusLabel: "Paused",
-    deal: { brand: "Pear & Co. Skincare", deliverables: "2 IG Posts + 3 Stories", rate: "$950", timeline: "2 weeks", progress: 45 },
+    deal: { brand: "Pear & Co. Skincare", amount: 950, videos: 2, offerBy: "them", timeline: "2 weeks", progress: 45 },
     messages: [
       { from: "me", text: "Thanks for the samples — loved the new serum!" },
       { from: "them", text: "So glad to hear it! Let's revisit the rate next week once you've tried the full routine." }
@@ -529,6 +529,31 @@ function tbaGetMyThreadMessages(username) {
 
 function tbaSaveMyThreadMessages(username, messages) {
   localStorage.setItem('tba_thread_' + username.toLowerCase(), JSON.stringify(messages));
+}
+
+// The amount + video count currently on the table — whichever side's
+// offer landed most recently in the conversation, falling back to the
+// thread's starting terms if neither side has made one yet.
+function tbaGetCurrentOffer(username) {
+  var messages = tbaGetMyThreadMessages(username);
+  for (var i = messages.length - 1; i >= 0; i--) {
+    if (messages[i].type === 'offer') {
+      return { amount: messages[i].amount, videos: messages[i].videos, from: messages[i].from };
+    }
+  }
+  var seed = tbaGetMyThread(username);
+  return seed ? { amount: seed.deal.amount, videos: seed.deal.videos, from: seed.deal.offerBy } : null;
+}
+
+function tbaGetMyThreadProgress(username) {
+  var stored = localStorage.getItem('tba_progress_' + username.toLowerCase());
+  if (stored !== null) return parseInt(stored, 10);
+  var seed = tbaGetMyThread(username);
+  return seed ? seed.deal.progress : 0;
+}
+
+function tbaSaveMyThreadProgress(username, progress) {
+  localStorage.setItem('tba_progress_' + username.toLowerCase(), String(progress));
 }
 
 function tbaAppendMyThreadMessage(username, message) {

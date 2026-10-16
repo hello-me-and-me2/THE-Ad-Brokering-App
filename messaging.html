@@ -66,8 +66,16 @@
 
       <div class="chat-body" id="chat-body"></div>
 
+      <div class="chat-offer-row" id="chat-offer-row" hidden>
+        <input type="number" id="offer-amount-input" placeholder="Amount ($)" min="1" step="1">
+        <input type="number" id="offer-videos-input" placeholder="# of videos" min="1" step="1">
+        <button type="button" id="offer-submit-btn">Send Offer</button>
+        <button type="button" id="offer-cancel-btn" class="offer-cancel-btn">Cancel</button>
+      </div>
+
       <div class="chat-input-row">
         <input type="text" id="chat-input" placeholder="Write a message...">
+        <button type="button" id="chat-offer-toggle-btn" class="btn-offer-toggle" title="Make an offer">$ Offer</button>
         <button type="button" id="chat-send-btn">Send</button>
       </div>
     </div>
@@ -148,7 +156,11 @@
     var messages = tbaGetMyThreadMessages(username);
     var last = messages[messages.length - 1];
     if (!last) return '';
-    return last.from === 'offer' ? 'Offer: ' + last.text : last.text;
+    if (last.type === 'offer') {
+      return (last.from === 'me' ? 'Your offer: ' : 'Their offer: ') +
+        '$' + last.amount.toLocaleString() + ' for ' + last.videos + ' video' + (last.videos === 1 ? '' : 's');
+    }
+    return last.text;
   }
 
   function renderThreadList() {
@@ -168,6 +180,7 @@
       item.addEventListener('click', function (e) {
         if (e.target.closest('a')) return;
         activeThreadUsername = item.getAttribute('data-username');
+        document.getElementById('chat-offer-row').hidden = true;
         renderThreadList();
         renderChat();
       });
@@ -175,21 +188,34 @@
   }
 
   function renderBubble(m) {
-    if (m.from === 'offer') {
-      return '<div class="bubble offer"><div class="offer-title">Offer</div>' + escapeHtml(m.text) + '</div>';
+    if (m.type === 'offer') {
+      var who = m.from === 'me' ? 'Your Offer' : 'Their Offer';
+      return (
+        '<div class="bubble offer offer-' + m.from + '">' +
+        '<div class="offer-title">' + who + '</div>' +
+        '<span class="amount">$' + m.amount.toLocaleString() + '</span> for ' +
+        m.videos + ' video' + (m.videos === 1 ? '' : 's') +
+        '</div>'
+      );
     }
     return '<div class="bubble ' + (m.from === 'me' ? 'me' : 'them') + '">' + escapeHtml(m.text) + '</div>';
   }
 
   function renderDealPanel(thread) {
+    var offer = tbaGetCurrentOffer(thread.username);
+    var progress = tbaGetMyThreadProgress(thread.username);
+
     dealPanelEl.innerHTML =
       '<h4>Deal Summary</h4>' +
       '<div class="deal-field"><label>Brand</label><div class="val">' + escapeHtml(thread.deal.brand) + '</div></div>' +
-      '<div class="deal-field"><label>Deliverables</label><div class="val">' + escapeHtml(thread.deal.deliverables) + '</div></div>' +
-      '<div class="deal-field"><label>Proposed Rate</label><div class="val money">' + escapeHtml(thread.deal.rate) + '</div></div>' +
+      '<div class="deal-field">' +
+      '<label>Current Offer <span class="offer-by">' + (offer.from === 'me' ? 'Proposed by You' : 'Proposed by Them') + '</span></label>' +
+      '<div class="val money">$' + offer.amount.toLocaleString() + '</div>' +
+      '<div class="val offer-video-count">' + offer.videos + ' video' + (offer.videos === 1 ? '' : 's') + '</div>' +
+      '</div>' +
       '<div class="deal-field"><label>Timeline</label><div class="val">' + escapeHtml(thread.deal.timeline) + '</div></div>' +
       '<div class="deal-field"><label>Negotiation Progress</label>' +
-      '<div class="progress-track"><div class="progress-fill" id="deal-progress-fill" style="width:' + thread.deal.progress + '%;"></div></div>' +
+      '<div class="progress-track"><div class="progress-fill" id="deal-progress-fill" style="width:' + progress + '%;"></div></div>' +
       '</div>';
   }
 
@@ -214,39 +240,60 @@
   function bumpDealProgress(username) {
     var thread = tbaGetMyThread(username);
     if (!thread || thread.status === 'closed') return;
-    thread.deal.progress = Math.min(95, thread.deal.progress + 5);
-    var fill = document.getElementById('deal-progress-fill');
-    if (fill) fill.style.width = thread.deal.progress + '%';
+    var progress = Math.min(95, tbaGetMyThreadProgress(username) + 5);
+    tbaSaveMyThreadProgress(username, progress);
+    if (username === activeThreadUsername) {
+      var fill = document.getElementById('deal-progress-fill');
+      if (fill) fill.style.width = progress + '%';
+    }
+  }
+
+  // Stands in for the other side replying — sometimes with plain
+  // text, sometimes with a counter-offer of their own, nudged a bit
+  // off the current terms. Same "simulate it locally" approach used
+  // elsewhere in the app since there's no real backend.
+  function simulateReply(username) {
+    var thread = tbaGetMyThread(username);
+
+    var typingBubble = document.createElement('div');
+    typingBubble.className = 'bubble them typing';
+    typingBubble.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+    if (username === activeThreadUsername) {
+      chatBodyEl.appendChild(typingBubble);
+      scrollChatToBottom();
+    }
+
+    setTimeout(function () {
+      typingBubble.remove();
+
+      if (thread.status !== 'closed' && Math.random() < 0.4) {
+        var current = tbaGetCurrentOffer(username);
+        var newAmount = Math.max(100, Math.round((current.amount * (0.92 + Math.random() * 0.16)) / 25) * 25);
+        var videoShift = Math.random() < 0.6 ? 0 : (Math.random() < 0.5 ? 1 : -1);
+        var newVideos = Math.max(1, current.videos + videoShift);
+        tbaAppendMyThreadMessage(username, { from: 'them', type: 'offer', amount: newAmount, videos: newVideos });
+      } else {
+        tbaAppendMyThreadMessage(username, { from: 'them', text: tbaPickAutoReply() });
+      }
+
+      bumpDealProgress(username);
+      if (username === activeThreadUsername) renderChat();
+      renderThreadList();
+    }, 1100 + Math.random() * 700);
+  }
+
+  function sendMyMessage(messageObj) {
+    tbaAppendMyThreadMessage(activeThreadUsername, messageObj);
+    renderChat();
+    renderThreadList();
+    simulateReply(activeThreadUsername);
   }
 
   function sendMessage() {
     var text = chatInputEl.value.trim();
     if (!text) return;
-
-    tbaAppendMyThreadMessage(activeThreadUsername, { from: 'me', text: text });
     chatInputEl.value = '';
-    renderChat();
-    renderThreadList();
-
-    var typingUsername = activeThreadUsername;
-    var typingBubble = document.createElement('div');
-    typingBubble.className = 'bubble them typing';
-    typingBubble.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
-    chatBodyEl.appendChild(typingBubble);
-    scrollChatToBottom();
-
-    setTimeout(function () {
-      typingBubble.remove();
-      if (typingUsername !== activeThreadUsername) {
-        // Still save the reply even if you've switched threads meanwhile.
-      }
-      tbaAppendMyThreadMessage(typingUsername, { from: 'them', text: tbaPickAutoReply() });
-      bumpDealProgress(typingUsername);
-      if (typingUsername === activeThreadUsername) {
-        renderChat();
-      }
-      renderThreadList();
-    }, 1100 + Math.random() * 700);
+    sendMyMessage({ from: 'me', text: text });
   }
 
   chatSendBtn.addEventListener('click', sendMessage);
@@ -255,6 +302,32 @@
       e.preventDefault();
       sendMessage();
     }
+  });
+
+  // --- Make an Offer ---
+
+  var offerRow = document.getElementById('chat-offer-row');
+  var offerAmountInput = document.getElementById('offer-amount-input');
+  var offerVideosInput = document.getElementById('offer-videos-input');
+
+  document.getElementById('chat-offer-toggle-btn').addEventListener('click', function () {
+    offerRow.hidden = !offerRow.hidden;
+    if (!offerRow.hidden) offerAmountInput.focus();
+  });
+
+  document.getElementById('offer-cancel-btn').addEventListener('click', function () {
+    offerRow.hidden = true;
+  });
+
+  document.getElementById('offer-submit-btn').addEventListener('click', function () {
+    var amount = parseInt(offerAmountInput.value, 10);
+    var videos = parseInt(offerVideosInput.value, 10);
+    if (!amount || amount <= 0 || !videos || videos <= 0) return;
+
+    offerAmountInput.value = '';
+    offerVideosInput.value = '';
+    offerRow.hidden = true;
+    sendMyMessage({ from: 'me', type: 'offer', amount: amount, videos: videos });
   });
 
   renderThreadList();
