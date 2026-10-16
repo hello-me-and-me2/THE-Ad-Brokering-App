@@ -440,6 +440,108 @@ function tbaAddSentRequest(username) {
   }
 }
 
+// --- Your conversations (Messaging & Negotiation) ---
+// Each of your four starting threads ships with a short seed
+// exchange; anything you send from here on is appended and persisted
+// per account, with a simulated reply standing in for the other side
+// since there's no backend to actually deliver and answer it.
+
+var TBA_MY_THREADS_SEED = [
+  {
+    username: "marencole",
+    displayName: "Maren Cole — Skyline Coffee Co.",
+    subtitle: "Sponsored post campaign · Instagram & TikTok",
+    status: "negotiating",
+    statusLabel: "Negotiating",
+    deal: { brand: "Skyline Coffee Co.", deliverables: "3 IG Posts + 1 TikTok", rate: "$2,100", timeline: "3 weeks", progress: 70 },
+    messages: [
+      { from: "them", text: "Hi! We love your content and would love to talk about a sponsored post series with Skyline Coffee." },
+      { from: "me", text: "Thanks for reaching out! I'd love to hear more about what you have in mind." },
+      { from: "offer", text: "2 Instagram posts + 1 TikTok video — $1,800, delivered within 3 weeks." },
+      { from: "them", text: "That works for us, but could we add a 3rd Instagram post to the package?" },
+      { from: "me", text: "Happy to! Let's adjust the rate to cover the extra deliverable." },
+      { from: "them", text: "Sounds good — can we lock in 3 posts?" }
+    ]
+  },
+  {
+    username: "riversidegear",
+    displayName: "Riverside Outdoor Gear",
+    subtitle: "Gear review collaboration",
+    status: "new",
+    statusLabel: "New",
+    deal: { brand: "Riverside Outdoor Gear", deliverables: "1 YouTube Review", rate: "$1,200", timeline: "4 weeks", progress: 20 },
+    messages: [
+      { from: "them", text: "Hey! Sent over our media kit and a few product options for the next gear review." },
+      { from: "me", text: "Thanks for sending the media kit! Taking a look now." }
+    ]
+  },
+  {
+    username: "jordanblake",
+    displayName: "Jordan Blake (Creator)",
+    subtitle: "YouTube gear review — signed",
+    status: "closed",
+    statusLabel: "Closed",
+    deal: { brand: "Riverside Outdoor Gear", deliverables: "1 YouTube Review", rate: "$1,200", timeline: "4 weeks", progress: 100 },
+    messages: [
+      { from: "them", text: "Everything looks great on our end — ready to sign when you are." },
+      { from: "me", text: "Signed! Excited to get started on this one." },
+      { from: "offer", text: "Deal signed — 1 YouTube Review, $1,200." }
+    ]
+  },
+  {
+    username: "pearandco",
+    displayName: "Pear & Co. Skincare",
+    subtitle: "Skincare collab · rate under discussion",
+    status: "negotiating",
+    statusLabel: "Paused",
+    deal: { brand: "Pear & Co. Skincare", deliverables: "2 IG Posts + 3 Stories", rate: "$950", timeline: "2 weeks", progress: 45 },
+    messages: [
+      { from: "me", text: "Thanks for the samples — loved the new serum!" },
+      { from: "them", text: "So glad to hear it! Let's revisit the rate next week once you've tried the full routine." }
+    ]
+  }
+];
+
+var TBA_AUTO_REPLIES = [
+  "Sounds good — let me check on that and get back to you.",
+  "Appreciate you sending that over!",
+  "That works on our end. Let's keep moving forward.",
+  "Good question — give me a moment to confirm the details.",
+  "Thanks for the update, I'll loop in the team.",
+  "Noted — let's lock that in.",
+  "Works for us. Anything else before we finalize?",
+  "Got it, thank you for the quick reply!"
+];
+
+function tbaGetMyThread(username) {
+  return TBA_MY_THREADS_SEED.find(function (t) { return t.username === username; }) || null;
+}
+
+function tbaGetMyThreadMessages(username) {
+  var key = 'tba_thread_' + username.toLowerCase();
+  try {
+    var stored = JSON.parse(localStorage.getItem(key));
+    if (stored) return stored;
+  } catch (e) { /* fall through to seed */ }
+  var seed = tbaGetMyThread(username);
+  return seed ? seed.messages.slice() : [];
+}
+
+function tbaSaveMyThreadMessages(username, messages) {
+  localStorage.setItem('tba_thread_' + username.toLowerCase(), JSON.stringify(messages));
+}
+
+function tbaAppendMyThreadMessage(username, message) {
+  var messages = tbaGetMyThreadMessages(username);
+  messages.push(message);
+  tbaSaveMyThreadMessages(username, messages);
+  return messages;
+}
+
+function tbaPickAutoReply() {
+  return TBA_AUTO_REPLIES[Math.floor(Math.random() * TBA_AUTO_REPLIES.length)];
+}
+
 // --- The Network ---
 // Landing a deal (a thread whose status is "closed") lets both sides
 // add each other to their network, but only once both accept. Seed

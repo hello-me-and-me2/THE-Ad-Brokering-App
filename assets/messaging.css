@@ -372,8 +372,25 @@ img.user-avatar { object-fit: cover; }
 
 .chat-input-row { display: flex; gap: 10px; padding: 14px 16px; border-top: 1px solid var(--line); background: var(--panel); }
 .chat-input-row input { flex: 1; padding: 11px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); font-family: inherit; font-size: 14px; }
+.chat-input-row input:focus { outline: none; border-color: var(--accent); }
 .chat-input-row button { border: none; background: var(--accent); color: #06131c; padding: 0 20px; border-radius: 8px; font-weight: 700; cursor: pointer; }
 .chat-input-row button:hover { background: #62b9ff; }
+
+.bubble.typing { display: flex; align-items: center; gap: 4px; padding: 13px 16px; }
+.typing-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-soft);
+  animation: typingBounce 1.2s infinite ease-in-out;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.15s; }
+.typing-dot:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes typingBounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+  30% { transform: translateY(-4px); opacity: 1; }
+}
 
 .deal-panel { border-left: 1px solid var(--line); padding: 20px; background: var(--panel); }
 .deal-panel h4 { margin-top: 0; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-soft); }

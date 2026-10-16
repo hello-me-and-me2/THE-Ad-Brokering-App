@@ -42,7 +42,7 @@
       <h1>Messaging &amp; Negotiation</h1>
       <p>Every deal lives in one thread — the conversation and the terms, side by side.</p>
     </div>
-    <span class="status-pill">4 active threads</span>
+    <span class="status-pill" id="threads-stat">4 active threads</span>
   </div>
 
   <div class="msg-tabs">
@@ -52,90 +52,27 @@
 
   <div class="tab-panel" id="tab-conversations">
   <div class="messenger">
-    <div class="thread-list">
+    <div class="thread-list" id="thread-list">
       <div class="thread-list-header">Conversations</div>
-
-      <div class="thread-item active">
-        <div class="t-name"><a href="profile.html?u=marencole" style="text-decoration:none;color:inherit;">Maren Cole — Skyline Coffee Co.</a></div>
-        <div class="t-preview">Sounds good — can we lock in 3 posts?</div>
-        <span class="t-tag negotiating">Negotiating</span>
-      </div>
-
-      <div class="thread-item">
-        <div class="t-name"><a href="profile.html?u=riversidegear" style="text-decoration:none;color:inherit;">Riverside Outdoor Gear</a></div>
-        <div class="t-preview">Thanks for sending the media kit!</div>
-        <span class="t-tag new">New</span>
-      </div>
-
-      <div class="thread-item">
-        <div class="t-name"><a href="profile.html?u=jordanblake" style="text-decoration:none;color:inherit;">Jordan Blake (Creator)</a></div>
-        <div class="t-preview">Deal signed — excited to get started</div>
-        <span class="t-tag closed">Closed</span>
-      </div>
-
-      <div class="thread-item">
-        <div class="t-name"><a href="profile.html?u=pearandco" style="text-decoration:none;color:inherit;">Pear &amp; Co. Skincare</a></div>
-        <div class="t-preview">Let's revisit the rate next week</div>
-        <span class="t-tag negotiating">Paused</span>
-      </div>
     </div>
 
     <div class="chat-panel">
       <div class="chat-header">
         <div>
-          <h3>Maren Cole — Skyline Coffee Co.</h3>
-          <div class="sub">Sponsored post campaign · Instagram &amp; TikTok</div>
+          <h3 id="chat-title"></h3>
+          <div class="sub" id="chat-subtitle"></div>
         </div>
       </div>
 
-      <div class="chat-body">
-        <div class="bubble them">Hi! We love your content and would love to talk about a sponsored post series with Skyline Coffee.</div>
-        <div class="bubble me">Thanks for reaching out! I'd love to hear more about what you have in mind.</div>
-
-        <div class="bubble offer">
-          <div class="offer-title">Offer Sent</div>
-          2 Instagram posts + 1 TikTok video — <span class="amount">$1,800</span>, delivered within 3 weeks.
-        </div>
-
-        <div class="bubble them">That works for us, but could we add a 3rd Instagram post to the package?</div>
-        <div class="bubble me">Happy to! Let's adjust the rate to cover the extra deliverable.</div>
-        <div class="bubble them">Sounds good — can we lock in 3 posts?</div>
-      </div>
+      <div class="chat-body" id="chat-body"></div>
 
       <div class="chat-input-row">
-        <input type="text" placeholder="Write a message..." disabled>
-        <button type="button" disabled>Send</button>
+        <input type="text" id="chat-input" placeholder="Write a message...">
+        <button type="button" id="chat-send-btn">Send</button>
       </div>
     </div>
 
-    <div class="deal-panel">
-      <h4>Deal Summary</h4>
-
-      <div class="deal-field">
-        <label>Brand</label>
-        <div class="val">Skyline Coffee Co.</div>
-      </div>
-
-      <div class="deal-field">
-        <label>Deliverables</label>
-        <div class="val">3 IG Posts + 1 TikTok</div>
-      </div>
-
-      <div class="deal-field">
-        <label>Proposed Rate</label>
-        <div class="val money">$2,100</div>
-      </div>
-
-      <div class="deal-field">
-        <label>Timeline</label>
-        <div class="val">3 weeks</div>
-      </div>
-
-      <div class="deal-field">
-        <label>Negotiation Progress</label>
-        <div class="progress-track"><div class="progress-fill"></div></div>
-      </div>
-    </div>
+    <div class="deal-panel" id="deal-panel"></div>
   </div>
   </div>
 
@@ -185,6 +122,143 @@
       document.getElementById('tab-find').hidden = btn.dataset.tab !== 'find';
     });
   });
+
+  // --- Conversations ---
+
+  function escapeHtml(str) {
+    return String(str || '').replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  var threadListEl = document.getElementById('thread-list');
+  var chatTitleEl = document.getElementById('chat-title');
+  var chatSubtitleEl = document.getElementById('chat-subtitle');
+  var chatBodyEl = document.getElementById('chat-body');
+  var dealPanelEl = document.getElementById('deal-panel');
+  var chatInputEl = document.getElementById('chat-input');
+  var chatSendBtn = document.getElementById('chat-send-btn');
+
+  var activeThreadUsername = TBA_MY_THREADS_SEED[0].username;
+
+  document.getElementById('threads-stat').textContent =
+    TBA_MY_THREADS_SEED.length + ' active thread' + (TBA_MY_THREADS_SEED.length === 1 ? '' : 's');
+
+  function lastMessagePreview(username) {
+    var messages = tbaGetMyThreadMessages(username);
+    var last = messages[messages.length - 1];
+    if (!last) return '';
+    return last.from === 'offer' ? 'Offer: ' + last.text : last.text;
+  }
+
+  function renderThreadList() {
+    threadListEl.innerHTML = '<div class="thread-list-header">Conversations</div>' +
+      TBA_MY_THREADS_SEED.map(function (t) {
+        var active = t.username === activeThreadUsername ? ' active' : '';
+        return (
+          '<div class="thread-item' + active + '" data-username="' + t.username + '">' +
+          '<div class="t-name"><a href="profile.html?u=' + encodeURIComponent(t.username) + '" style="text-decoration:none;color:inherit;">' + escapeHtml(t.displayName) + '</a></div>' +
+          '<div class="t-preview">' + escapeHtml(lastMessagePreview(t.username)) + '</div>' +
+          '<span class="t-tag ' + t.status + '">' + escapeHtml(t.statusLabel) + '</span>' +
+          '</div>'
+        );
+      }).join('');
+
+    threadListEl.querySelectorAll('.thread-item').forEach(function (item) {
+      item.addEventListener('click', function (e) {
+        if (e.target.closest('a')) return;
+        activeThreadUsername = item.getAttribute('data-username');
+        renderThreadList();
+        renderChat();
+      });
+    });
+  }
+
+  function renderBubble(m) {
+    if (m.from === 'offer') {
+      return '<div class="bubble offer"><div class="offer-title">Offer</div>' + escapeHtml(m.text) + '</div>';
+    }
+    return '<div class="bubble ' + (m.from === 'me' ? 'me' : 'them') + '">' + escapeHtml(m.text) + '</div>';
+  }
+
+  function renderDealPanel(thread) {
+    dealPanelEl.innerHTML =
+      '<h4>Deal Summary</h4>' +
+      '<div class="deal-field"><label>Brand</label><div class="val">' + escapeHtml(thread.deal.brand) + '</div></div>' +
+      '<div class="deal-field"><label>Deliverables</label><div class="val">' + escapeHtml(thread.deal.deliverables) + '</div></div>' +
+      '<div class="deal-field"><label>Proposed Rate</label><div class="val money">' + escapeHtml(thread.deal.rate) + '</div></div>' +
+      '<div class="deal-field"><label>Timeline</label><div class="val">' + escapeHtml(thread.deal.timeline) + '</div></div>' +
+      '<div class="deal-field"><label>Negotiation Progress</label>' +
+      '<div class="progress-track"><div class="progress-fill" id="deal-progress-fill" style="width:' + thread.deal.progress + '%;"></div></div>' +
+      '</div>';
+  }
+
+  function scrollChatToBottom() {
+    chatBodyEl.scrollTop = chatBodyEl.scrollHeight;
+  }
+
+  function renderChat() {
+    var thread = tbaGetMyThread(activeThreadUsername);
+    if (!thread) return;
+
+    chatTitleEl.textContent = thread.displayName;
+    chatSubtitleEl.textContent = thread.subtitle;
+
+    var messages = tbaGetMyThreadMessages(activeThreadUsername);
+    chatBodyEl.innerHTML = messages.map(renderBubble).join('');
+    scrollChatToBottom();
+
+    renderDealPanel(thread);
+  }
+
+  function bumpDealProgress(username) {
+    var thread = tbaGetMyThread(username);
+    if (!thread || thread.status === 'closed') return;
+    thread.deal.progress = Math.min(95, thread.deal.progress + 5);
+    var fill = document.getElementById('deal-progress-fill');
+    if (fill) fill.style.width = thread.deal.progress + '%';
+  }
+
+  function sendMessage() {
+    var text = chatInputEl.value.trim();
+    if (!text) return;
+
+    tbaAppendMyThreadMessage(activeThreadUsername, { from: 'me', text: text });
+    chatInputEl.value = '';
+    renderChat();
+    renderThreadList();
+
+    var typingUsername = activeThreadUsername;
+    var typingBubble = document.createElement('div');
+    typingBubble.className = 'bubble them typing';
+    typingBubble.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+    chatBodyEl.appendChild(typingBubble);
+    scrollChatToBottom();
+
+    setTimeout(function () {
+      typingBubble.remove();
+      if (typingUsername !== activeThreadUsername) {
+        // Still save the reply even if you've switched threads meanwhile.
+      }
+      tbaAppendMyThreadMessage(typingUsername, { from: 'them', text: tbaPickAutoReply() });
+      bumpDealProgress(typingUsername);
+      if (typingUsername === activeThreadUsername) {
+        renderChat();
+      }
+      renderThreadList();
+    }, 1100 + Math.random() * 700);
+  }
+
+  chatSendBtn.addEventListener('click', sendMessage);
+  chatInputEl.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  renderThreadList();
+  renderChat();
 
   // Find People directory + message requests
   var allUsers = tbaGetAllUsers();
