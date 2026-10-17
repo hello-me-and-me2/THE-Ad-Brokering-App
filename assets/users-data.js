@@ -558,8 +558,10 @@ function tbaSaveMyThreadProgress(username, progress) {
 
 function tbaAppendMyThreadMessage(username, message) {
   var messages = tbaGetMyThreadMessages(username);
+  if (!message.createdAt) message.createdAt = new Date().toISOString();
   messages.push(message);
   tbaSaveMyThreadMessages(username, messages);
+  if (message.from === 'them' && window.tbaRefreshNotificationBell) window.tbaRefreshNotificationBell();
   return messages;
 }
 
@@ -1033,4 +1035,185 @@ function tbaWireThemeToggle(buttonId, naturalDefault) {
   });
 
   render();
+}
+
+// --- Notifications ---
+// Built from events already recorded elsewhere — new messages from
+// the other side, and verification decisions on your own account —
+// rather than a separate log, so there's nothing new to keep in sync.
+// Only timestamped events count, which in practice means events from
+// this session (simulated replies, contract activity, signatures),
+// not the pre-loaded seed conversation history.
+
+function tbaGetReadNotificationIds() {
+  try {
+    return JSON.parse(localStorage.getItem('tba_notifications_read') || '[]');
+  } catch (e) {
+    return [];
+  }
+}
+
+function tbaMarkNotificationRead(id) {
+  var read = tbaGetReadNotificationIds();
+  if (read.indexOf(id) === -1) {
+    read.push(id);
+    localStorage.setItem('tba_notifications_read', JSON.stringify(read));
+  }
+}
+
+function tbaMarkAllNotificationsRead() {
+  var ids = tbaGetNotifications().map(function (n) { return n.id; });
+  localStorage.setItem('tba_notifications_read', JSON.stringify(ids));
+}
+
+function tbaNotificationMessagePreview(m) {
+  if (m.type === 'offer') {
+    return 'Countered with $' + m.amount.toLocaleString() + ' for ' + m.videos + ' video' + (m.videos === 1 ? '' : 's');
+  }
+  if (m.type === 'contract') {
+    var verb = m.action === 'sent' ? 'Sent a contract' : m.action === 'revised' ? 'Sent back a revised contract' : 'Contract update';
+    return verb + ': ' + m.contractName;
+  }
+  return m.text;
+}
+
+function tbaGetNotifications() {
+  var myUsername = localStorage.getItem('tba_username');
+  if (!myUsername) return [];
+
+  var notifications = [];
+
+  TBA_MY_THREADS_SEED.forEach(function (t) {
+    var messages = tbaGetMyThreadMessages(t.username);
+    messages.forEach(function (m, i) {
+      if (m.from !== 'them' || !m.createdAt) return;
+      notifications.push({
+        id: 'msg-' + t.username + '-' + i,
+        icon: m.type === 'contract' ? '📄' : m.type === 'offer' ? '💰' : '💬',
+        title: t.displayName,
+        text: tbaNotificationMessagePreview(m),
+        date: m.createdAt,
+        link: 'messaging.html?thread=' + encodeURIComponent(t.username)
+      });
+    });
+  });
+
+  tbaGetVerificationDecisionLog()
+    .filter(function (l) { return l.username.toLowerCase() === myUsername.toLowerCase(); })
+    .forEach(function (d) {
+      notifications.push({
+        id: 'verify-' + d.decidedAt,
+        icon: d.decision === 'approved' ? '✅' : '✖️',
+        title: 'Verification',
+        text: d.decision === 'approved' ? 'Your account was verified!' : 'Your verification application was not approved this time.',
+        date: d.decidedAt,
+        link: 'profile.html'
+      });
+    });
+
+  notifications.sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
+
+  var readIds = tbaGetReadNotificationIds();
+  notifications.forEach(function (n) { n.read = readIds.indexOf(n.id) !== -1; });
+
+  return notifications;
+}
+
+function tbaFormatRelativeTime(iso) {
+  var diffMs = Date.now() - new Date(iso).getTime();
+  var mins = Math.round(diffMs / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return mins + 'm ago';
+  var hours = Math.round(mins / 60);
+  if (hours < 24) return hours + 'h ago';
+  var days = Math.round(hours / 24);
+  return days + 'd ago';
+}
+
+function tbaEscapeHtmlForNotif(str) {
+  return String(str || '').replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+
+// Wires up a notification bell: `wrapId` is a positioned wrapper
+// (position: relative) holding the bell button itself, `btnId`. The
+// dropdown panel and its contents are built and injected here, so
+// every page only needs to markup the bell button.
+function tbaWireNotificationBell(wrapId, btnId) {
+  var wrap = document.getElementById(wrapId);
+  var btn = document.getElementById(btnId);
+  if (!wrap || !btn) return;
+
+  var badge = document.createElement('span');
+  badge.className = 'notif-badge';
+  badge.hidden = true;
+  btn.appendChild(badge);
+
+  var panel = document.createElement('div');
+  panel.className = 'notif-panel';
+  panel.hidden = true;
+  wrap.appendChild(panel);
+
+  function renderPanel() {
+    var notifications = tbaGetNotifications();
+    var unread = notifications.filter(function (n) { return !n.read; }).length;
+
+    badge.style.display = unread === 0 ? 'none' : 'flex';
+    badge.textContent = unread > 9 ? '9+' : String(unread);
+
+    var listHtml = notifications.length === 0
+      ? '<p class="notif-empty">Nothing new yet.</p>'
+      : notifications.slice(0, 20).map(function (n) {
+          return (
+            '<a class="notif-item' + (n.read ? '' : ' unread') + '" href="' + n.link + '" data-id="' + n.id + '">' +
+            '<span class="notif-icon">' + n.icon + '</span>' +
+            '<span class="notif-body">' +
+            '<span class="notif-title">' + tbaEscapeHtmlForNotif(n.title) + '</span>' +
+            '<span class="notif-text">' + tbaEscapeHtmlForNotif(n.text) + '</span>' +
+            '<span class="notif-time">' + tbaFormatRelativeTime(n.date) + '</span>' +
+            '</span>' +
+            '</a>'
+          );
+        }).join('');
+
+    panel.innerHTML =
+      '<div class="notif-panel-head">' +
+      '<span>Notifications</span>' +
+      (unread > 0 ? '<button type="button" class="notif-mark-all" id="notif-mark-all">Mark all read</button>' : '') +
+      '</div>' +
+      '<div class="notif-panel-list">' + listHtml + '</div>';
+
+    var markAllBtn = document.getElementById('notif-mark-all');
+    if (markAllBtn) {
+      markAllBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        tbaMarkAllNotificationsRead();
+        renderPanel();
+      });
+    }
+
+    panel.querySelectorAll('.notif-item').forEach(function (item) {
+      item.addEventListener('click', function () {
+        tbaMarkNotificationRead(item.getAttribute('data-id'));
+      });
+    });
+  }
+
+  btn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    panel.hidden = !panel.hidden;
+    if (!panel.hidden) renderPanel();
+  });
+
+  document.addEventListener('click', function (e) {
+    if (!panel.hidden && !wrap.contains(e.target)) panel.hidden = true;
+  });
+
+  renderPanel();
+
+  // Exposed so a page can refresh the unread badge right after it
+  // posts a new simulated message, instead of waiting for the next
+  // bell click or page load.
+  window.tbaRefreshNotificationBell = renderPanel;
 }

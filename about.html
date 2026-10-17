@@ -30,6 +30,9 @@
       <a href="network.html">The Network</a>
       <a href="about.html" class="active">About</a>
       <a href="profile.html">Profile</a>
+      <div class="notif-wrap" id="notif-wrap">
+        <button type="button" class="notif-bell-btn" id="notif-bell-btn" aria-label="Notifications">🔔</button>
+      </div>
       <button type="button" class="theme-toggle-btn" id="theme-toggle-btn"></button>
       <a href="index.html" class="nav-logout" id="logout-link">Log Out</a>
     </nav>
@@ -120,6 +123,7 @@
     localStorage.removeItem('tba_authed');
   });
   tbaWireThemeToggle('theme-toggle-btn', 'light');
+  tbaWireNotificationBell('notif-wrap', 'notif-bell-btn');
 </script>
 </body>
 </html>
