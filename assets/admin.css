@@ -12,6 +12,22 @@
   --money: #34c98a;
   --warn: #e0a941;
   --danger: #f16565;
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --bg: #f5f4fa;
+  --panel: #ffffff;
+  --panel-2: #f0eef8;
+  --line: #e1ddf0;
+  --text: #1a1830;
+  --text-soft: #5e5a78;
+  --accent: #6a56e0;
+  --accent-dim: #d8d1f7;
+  --money: #1f9d6c;
+  --warn: #b07c1c;
+  --danger: #d1403f;
+  color-scheme: light;
 }
 
 * { box-sizing: border-box; }
@@ -216,6 +232,39 @@ form { text-align: left; }
   border-radius: 999px;
 }
 .admin-header .signout:hover { border-color: var(--accent); color: var(--accent); }
+
+.admin-header button.theme-toggle-btn {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text-soft);
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  font-size: 14px;
+  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.admin-header button.theme-toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+.theme-toggle-standalone {
+  position: fixed;
+  top: 18px;
+  left: 20px;
+  z-index: 10;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--text-soft);
+  font-size: 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.theme-toggle-standalone:hover { border-color: var(--accent); color: var(--accent); }
 
 .admin-main { max-width: 1200px; margin: 0 auto; padding: 32px 24px 70px; }
 

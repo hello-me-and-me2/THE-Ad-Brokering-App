@@ -973,3 +973,64 @@ function tbaGetNetworkFor(username) {
     .map(function (u) { return tbaGetUserByUsername(u); })
     .filter(Boolean);
 }
+
+// --- Light / dark mode ---
+// One preference, shared across every page via localStorage. Unset
+// means "use this page's own default look" (the designed light or
+// dark theme) — picking a mode in the toggle overrides that default
+// everywhere until changed again.
+
+function tbaGetTheme() {
+  var t = localStorage.getItem('tba_theme');
+  return (t === 'light' || t === 'dark') ? t : null;
+}
+
+function tbaSetTheme(theme) {
+  if (theme === 'light' || theme === 'dark') {
+    localStorage.setItem('tba_theme', theme);
+  } else {
+    localStorage.removeItem('tba_theme');
+  }
+}
+
+// Applied immediately as this script loads (it's a blocking <script>
+// in every page's <head>), so the right theme is in place before the
+// page paints — no flash of the wrong colors.
+function tbaApplyTheme() {
+  var t = tbaGetTheme();
+  if (t) {
+    document.documentElement.setAttribute('data-theme', t);
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+  }
+}
+
+tbaApplyTheme();
+
+// Wires up a theme-toggle button: reflects the current effective
+// theme (falling back to the page's own natural default when no
+// preference is saved yet) and flips it on click.
+function tbaWireThemeToggle(buttonId, naturalDefault) {
+  var btn = document.getElementById(buttonId);
+  if (!btn) return;
+
+  function effectiveTheme() {
+    return tbaGetTheme() || naturalDefault;
+  }
+
+  function render() {
+    var current = effectiveTheme();
+    btn.textContent = current === 'dark' ? '☀️' : '🌙';
+    btn.setAttribute('aria-label', current === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+    btn.title = current === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+  }
+
+  btn.addEventListener('click', function () {
+    var next = effectiveTheme() === 'dark' ? 'light' : 'dark';
+    tbaSetTheme(next);
+    tbaApplyTheme();
+    render();
+  });
+
+  render();
+}

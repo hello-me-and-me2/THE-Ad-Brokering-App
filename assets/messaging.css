@@ -11,6 +11,21 @@
   --accent-dim: #235a80;
   --money: #34c98a;
   --warn: #e0a941;
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --bg: #f4f6f9;
+  --panel: #ffffff;
+  --panel-2: #eef1f5;
+  --line: #dde2e7;
+  --text: #151c22;
+  --text-soft: #535d66;
+  --accent: #1c7fd1;
+  --accent-dim: #4a90d1;
+  --money: #1f9d6c;
+  --warn: #b07c1c;
+  color-scheme: light;
 }
 
 * { box-sizing: border-box; }
@@ -81,6 +96,20 @@ nav.main-nav a.nav-logout {
   margin-left: 4px;
 }
 nav.main-nav a.nav-logout:hover { background: var(--accent); color: #06131c; }
+
+nav.main-nav button.theme-toggle-btn {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text-soft);
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  font-size: 14px;
+  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-left: 4px;
+  transition: border-color 0.12s ease, color 0.12s ease;
+}
+nav.main-nav button.theme-toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
 
 main { max-width: 1200px; margin: 0 auto; padding: 28px 24px 70px; }
 

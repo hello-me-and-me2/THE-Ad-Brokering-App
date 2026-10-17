@@ -8,6 +8,18 @@
   --rule: #e3d5ba;
   --rust: #a8532b;
   --sage: #6c7a5e;
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --paper: #1d170f;
+  --paper-2: #272019;
+  --ink: #f2e6d0;
+  --ink-soft: #b4a383;
+  --rule: #3c3222;
+  --rust: #e8824a;
+  --sage: #93ab7e;
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -74,6 +86,20 @@ nav.main-nav a.nav-logout {
   margin-left: 4px;
 }
 nav.main-nav a.nav-logout:hover { background: var(--rust); color: #fff; }
+
+nav.main-nav button.theme-toggle-btn {
+  border: 1px solid var(--rule);
+  background: transparent;
+  color: var(--ink-soft);
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  font-size: 14px;
+  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-left: 4px;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+nav.main-nav button.theme-toggle-btn:hover { border-color: var(--rust); color: var(--rust); }
 
 main { max-width: 880px; margin: 0 auto; padding: 50px 24px 100px; background: var(--paper); }
 

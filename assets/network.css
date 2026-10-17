@@ -9,6 +9,19 @@
   --node: #6ee7d8;
   --node-2: #a78bfa;
   --node-3: #f4b860;
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --bg: #f3f5fa;
+  --bg-2: #ffffff;
+  --line: #dde2ee;
+  --text: #121726;
+  --text-soft: #5a6275;
+  --node: #0f9a8c;
+  --node-2: #7a5cd6;
+  --node-3: #c9861a;
+  color-scheme: light;
 }
 
 * { box-sizing: border-box; }
@@ -51,7 +64,7 @@ body::before {
 
 a { color: var(--node); }
 
-.site-header { background: rgba(11,14,20,0.9); border-bottom: 1px solid var(--line); backdrop-filter: blur(6px); }
+.site-header { background: color-mix(in srgb, var(--bg) 90%, transparent); border-bottom: 1px solid var(--line); backdrop-filter: blur(6px); }
 
 .nav-wrap {
   max-width: 1100px; margin: 0 auto;
@@ -87,6 +100,20 @@ nav.main-nav a.nav-logout {
   margin-left: 4px;
 }
 nav.main-nav a.nav-logout:hover { background: rgba(244,184,96,0.12); border-color: var(--node-3); color: var(--node-3); }
+
+nav.main-nav button.theme-toggle-btn {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-soft);
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  font-size: 14px;
+  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-left: 4px;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+nav.main-nav button.theme-toggle-btn:hover { border-color: var(--line); color: var(--text); }
 
 main {
   max-width: 1100px; margin: 0 auto;

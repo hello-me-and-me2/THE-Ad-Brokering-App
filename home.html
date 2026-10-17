@@ -30,6 +30,7 @@
       <a href="network.html">The Network</a>
       <a href="about.html">About</a>
       <a href="profile.html">Profile</a>
+      <button type="button" class="theme-toggle-btn" id="theme-toggle-btn"></button>
       <a href="index.html" class="nav-logout" id="logout-link">Log Out</a>
     </nav>
   </div>
@@ -137,6 +138,7 @@
   document.getElementById('logout-link').addEventListener('click', function () {
     localStorage.removeItem('tba_authed');
   });
+  tbaWireThemeToggle('theme-toggle-btn', 'light');
 
   var myUsername = localStorage.getItem('tba_username');
   var myRole = localStorage.getItem('tba_role') || 'business';

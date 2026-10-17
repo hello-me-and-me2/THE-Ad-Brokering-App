@@ -15,6 +15,7 @@
 <body>
 
 <a class="admin-tab" href="admin-signin.html">ADMIN</a>
+<button type="button" class="theme-toggle-standalone" id="theme-toggle-btn"></button>
 
 <div class="landing-wrap">
   <div class="landing-grid">
@@ -130,6 +131,8 @@
 </footer>
 
 <script>
+  tbaWireThemeToggle('theme-toggle-btn', 'light');
+
   // Tab switching between Log In and Sign Up
   var tabButtons = document.querySelectorAll('.auth-tab');
   function showTab(name) {

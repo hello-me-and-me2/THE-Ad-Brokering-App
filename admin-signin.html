@@ -10,8 +10,11 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="assets/profile-picture.png">
 <link rel="stylesheet" href="assets/admin.css">
+<script src="assets/users-data.js"></script>
 </head>
 <body>
+
+<button type="button" class="theme-toggle-standalone" id="theme-toggle-btn"></button>
 
 <div class="admin-signin-wrap">
   <div class="admin-signin-card">
@@ -39,6 +42,8 @@
 </div>
 
 <script>
+  tbaWireThemeToggle('theme-toggle-btn', 'dark');
+
   // Demo-only check — see project notes: this runs entirely in the
   // browser, so it is not real authentication.
   var ADMIN_EMAIL = "andre.jacob.anderson@gmail.com";

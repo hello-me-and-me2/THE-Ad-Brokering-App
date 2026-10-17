@@ -30,6 +30,7 @@
       <a href="network.html" class="active">The Network</a>
       <a href="about.html">About</a>
       <a href="profile.html">Profile</a>
+      <button type="button" class="theme-toggle-btn" id="theme-toggle-btn"></button>
       <a href="index.html" class="nav-logout" id="logout-link">Log Out</a>
     </nav>
   </div>
@@ -122,6 +123,7 @@
   document.getElementById('logout-link').addEventListener('click', function () {
     localStorage.removeItem('tba_authed');
   });
+  tbaWireThemeToggle('theme-toggle-btn', 'dark');
 
   function initials(name) {
     return name.replace('@', '').slice(0, 2).toUpperCase();

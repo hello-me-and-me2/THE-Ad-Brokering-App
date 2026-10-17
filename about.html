@@ -10,6 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Serif+4:wght@400;500&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="assets/profile-picture.png">
 <link rel="stylesheet" href="assets/about.css">
+<script src="assets/users-data.js"></script>
 </head>
 <body>
 
@@ -29,6 +30,7 @@
       <a href="network.html">The Network</a>
       <a href="about.html" class="active">About</a>
       <a href="profile.html">Profile</a>
+      <button type="button" class="theme-toggle-btn" id="theme-toggle-btn"></button>
       <a href="index.html" class="nav-logout" id="logout-link">Log Out</a>
     </nav>
   </div>
@@ -117,6 +119,7 @@
   document.getElementById('logout-link').addEventListener('click', function () {
     localStorage.removeItem('tba_authed');
   });
+  tbaWireThemeToggle('theme-toggle-btn', 'light');
 </script>
 </body>
 </html>

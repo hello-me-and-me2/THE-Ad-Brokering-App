@@ -10,6 +10,20 @@
   --olive: #5c6e4f;
   --gold: #d9a441;
   --border: #ecdfc9;
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --cream: #1d170f;
+  --paper: #272019;
+  --ink: #f2e6d0;
+  --ink-soft: #b4a383;
+  --terracotta: #e8824a;
+  --terracotta-dark: #f3a06a;
+  --olive: #93ab7e;
+  --gold: #e6b955;
+  --border: #3c3222;
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -106,7 +120,7 @@ nav.main-nav a {
   transition: background 0.15s ease, color 0.15s ease;
 }
 
-nav.main-nav a:hover { background: #f3e6d3; color: var(--terracotta-dark); }
+nav.main-nav a:hover { background: var(--border); color: var(--terracotta-dark); }
 nav.main-nav a.active { background: var(--terracotta); color: #fff; }
 
 nav.main-nav a.nav-logout {
@@ -115,6 +129,20 @@ nav.main-nav a.nav-logout {
   margin-left: 4px;
 }
 nav.main-nav a.nav-logout:hover { background: var(--terracotta); color: #fff; }
+
+nav.main-nav button.theme-toggle-btn {
+  border: 1.5px solid var(--border);
+  background: transparent;
+  color: var(--ink-soft);
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  font-size: 15px;
+  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-left: 4px;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+nav.main-nav button.theme-toggle-btn:hover { border-color: var(--terracotta); background: var(--border); }
 
 main { max-width: 1120px; margin: 0 auto; padding: 20px 24px 90px; }
 
@@ -325,7 +353,7 @@ img.user-avatar { object-fit: cover; }
 }
 
 .role-tag.business { color: var(--olive); background: #eef1e6; }
-.role-tag.influencer { color: var(--terracotta-dark); background: #f3e6d3; }
+.role-tag.influencer { color: var(--terracotta-dark); background: var(--border); }
 
 .user-tagline { font-size: 13px; color: var(--ink-soft); margin: 2px 0 0; }
 

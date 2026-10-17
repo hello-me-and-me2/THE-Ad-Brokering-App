@@ -10,6 +10,20 @@
   --olive: #5c6e4f;
   --gold: #d9a441;
   --border: #ecdfc9;
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --cream: #1d170f;
+  --paper: #272019;
+  --ink: #f2e6d0;
+  --ink-soft: #b4a383;
+  --terracotta: #e8824a;
+  --terracotta-dark: #f3a06a;
+  --olive: #93ab7e;
+  --gold: #e6b955;
+  --border: #3c3222;
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -157,7 +171,7 @@ label.field input {
   padding: 12px 14px;
   border-radius: 10px;
   border: 1.5px solid var(--border);
-  background: #fff;
+  background: var(--paper);
   font-family: inherit;
   font-size: 14.5px;
   color: var(--ink);
@@ -273,6 +287,26 @@ label.field input:focus {
 }
 
 .admin-tab:hover { color: var(--terracotta-dark); border-color: var(--terracotta); }
+
+.theme-toggle-standalone {
+  position: fixed;
+  top: 18px;
+  left: 20px;
+  z-index: 10;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--paper);
+  color: var(--ink-soft);
+  font-size: 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.theme-toggle-standalone:hover { color: var(--terracotta-dark); border-color: var(--terracotta); }
 
 footer {
   padding: 24px 24px 34px;
