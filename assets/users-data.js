@@ -1217,3 +1217,145 @@ function tbaWireNotificationBell(wrapId, btnId) {
   // bell click or page load.
   window.tbaRefreshNotificationBell = renderPanel;
 }
+
+// --- Admin notifications ---
+// A separate feed from the user-facing one above: this is less a
+// changelog of "what happened" and more an admin inbox of "what
+// needs a look" — pending verification applications (including the
+// seed demo queue, which is the actual admin review workload here,
+// not session backstory to filter out) and contracts that just
+// reached fully-signed. Tracked with its own read-state key so it
+// never interacts with the user-facing bell's read state.
+
+function tbaGetAdminReadNotificationIds() {
+  try {
+    return JSON.parse(localStorage.getItem('tba_admin_notifications_read') || '[]');
+  } catch (e) {
+    return [];
+  }
+}
+
+function tbaMarkAdminNotificationRead(id) {
+  var read = tbaGetAdminReadNotificationIds();
+  if (read.indexOf(id) === -1) {
+    read.push(id);
+    localStorage.setItem('tba_admin_notifications_read', JSON.stringify(read));
+  }
+}
+
+function tbaMarkAllAdminNotificationsRead() {
+  var ids = tbaGetAdminNotifications().map(function (n) { return n.id; });
+  localStorage.setItem('tba_admin_notifications_read', JSON.stringify(ids));
+}
+
+function tbaGetAdminNotifications() {
+  var notifications = [];
+
+  tbaGetPendingVerificationRequests().forEach(function (r) {
+    notifications.push({
+      id: 'adminverify-' + r.username,
+      icon: '🪪',
+      title: 'Verification',
+      text: 'New application from ' + r.name,
+      date: r.submittedAt,
+      link: 'admin-verifications.html'
+    });
+  });
+
+  tbaGetContracts()
+    .filter(function (c) { return c.status === 'signed'; })
+    .forEach(function (c) {
+      var sigDates = [c.signatures.me].concat(c.participants.map(function (p) { return c.signatures[p]; }))
+        .filter(Boolean)
+        .map(function (s) { return s.signedAt; });
+      var signedAt = sigDates.length ? sigDates.sort().slice(-1)[0] : c.createdAt;
+      notifications.push({
+        id: 'adminsigned-' + c.id,
+        icon: '📄',
+        title: 'Contract signed',
+        text: '"' + c.name + '" is now fully executed',
+        date: signedAt,
+        link: 'admin-contracts.html?contract=' + encodeURIComponent(c.id)
+      });
+    });
+
+  notifications.sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
+
+  var readIds = tbaGetAdminReadNotificationIds();
+  notifications.forEach(function (n) { n.read = readIds.indexOf(n.id) !== -1; });
+
+  return notifications;
+}
+
+function tbaWireAdminNotificationBell(wrapId, btnId) {
+  var wrap = document.getElementById(wrapId);
+  var btn = document.getElementById(btnId);
+  if (!wrap || !btn) return;
+
+  var badge = document.createElement('span');
+  badge.className = 'notif-badge';
+  badge.style.display = 'none';
+  btn.appendChild(badge);
+
+  var panel = document.createElement('div');
+  panel.className = 'notif-panel';
+  panel.hidden = true;
+  wrap.appendChild(panel);
+
+  function renderPanel() {
+    var notifications = tbaGetAdminNotifications();
+    var unread = notifications.filter(function (n) { return !n.read; }).length;
+
+    badge.style.display = unread === 0 ? 'none' : 'flex';
+    badge.textContent = unread > 9 ? '9+' : String(unread);
+
+    var listHtml = notifications.length === 0
+      ? '<p class="notif-empty">Nothing needs your attention.</p>'
+      : notifications.slice(0, 20).map(function (n) {
+          return (
+            '<a class="notif-item' + (n.read ? '' : ' unread') + '" href="' + n.link + '" data-id="' + n.id + '">' +
+            '<span class="notif-icon">' + n.icon + '</span>' +
+            '<span class="notif-body">' +
+            '<span class="notif-title">' + tbaEscapeHtmlForNotif(n.title) + '</span>' +
+            '<span class="notif-text">' + tbaEscapeHtmlForNotif(n.text) + '</span>' +
+            '<span class="notif-time">' + tbaFormatRelativeTime(n.date) + '</span>' +
+            '</span>' +
+            '</a>'
+          );
+        }).join('');
+
+    panel.innerHTML =
+      '<div class="notif-panel-head">' +
+      '<span>Notifications</span>' +
+      (unread > 0 ? '<button type="button" class="notif-mark-all" id="admin-notif-mark-all">Mark all read</button>' : '') +
+      '</div>' +
+      '<div class="notif-panel-list">' + listHtml + '</div>';
+
+    var markAllBtn = document.getElementById('admin-notif-mark-all');
+    if (markAllBtn) {
+      markAllBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        tbaMarkAllAdminNotificationsRead();
+        renderPanel();
+      });
+    }
+
+    panel.querySelectorAll('.notif-item').forEach(function (item) {
+      item.addEventListener('click', function () {
+        tbaMarkAdminNotificationRead(item.getAttribute('data-id'));
+      });
+    });
+  }
+
+  btn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    panel.hidden = !panel.hidden;
+    if (!panel.hidden) renderPanel();
+  });
+
+  document.addEventListener('click', function (e) {
+    if (!panel.hidden && !wrap.contains(e.target)) panel.hidden = true;
+  });
+
+  renderPanel();
+}

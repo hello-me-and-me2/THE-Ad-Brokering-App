@@ -25,6 +25,9 @@
     <a href="admin-verifications.html">Verifications</a>
     <a href="admin-contracts.html">Contracts</a>
     <a href="admin.html#reports">Reports</a>
+    <div class="notif-wrap" id="notif-wrap">
+      <button type="button" class="notif-bell-btn" id="notif-bell-btn" aria-label="Notifications">🔔</button>
+    </div>
     <button type="button" class="theme-toggle-btn" id="theme-toggle-btn"></button>
     <a class="signout" href="index.html" id="signout-link">Sign Out</a>
   </nav>
@@ -40,6 +43,7 @@
 
 <script>
   tbaWireThemeToggle('theme-toggle-btn', 'dark');
+  tbaWireAdminNotificationBell('notif-wrap', 'notif-bell-btn');
   document.getElementById('signout-link').addEventListener('click', function () {
     localStorage.removeItem('tba_admin_authed');
     localStorage.removeItem('tba_authed');
