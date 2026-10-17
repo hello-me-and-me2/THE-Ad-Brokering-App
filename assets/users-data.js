@@ -573,9 +573,23 @@ function tbaPickAutoReply() {
 // save (yours or a simulated revision from the other side) appends a
 // new version rather than overwriting the last one.
 
+// Contracts created before multi-party support shipped are stored with
+// a single `username` field and a `{ me, them }` signature pair. Every
+// reader expects `participants: string[]` and a signature keyed by
+// username, so old contracts are upgraded to that shape on read —
+// this keeps contracts saved before the update from crashing the page.
+function tbaNormalizeContract(c) {
+  if (c.participants) return c;
+  var counterpart = c.username;
+  var signatures = { me: c.signatures ? c.signatures.me : null };
+  signatures[counterpart] = c.signatures ? c.signatures.them : null;
+  return Object.assign({}, c, { participants: [counterpart], signatures: signatures });
+}
+
 function tbaGetContracts() {
   try {
-    return JSON.parse(localStorage.getItem('tba_contracts') || '[]');
+    var list = JSON.parse(localStorage.getItem('tba_contracts') || '[]');
+    return list.map(tbaNormalizeContract);
   } catch (e) {
     return [];
   }
