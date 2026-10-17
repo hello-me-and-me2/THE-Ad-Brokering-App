@@ -5,6 +5,7 @@
 <script>if(!localStorage.getItem("tba_admin_authed")){location.replace("admin-signin.html");}if("scrollRestoration" in history){history.scrollRestoration="manual";}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Contracts — Admin — THE INTROductory</title>
+<meta name="description" content="Browse every contract created on THE INTROductory.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
@@ -58,7 +59,7 @@
     <div class="panel">
       <h2>All Contracts <span id="contract-count"></span></h2>
       <div id="admin-contracts-list"></div>
-      <p class="admin-empty" id="contracts-empty" hidden>No contracts have been created on this device yet.</p>
+      <p class="admin-empty" id="contracts-empty" hidden>📄 No contracts have been created on this device yet.</p>
     </div>
   </div>
 
@@ -214,7 +215,8 @@
       '</div>' +
       dueHtml +
       '<div class="version-chips">' + versionChips + '</div>' +
-      '<div class="panel admin-contract-text">' + escapeHtml(latest.text) + '</div>' +
+      '<div class="panel admin-contract-text" id="admin-contract-text-block">' + escapeHtml(latest.text) + '</div>' +
+      '<div class="admin-detail-actions"><button type="button" class="btn-view-contract" id="print-contract-btn">Print / Save as PDF</button></div>' +
       '<div class="panel">' +
       '<h2>Signatures</h2>' +
       sigRows.join('') +
@@ -226,6 +228,8 @@
       detailView.hidden = true;
       detailView.innerHTML = '';
     });
+
+    document.getElementById('print-contract-btn').addEventListener('click', function () { window.print(); });
   }
 
   searchInput.addEventListener('input', renderList);

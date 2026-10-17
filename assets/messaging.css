@@ -29,6 +29,8 @@
 }
 
 * { box-sizing: border-box; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
 html, body { margin: 0; padding: 0; }
 
 body {
@@ -256,7 +258,9 @@ main { max-width: 1200px; margin: 0 auto; padding: 28px 24px 70px; }
   display: flex;
   flex-direction: column;
   gap: 12px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
 }
+.user-card:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0,0,0,0.25); border-color: var(--accent); }
 
 .user-avatar {
   width: 40px;
@@ -547,9 +551,9 @@ footer { padding: 28px 24px; text-align: center; color: var(--text-soft); font-s
 
 .contract-card {
   background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; cursor: pointer;
-  display: flex; flex-direction: column; gap: 6px; transition: border-color 0.15s ease;
+  display: flex; flex-direction: column; gap: 6px; transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
-.contract-card:hover { border-color: var(--accent); }
+.contract-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0,0,0,0.25); }
 .contract-card h3 { margin: 2px 0 0; font-size: 14.5px; }
 .contract-card-counterpart { margin: 0; font-size: 12.5px; color: var(--text-soft); }
 .contract-card-meta { margin: 0; font-size: 11.5px; color: var(--text-soft); }
@@ -765,4 +769,22 @@ footer { padding: 28px 24px; text-align: center; color: var(--text-soft); font-s
   .signature-grid { grid-template-columns: 1fr; }
   .contract-actions-row { flex-direction: column; align-items: stretch; }
   .btn-contract-action { text-align: center; }
+}
+
+@media print {
+  body * { visibility: hidden; }
+  #contracts-view, #contracts-view * { visibility: visible; }
+  #contracts-view { position: absolute; left: 0; top: 0; width: 100%; padding: 0; }
+  #contracts-view .contracts-back,
+  #contracts-view .contract-actions-row,
+  #contracts-view .version-chips,
+  #contracts-view .sig-check,
+  #contracts-view input,
+  #contracts-view .btn-sign { display: none !important; }
+  .contract-text-block { border: none; color: #000; background: #fff; font-size: 12px; }
+  .contract-viewer-head, .signature-section h3 { color: #000; }
+  .signature-block { border: 1px solid #999; background: #fff; }
+  .signature-block.pending { opacity: 1; }
+  .signature-script { color: #000; }
+  .signature-meta { color: #333; }
 }

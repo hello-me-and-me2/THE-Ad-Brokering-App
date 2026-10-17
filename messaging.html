@@ -5,6 +5,7 @@
 <script>if(!localStorage.getItem("tba_authed")){location.replace("index.html");}if("scrollRestoration" in history){history.scrollRestoration="manual";}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Messaging &amp; Negotiation — THE INTROductory</title>
+<meta name="description" content="Message, negotiate, and sign contracts with brands and influencers on THE INTROductory.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
@@ -121,6 +122,7 @@
 
 <footer>
   &copy; 2026 THE INTROductory. Built with care by Andre Anderson &amp; team.
+  <span style="margin-left:10px;"><a href="terms.html" style="color:inherit;">Terms</a> &middot; <a href="privacy.html" style="color:inherit;">Privacy</a></span>
 </footer>
 
 
@@ -406,7 +408,7 @@
       '</div>';
 
     if (contracts.length === 0) {
-      html += '<p class="contracts-empty">You haven\'t created any contracts yet. Start one from a conversation above.</p>';
+      html += '<p class="contracts-empty">📄 No contracts yet — once a deal is ready, start one from a conversation above.</p>';
     } else {
       html += '<div class="contracts-grid">' + contracts.map(function (c) {
         var latest = c.versions[c.versions.length - 1];
@@ -560,6 +562,7 @@
         };
         tbaCreateContract(contract);
         renderContractViewer(contract.id);
+        tbaShowToast('Contract saved', 'success');
       } else {
         var existing = tbaGetContract(opts.contractId);
         var versions = existing.versions.concat([{ author: 'me', text: text, createdAt: new Date().toISOString() }]);
@@ -570,6 +573,7 @@
         renderThreadList();
         simulateContractReaction(opts.contractId, counterpartUsername);
         renderContractViewer(opts.contractId);
+        tbaShowToast('Revision sent', 'success');
       }
     });
   }
@@ -648,6 +652,7 @@
 
       renderContractViewer(contract.id);
       simulateCounterpartSignatures(contract.id);
+      tbaShowToast('You signed the contract', 'success');
     });
   }
 
@@ -710,6 +715,7 @@
       simulateContractReaction(id, contract.participants[0]);
     }
     renderContractViewer(id);
+    tbaShowToast('Contract sent', 'success');
   }
 
   // Stands in for the other side reviewing a contract you sent or
@@ -774,6 +780,7 @@
       }
     }
     actionsHtml += '<button type="button" class="btn-contract-action btn-download" id="download-contract-btn">Download</button>';
+    actionsHtml += '<button type="button" class="btn-contract-action btn-download" id="print-contract-btn">Print / Save as PDF</button>';
 
     var dueDate = tbaGetContractDueDate(contract);
     var dueHtml = '';
@@ -815,6 +822,9 @@
 
     var downloadBtn = document.getElementById('download-contract-btn');
     if (downloadBtn) downloadBtn.addEventListener('click', function () { downloadContract(contract); });
+
+    var printBtn = document.getElementById('print-contract-btn');
+    if (printBtn) printBtn.addEventListener('click', function () { window.print(); });
 
     var sendBtn = document.getElementById('send-contract-btn');
     if (sendBtn) sendBtn.addEventListener('click', function () { sendContract(contract.id); });
@@ -928,6 +938,7 @@
           btn.classList.add('sent');
           btn.disabled = true;
           renderRequestsSent();
+          tbaShowToast('Request sent', 'success');
         });
         card.appendChild(btn);
       }

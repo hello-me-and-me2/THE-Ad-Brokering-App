@@ -25,6 +25,8 @@
 }
 
 * { box-sizing: border-box; }
+:focus-visible { outline: 2px solid var(--node); outline-offset: 2px; border-radius: 4px; }
+
 html, body { margin: 0; padding: 0; }
 
 body {
@@ -341,7 +343,9 @@ main {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
 }
+.net-card:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(0,0,0,0.3); border-color: var(--node); }
 
 .net-avatar {
   width: 42px;

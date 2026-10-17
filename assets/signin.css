@@ -27,6 +27,8 @@
 }
 
 * { box-sizing: border-box; }
+:focus-visible { outline: 2px solid var(--terracotta); outline-offset: 2px; border-radius: 4px; }
+
 html, body { margin: 0; padding: 0; }
 
 body {
@@ -330,3 +332,34 @@ footer {
   .signin-card { padding: 28px 22px 26px; }
   .auth-tabs { gap: 18px; }
 }
+
+.notfound-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+}
+
+.notfound-card {
+  width: 100%;
+  max-width: 440px;
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 26px;
+  padding: 44px 36px;
+  box-shadow: 0 24px 50px rgba(46,36,23,0.1);
+  text-align: center;
+}
+
+.notfound-logo { width: 64px; height: 64px; border-radius: 14px; margin-bottom: 18px; }
+.notfound-code { font-family: "Fraunces", serif; font-size: 52px; font-weight: 700; color: var(--terracotta); line-height: 1; margin-bottom: 10px; }
+.notfound-card h1 { font-size: 22px; margin: 0 0 10px; }
+.notfound-sub { color: var(--ink-soft); font-size: 14.5px; line-height: 1.6; margin: 0 0 26px; }
+
+.notfound-actions { display: flex; flex-direction: column; gap: 14px; align-items: center; }
+.notfound-btn { display: inline-block; text-decoration: none; width: 100%; }
+.notfound-link { color: var(--ink-soft); font-size: 13.5px; font-weight: 600; text-decoration: none; }
+.notfound-link:hover { color: var(--terracotta-dark); }
+
+.notfound-footer { text-align: center; padding: 24px; color: var(--ink-soft); font-size: 12.5px; }

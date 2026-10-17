@@ -1359,3 +1359,49 @@ function tbaWireAdminNotificationBell(wrapId, btnId) {
 
   renderPanel();
 }
+
+// --- Toasts ---
+// A small, floating confirmation for actions that already change the
+// page (saved a profile, sent a contract, signed, etc.) — the page's
+// own state already reflects the change, so this is just a moment of
+// "yes, that worked" feedback. Styles are injected once, directly,
+// rather than added to all eight page stylesheets, since a toast is a
+// floating overlay rather than themed page content — one dark pill
+// reads fine over any page, light or dark.
+function tbaEnsureToastStyles() {
+  if (document.getElementById('tba-toast-styles')) return;
+  var style = document.createElement('style');
+  style.id = 'tba-toast-styles';
+  style.textContent =
+    '.tba-toast-container { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; }' +
+    '.tba-toast { pointer-events: auto; background: rgba(22,22,28,0.95); color: #fff; font-family: "Inter", "Helvetica Neue", Arial, sans-serif; font-size: 13.5px; font-weight: 600; padding: 12px 22px; border-radius: 999px; box-shadow: 0 12px 32px rgba(0,0,0,0.35); opacity: 0; transform: translateY(14px); transition: opacity 0.25s ease, transform 0.25s ease; display: flex; align-items: center; gap: 9px; max-width: min(420px, 90vw); border-left: 3px solid #3ea6ff; }' +
+    '.tba-toast.show { opacity: 1; transform: translateY(0); }' +
+    '.tba-toast-success { border-left-color: #34c98a; }' +
+    '.tba-toast-error { border-left-color: #f16565; }' +
+    '.tba-toast-icon { font-size: 14px; flex-shrink: 0; }';
+  document.head.appendChild(style);
+}
+
+function tbaShowToast(message, type) {
+  tbaEnsureToastStyles();
+
+  var container = document.getElementById('tba-toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'tba-toast-container';
+    container.className = 'tba-toast-container';
+    document.body.appendChild(container);
+  }
+
+  var icon = type === 'success' ? '✅' : type === 'error' ? '⚠️' : '💬';
+  var toast = document.createElement('div');
+  toast.className = 'tba-toast' + (type ? ' tba-toast-' + type : '');
+  toast.innerHTML = '<span class="tba-toast-icon">' + icon + '</span><span>' + tbaEscapeHtmlForNotif(message) + '</span>';
+  container.appendChild(toast);
+
+  requestAnimationFrame(function () { toast.classList.add('show'); });
+  setTimeout(function () {
+    toast.classList.remove('show');
+    setTimeout(function () { toast.remove(); }, 300);
+  }, 3200);
+}

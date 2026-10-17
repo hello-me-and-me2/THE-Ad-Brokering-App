@@ -5,6 +5,7 @@
 <script>if(!localStorage.getItem("tba_authed")){location.replace("index.html");}if("scrollRestoration" in history){history.scrollRestoration="manual";}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Profile — THE INTROductory</title>
+<meta name="description" content="View and edit your THE INTROductory profile, network, and account activity.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
@@ -45,6 +46,7 @@
 
 <footer>
   &copy; 2026 THE INTROductory. Built with care by Andre Anderson &amp; team.
+  <span style="margin-left:10px;"><a href="terms.html" style="color:inherit;">Terms</a> &middot; <a href="privacy.html" style="color:inherit;">Privacy</a></span>
 </footer>
 
 
@@ -125,7 +127,7 @@
     var isYou = !!user.isYou;
 
     var chips = members.length === 0
-      ? '<p class="no-links">' + (isYou ? 'Your network is empty. Close a deal or connect with someone in ' : 'This account hasn\'t connected with anyone in ') +
+      ? '<p class="no-links">🌱 ' + (isYou ? 'Your network is empty. Close a deal or connect with someone in ' : 'This account hasn\'t connected with anyone in ') +
         '<a href="network.html">The Network</a> yet.</p>'
       : '<div class="network-chip-list">' + members.map(function (m) {
           var href = 'profile.html?u=' + encodeURIComponent(m.username);
@@ -151,7 +153,7 @@
     var activities = tbaGetActivityFor(user.username);
 
     var body = activities.length === 0
-      ? '<p class="no-links">Nothing to show yet.</p>'
+      ? '<p class="no-links">✨ Nothing to show yet — activity will show up here as deals, contracts, and connections happen.</p>'
       : '<ul class="activity-feed-list">' + activities.map(function (a) {
           return '<li class="activity-feed-item">' +
             '<span class="activity-feed-icon">' + a.icon + '</span>' +
@@ -266,6 +268,7 @@
           if (!reason) return;
           tbaSubmitVerificationApplication(reason);
           render();
+          tbaShowToast('Application submitted', 'success');
         });
       }
 
@@ -373,6 +376,7 @@
         stopCamera();
         document.getElementById('save-confirm').hidden = false;
         render();
+        tbaShowToast('Profile saved', 'success');
       });
     } else if (!alreadySent) {
       document.getElementById('request-btn').addEventListener('click', function () {

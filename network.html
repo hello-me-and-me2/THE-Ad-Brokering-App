@@ -5,6 +5,7 @@
 <script>if(!localStorage.getItem("tba_authed")){location.replace("index.html");}if("scrollRestoration" in history){history.scrollRestoration="manual";}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Network — THE INTROductory</title>
+<meta name="description" content="Browse THE INTROductory's directory of brands and influencers and build your network.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -63,7 +64,7 @@
     <div class="diagram-wrap">
       <div class="diagram-canvas" id="network-diagram"></div>
     </div>
-    <p class="network-empty" id="my-network-empty" hidden>Your network is empty. Close a deal or connect with someone below to get started.</p>
+    <p class="network-empty" id="my-network-empty" hidden>🌱 Your network is empty — close a deal or connect with someone below to get started.</p>
 
     <div class="share-network-row">
       <button type="button" class="btn-share-net" id="share-network-btn">Share My Network</button>
@@ -119,6 +120,7 @@
 
 <footer>
   &copy; 2026 THE INTROductory. Built with care by Andre Anderson &amp; team.
+  <span style="margin-left:10px;"><a href="terms.html" style="color:inherit;">Terms</a> &middot; <a href="privacy.html" style="color:inherit;">Privacy</a></span>
 </footer>
 
 
@@ -180,12 +182,14 @@
       btn.addEventListener('click', function () {
         tbaDecideNetworkRequest(btn.getAttribute('data-username'), 'accepted');
         renderAll();
+        tbaShowToast('Added to your network', 'success');
       });
     });
     grid.querySelectorAll('.btn-decline-net').forEach(function (btn) {
       btn.addEventListener('click', function () {
         tbaDecideNetworkRequest(btn.getAttribute('data-username'), 'declined');
         renderAll();
+        tbaShowToast('Request declined');
       });
     });
   }
@@ -282,6 +286,7 @@
       btn.addEventListener('click', function () {
         tbaSendNetworkRequest(btn.getAttribute('data-username'));
         renderAll();
+        tbaShowToast('Added to your network', 'success');
       });
     });
     grid.querySelectorAll('.btn-remove-net').forEach(function (btn) {

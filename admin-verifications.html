@@ -5,6 +5,7 @@
 <script>if(!localStorage.getItem("tba_admin_authed")){location.replace("admin-signin.html");}if("scrollRestoration" in history){history.scrollRestoration="manual";}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Verification Requests — Admin — THE INTROductory</title>
+<meta name="description" content="Review pending verification applications on THE INTROductory.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
@@ -87,7 +88,7 @@
     pendingCount.textContent = '(' + requests.length + ')';
 
     if (requests.length === 0) {
-      pendingList.innerHTML = '<div class="admin-empty">No pending verification applications.</div>';
+      pendingList.innerHTML = '<div class="admin-empty">✅ All caught up — no pending verification applications.</div>';
       return;
     }
 
@@ -121,9 +122,11 @@
       btn.addEventListener('click', function () {
         var card = btn.closest('.verify-request-card');
         var username = card.getAttribute('data-username');
-        tbaDecideVerification(username, btn.getAttribute('data-action'));
+        var decision = btn.getAttribute('data-action');
+        tbaDecideVerification(username, decision);
         renderPending();
         renderLog();
+        tbaShowToast(decision === 'approved' ? 'Application approved' : 'Application denied', decision === 'approved' ? 'success' : null);
       });
     });
   }

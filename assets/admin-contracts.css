@@ -12,9 +12,11 @@
 
 .admin-contract-card {
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
-  padding: 16px 0; border-top: 1px solid var(--line);
+  padding: 16px; margin: 0 -16px; border-top: 1px solid var(--line); border-radius: 10px;
+  transition: background 0.15s ease;
 }
-.admin-contract-card:first-child { border-top: none; padding-top: 0; }
+.admin-contract-card:first-child { border-top: none; }
+.admin-contract-card:hover { background: var(--panel-2); }
 
 .admin-contract-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
 .admin-contract-name { font-weight: 700; font-size: 14.5px; color: var(--text); }
@@ -69,8 +71,23 @@
 .admin-sig-status.signed { color: var(--money); }
 .admin-sig-status.pending { color: var(--text-soft); }
 
+.admin-detail-actions { margin-bottom: 20px; }
+
 @media (max-width: 720px) {
   .contracts-filter-row { flex-direction: column; }
   .admin-contract-card { flex-direction: column; align-items: stretch; }
   .btn-view-contract { width: 100%; text-align: center; }
+}
+
+@media print {
+  body * { visibility: hidden; }
+  #detail-view, #detail-view * { visibility: visible; }
+  #detail-view { position: absolute; left: 0; top: 0; width: 100%; padding: 0; }
+  #detail-view .admin-back-link,
+  #detail-view .version-chips,
+  #detail-view .admin-detail-actions { display: none !important; }
+  .admin-contract-text { border: none; color: #000; background: #fff; font-size: 12px; max-height: none; }
+  .admin-page-head h1, .admin-page-head p { color: #000; }
+  .admin-sig-row { border-color: #ccc; }
+  .admin-sig-label { color: #000; }
 }
