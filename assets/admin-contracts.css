@@ -1,0 +1,76 @@
+/* ADMIN — CONTRACTS — reuses the admin palette (see admin.css :root) */
+
+.contracts-filter-row { display: flex; gap: 12px; margin-bottom: 20px; }
+.contracts-filter-row input,
+.contracts-filter-row select {
+  background: var(--panel-2); border: 1.5px solid var(--line); color: var(--text);
+  border-radius: 10px; padding: 10px 14px; font-size: 13.5px; font-family: inherit;
+}
+.contracts-filter-row input { flex: 1; }
+.contracts-filter-row input:focus,
+.contracts-filter-row select:focus { outline: none; border-color: var(--accent); }
+
+.admin-contract-card {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 16px 0; border-top: 1px solid var(--line);
+}
+.admin-contract-card:first-child { border-top: none; padding-top: 0; }
+
+.admin-contract-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+.admin-contract-name { font-weight: 700; font-size: 14.5px; color: var(--text); }
+.admin-contract-meta { font-size: 12.5px; color: var(--text-soft); margin-top: 2px; }
+
+.btn-view-contract {
+  background: var(--panel-2); border: 1px solid var(--line); color: var(--text);
+  border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer; flex-shrink: 0;
+}
+.btn-view-contract:hover { border-color: var(--accent); }
+
+.contract-status {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+  padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line); color: var(--text-soft);
+}
+.contract-status.status-draft { color: var(--text-soft); border-color: var(--line); }
+.contract-status.status-sent { color: var(--accent); border-color: rgba(139,125,251,0.4); }
+.contract-status.status-revised { color: var(--warn); border-color: rgba(224,169,65,0.4); }
+.contract-status.status-signed { color: var(--money); border-color: rgba(52,201,138,0.4); }
+
+.multi-badge {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px;
+  padding: 3px 9px; border-radius: 999px; background: rgba(139,125,251,0.15); color: var(--accent);
+  border: 1px solid rgba(139,125,251,0.4);
+}
+
+.contract-due {
+  font-size: 13px; font-weight: 600; color: var(--text-soft); background: var(--panel);
+  border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; margin: 0 0 20px;
+}
+.contract-due.overdue { color: #e05a5a; border-color: rgba(224,90,90,0.4); background: rgba(224,90,90,0.08); }
+
+.version-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.version-chip {
+  font-size: 12px; font-weight: 600; color: var(--text-soft); background: var(--panel-2);
+  border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px;
+}
+.version-chip.active { color: var(--accent); border-color: var(--accent); }
+
+.admin-contract-text {
+  font-family: "JetBrains Mono", monospace; font-size: 13px; line-height: 1.7; color: var(--text);
+  white-space: pre-wrap; max-height: 420px; overflow-y: auto; margin-bottom: 20px;
+}
+
+.admin-sig-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 0; border-top: 1px solid var(--line);
+}
+.admin-sig-row:first-child { border-top: none; padding-top: 0; }
+.admin-sig-label { font-weight: 700; font-size: 13.5px; color: var(--text); }
+.admin-sig-status { font-size: 12.5px; }
+.admin-sig-status.signed { color: var(--money); }
+.admin-sig-status.pending { color: var(--text-soft); }
+
+@media (max-width: 720px) {
+  .contracts-filter-row { flex-direction: column; }
+  .admin-contract-card { flex-direction: column; align-items: stretch; }
+  .btn-view-contract { width: 100%; text-align: center; }
+}

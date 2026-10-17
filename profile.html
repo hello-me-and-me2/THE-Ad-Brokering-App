@@ -141,6 +141,28 @@
     );
   }
 
+  function renderActivitySection(user) {
+    var activities = tbaGetActivityFor(user.username);
+
+    var body = activities.length === 0
+      ? '<p class="no-links">Nothing to show yet.</p>'
+      : '<ul class="activity-feed-list">' + activities.map(function (a) {
+          return '<li class="activity-feed-item">' +
+            '<span class="activity-feed-icon">' + a.icon + '</span>' +
+            '<span class="activity-feed-text">' + escapeHtml(a.text) +
+            (a.date ? '<span class="activity-feed-date">' + tbaFormatDateLong(a.date) + '</span>' : '') +
+            '</span>' +
+            '</li>';
+        }).join('') + '</ul>';
+
+    return (
+      '<div class="profile-activity-section">' +
+      '<h3>Recent Activity</h3>' +
+      body +
+      '</div>'
+    );
+  }
+
   function renderEditForm(user) {
     var rows = [];
     for (var i = 0; i < 7; i++) {
@@ -224,6 +246,7 @@
             : '<button type="button" class="request-btn" id="request-btn">Request to Message</button>')) +
       '</div>' +
       renderNetworkSection(user) +
+      renderActivitySection(user) +
       (isYou ? renderVerifySection(user, verifyStatus) : '') +
       (isYou ? renderEditForm(user) : '') +
       '</div>';

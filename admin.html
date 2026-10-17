@@ -23,6 +23,7 @@
     <a href="admin.html" class="active">Overview</a>
     <a href="admin-users.html">Users</a>
     <a href="admin-verifications.html">Verifications</a>
+    <a href="admin-contracts.html">Contracts</a>
     <a href="#reports">Reports</a>
     <a class="signout" href="index.html" id="signout-link">Sign Out</a>
   </nav>
@@ -65,6 +66,11 @@
       <div class="label">Pending Verifications</div>
       <div class="value" id="pending-verify-stat">0</div>
       <div class="delta down" id="pending-verify-delta">Needs review</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Total Contracts</div>
+      <div class="value" id="contracts-stat">0</div>
+      <div class="delta up" id="contracts-delta">0 signed</div>
     </div>
   </div>
 
@@ -174,6 +180,11 @@
     document.getElementById('pending-verify-delta').classList.remove('down');
     document.getElementById('pending-verify-delta').classList.add('up');
   }
+
+  var allContracts = tbaGetContracts();
+  var signedContracts = allContracts.filter(function (c) { return c.status === 'signed'; }).length;
+  document.getElementById('contracts-stat').textContent = allContracts.length;
+  document.getElementById('contracts-delta').textContent = signedContracts + ' signed';
 </script>
 
 </body>

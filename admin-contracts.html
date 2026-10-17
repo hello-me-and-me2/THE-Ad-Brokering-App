@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script>if(!localStorage.getItem("tba_admin_authed")){location.replace("admin-signin.html");}if("scrollRestoration" in history){history.scrollRestoration="manual";}</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contracts — Admin — THE INTROductory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="assets/profile-picture.png">
+<link rel="stylesheet" href="assets/admin.css">
+<link rel="stylesheet" href="assets/admin-contracts.css">
+<script src="assets/users-data.js"></script>
+</head>
+<body>
+
+<header class="admin-header">
+  <a class="brand" href="admin.html">
+    <img src="assets/admin-logo.png" alt="THE INTROductory — Admin" class="brand-mark-img">
+    <span class="badge">ADMIN</span>
+  </a>
+  <nav>
+    <a href="admin.html">Overview</a>
+    <a href="admin-users.html">Users</a>
+    <a href="admin-verifications.html">Verifications</a>
+    <a href="admin-contracts.html" class="active">Contracts</a>
+    <a href="admin.html#reports">Reports</a>
+    <a class="signout" href="index.html" id="signout-link">Sign Out</a>
+  </nav>
+</header>
+
+<main class="admin-main">
+
+  <a class="admin-back-link" href="admin.html" id="back-link">&larr; Back to Overview</a>
+
+  <div class="admin-page-head">
+    <h1>Contracts</h1>
+    <p>Every contract created in this browser, across all users. This demo has no shared backend, so it shows only what was created on this device.</p>
+  </div>
+
+  <div id="list-view">
+    <div class="contracts-filter-row">
+      <input type="text" id="contract-search" placeholder="Search by contract name or party...">
+      <select id="status-filter">
+        <option value="">All statuses</option>
+        <option value="draft">Draft</option>
+        <option value="sent">Sent</option>
+        <option value="revised">Revised</option>
+        <option value="signed">Signed</option>
+      </select>
+    </div>
+
+    <div class="panel">
+      <h2>All Contracts <span id="contract-count"></span></h2>
+      <div id="admin-contracts-list"></div>
+      <p class="admin-empty" id="contracts-empty" hidden>No contracts have been created on this device yet.</p>
+    </div>
+  </div>
+
+  <div id="detail-view" hidden></div>
+
+</main>
+
+<script>
+  document.getElementById('signout-link').addEventListener('click', function () {
+    localStorage.removeItem('tba_admin_authed');
+    localStorage.removeItem('tba_authed');
+  });
+
+  function escapeHtml(str) {
+    return String(str || '').replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function participantNames(contract) {
+    return contract.participants.map(function (p) {
+      var u = tbaGetUserByUsername(p);
+      return u ? u.name : p;
+    }).join(', ');
+  }
+
+  // Every contract in this demo was created by whoever is logged into
+  // this browser — there's no multi-login backend, so "creator" is
+  // simply the local account, same as everywhere else in the app.
+  function creatorDisplayName() {
+    var myUsername = localStorage.getItem('tba_username');
+    var me = myUsername ? tbaGetUserByUsername(myUsername) : null;
+    return me ? me.name : (myUsername ? '@' + myUsername : 'You');
+  }
+
+  function statusLabel(status) {
+    return { draft: 'Draft', sent: 'Sent', revised: 'Revised', signed: 'Signed' }[status] || status;
+  }
+
+  var listView = document.getElementById('list-view');
+  var detailView = document.getElementById('detail-view');
+  var backLink = document.getElementById('back-link');
+  var listEl = document.getElementById('admin-contracts-list');
+  var emptyEl = document.getElementById('contracts-empty');
+  var countEl = document.getElementById('contract-count');
+  var searchInput = document.getElementById('contract-search');
+  var statusFilter = document.getElementById('status-filter');
+
+  function renderList() {
+    var contracts = tbaGetContracts();
+    var query = searchInput.value.trim().toLowerCase();
+    var status = statusFilter.value;
+
+    var filtered = contracts.filter(function (c) {
+      if (status && c.status !== status) return false;
+      if (!query) return true;
+      var haystack = (c.name + ' ' + creatorDisplayName() + ' ' + participantNames(c)).toLowerCase();
+      return haystack.indexOf(query) !== -1;
+    });
+
+    countEl.textContent = '(' + filtered.length + ' of ' + contracts.length + ')';
+    emptyEl.hidden = contracts.length !== 0;
+
+    if (filtered.length === 0) {
+      listEl.innerHTML = contracts.length === 0
+        ? ''
+        : '<p class="admin-empty">No contracts match your search.</p>';
+      return;
+    }
+
+    var creatorName = creatorDisplayName();
+
+    listEl.innerHTML = filtered.map(function (c) {
+      var latest = c.versions[c.versions.length - 1];
+      var multi = c.participants.length > 1;
+
+      return (
+        '<div class="admin-contract-card" data-id="' + escapeHtml(c.id) + '">' +
+        '<div class="admin-contract-info">' +
+        '<div class="admin-contract-head">' +
+        '<span class="contract-status status-' + c.status + '">' + statusLabel(c.status) + '</span>' +
+        (multi ? '<span class="multi-badge">Multi-Party</span>' : '') +
+        '<div class="admin-contract-name">' + escapeHtml(c.name) + '</div>' +
+        '</div>' +
+        '<div class="admin-contract-meta">Created by ' + escapeHtml(creatorName) + ' &middot; with ' + escapeHtml(participantNames(c)) + '</div>' +
+        '<div class="admin-contract-meta">v' + c.versions.length + ' &middot; updated ' + tbaFormatDateLong(latest.createdAt) + '</div>' +
+        '</div>' +
+        '<button type="button" class="btn-view-contract" data-id="' + escapeHtml(c.id) + '">View</button>' +
+        '</div>'
+      );
+    }).join('');
+
+    listEl.querySelectorAll('.btn-view-contract').forEach(function (btn) {
+      btn.addEventListener('click', function () { renderDetail(btn.getAttribute('data-id')); });
+    });
+  }
+
+  function renderDetail(id) {
+    var contract = tbaGetContract(id);
+    if (!contract) return;
+
+    listView.hidden = true;
+    backLink.style.display = 'none';
+    detailView.hidden = false;
+
+    var creatorName = creatorDisplayName();
+    var latest = contract.versions[contract.versions.length - 1];
+    var dueDate = tbaGetContractDueDate(contract);
+
+    var versionChips = contract.versions.map(function (v, i) {
+      var authorUser = tbaGetUserByUsername(v.author);
+      var authorName = v.author === 'me' ? creatorName : (authorUser ? authorUser.name : v.author || 'Unknown');
+      return '<span class="version-chip' + (i === contract.versions.length - 1 ? ' active' : '') + '">v' + (i + 1) + ' &middot; ' + escapeHtml(authorName) + '</span>';
+    }).join('');
+
+    var sigRows = [];
+    sigRows.push(sigRow('Creator (' + creatorName + ')', contract.signatures.me));
+    contract.participants.forEach(function (p) {
+      var u = tbaGetUserByUsername(p);
+      sigRows.push(sigRow(u ? u.name : p, contract.signatures[p]));
+    });
+
+    function sigRow(label, sig) {
+      return (
+        '<div class="admin-sig-row">' +
+        '<span class="admin-sig-label">' + escapeHtml(label) + '</span>' +
+        (sig
+          ? '<span class="admin-sig-status signed">Signed ' + tbaFormatDateLong(sig.signedAt) + ' &middot; ' + escapeHtml(sig.email || '') + '</span>'
+          : '<span class="admin-sig-status pending">Not yet signed</span>')
+        + '</div>'
+      );
+    }
+
+    var dueHtml = '';
+    if (dueDate) {
+      var daysLeft = Math.ceil((new Date(dueDate) - new Date()) / 86400000);
+      var overdue = daysLeft < 0;
+      dueHtml = '<p class="contract-due' + (overdue ? ' overdue' : '') + '">' +
+        '📅 Deliverable due ' + tbaFormatDateLong(dueDate) +
+        (overdue
+          ? ' — ' + Math.abs(daysLeft) + ' day' + (Math.abs(daysLeft) === 1 ? '' : 's') + ' overdue'
+          : ' — ' + daysLeft + ' day' + (daysLeft === 1 ? '' : 's') + ' left') +
+        '</p>';
+    }
+
+    detailView.innerHTML =
+      '<a class="admin-back-link" id="detail-back-link">&larr; Back to Contracts</a>' +
+      '<div class="admin-page-head">' +
+      '<h1>' + escapeHtml(contract.name) + '</h1>' +
+      '<p>Created by ' + escapeHtml(creatorName) + ' &middot; with ' + escapeHtml(participantNames(contract)) + ' &middot; <span class="contract-status status-' + contract.status + '">' + statusLabel(contract.status) + '</span></p>' +
+      '</div>' +
+      dueHtml +
+      '<div class="version-chips">' + versionChips + '</div>' +
+      '<div class="panel admin-contract-text">' + escapeHtml(latest.text) + '</div>' +
+      '<div class="panel">' +
+      '<h2>Signatures</h2>' +
+      sigRows.join('') +
+      '</div>';
+
+    document.getElementById('detail-back-link').addEventListener('click', function () {
+      listView.hidden = false;
+      backLink.style.display = '';
+      detailView.hidden = true;
+      detailView.innerHTML = '';
+    });
+  }
+
+  searchInput.addEventListener('input', renderList);
+  statusFilter.addEventListener('change', renderList);
+
+  renderList();
+</script>
+</body>
+</html>

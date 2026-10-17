@@ -111,6 +111,11 @@
     </div>
   </div>
 
+  <div class="panel deadlines-panel" id="deadlines-panel" hidden>
+    <h2>Upcoming Deadlines</h2>
+    <ul class="deadline-list" id="deadline-list"></ul>
+  </div>
+
   <div class="suggested-head">
     <div>
       <h2>Suggested Deals</h2>
@@ -139,6 +144,30 @@
   document.getElementById('welcome-heading').textContent = myUsername
     ? 'Welcome back, @' + myUsername
     : 'Welcome back';
+
+  var deadlines = tbaGetUpcomingDeadlines();
+  if (deadlines.length > 0) {
+    var deadlinesPanel = document.getElementById('deadlines-panel');
+    var deadlineList = document.getElementById('deadline-list');
+    deadlinesPanel.hidden = false;
+    deadlines.forEach(function (d) {
+      var li = document.createElement('li');
+      var overdue = d.daysLeft < 0;
+      var dueText = overdue
+        ? Math.abs(d.daysLeft) + ' day' + (Math.abs(d.daysLeft) === 1 ? '' : 's') + ' overdue'
+        : d.daysLeft + ' day' + (d.daysLeft === 1 ? '' : 's') + ' left';
+      li.className = 'deadline-item' + (overdue ? ' overdue' : '');
+      li.innerHTML =
+        '<a href="messaging.html?contract=' + d.contract.id + '" class="deadline-link">' +
+        '<span class="deadline-icon">' + (overdue ? '⚠️' : '📅') + '</span>' +
+        '<span class="deadline-text"><span class="deadline-name"></span>' +
+        '<span class="deadline-meta"></span></span>' +
+        '</a>';
+      li.querySelector('.deadline-name').textContent = d.contract.name;
+      li.querySelector('.deadline-meta').textContent = dueText;
+      deadlineList.appendChild(li);
+    });
+  }
 
   var sentRequests = tbaGetSentRequests();
   document.getElementById('requests-sent-stat').textContent = sentRequests.length;

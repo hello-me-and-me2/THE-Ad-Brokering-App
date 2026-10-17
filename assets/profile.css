@@ -206,6 +206,27 @@ img.profile-avatar-lg { object-fit: cover; }
 }
 .network-chip:hover { border-color: var(--terracotta); }
 
+.profile-activity-section {
+  margin-top: 30px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  text-align: left;
+}
+.profile-activity-section h3 { font-size: 15px; margin: 0 0 14px; font-weight: 700; color: var(--ink); }
+
+.activity-feed-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+
+.activity-feed-item {
+  display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px;
+  background: #f3e6d3; border: 1px solid var(--border); border-radius: 12px;
+}
+
+.activity-feed-icon { font-size: 15px; line-height: 1.4; }
+
+.activity-feed-text { font-size: 13.5px; color: var(--ink); display: flex; flex-direction: column; gap: 2px; }
+
+.activity-feed-date { font-size: 11.5px; color: var(--ink-soft); font-weight: 500; }
+
 .network-chip-avatar {
   width: 26px;
   height: 26px;

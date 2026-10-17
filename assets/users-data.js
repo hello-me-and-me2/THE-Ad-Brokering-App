@@ -606,7 +606,7 @@ function tbaUpdateContract(id, patch) {
 }
 
 function tbaGetContractsForThread(username) {
-  return tbaGetContracts().filter(function (c) { return c.username === username; });
+  return tbaGetContracts().filter(function (c) { return c.participants.indexOf(username) !== -1; });
 }
 
 function tbaNewContractId() {
@@ -618,68 +618,121 @@ function tbaFormatDateLong(iso) {
 }
 
 // A lightweight stand-in for an AI drafting assistant: it pulls the
-// real terms already on the table for this thread (current offer,
-// brand, timeline) into a standard sponsorship-contract shape. There's
-// no backend here to actually call a model from, so this is an
-// honest "smart template," not a live AI call.
-function tbaGenerateContractDraft(myUsername, counterpartUsername) {
-  var thread = tbaGetMyThread(counterpartUsername);
-  var counterpart = tbaGetUserByUsername(counterpartUsername);
-  var offer = tbaGetCurrentOffer(counterpartUsername);
+// real terms already on the table for each conversation (current
+// offer, brand, timeline) into a standard agreement shape. There's no
+// backend here to actually call a model from, so this is an honest
+// "smart template," not a live AI call. Takes one or more participant
+// usernames — a single one produces a standard two-party contract, more
+// than one produces a multi-party agreement with a terms block per party.
+function tbaGenerateContractDraft(myUsername, participantUsernames) {
   var today = tbaFormatDateLong(new Date().toISOString());
-  var brand = thread ? thread.deal.brand : (counterpart ? counterpart.name : counterpartUsername);
-  var timeline = thread ? thread.deal.timeline : '4 weeks';
-  var videosLabel = offer.videos + ' video' + (offer.videos === 1 ? '' : 's');
+  var isMulti = participantUsernames.length > 1;
+
+  var parties = participantUsernames.map(function (u) {
+    var thread = tbaGetMyThread(u);
+    var counterpart = tbaGetUserByUsername(u);
+    var offer = tbaGetCurrentOffer(u);
+    return {
+      username: u,
+      brand: thread ? thread.deal.brand : (counterpart ? counterpart.name : u),
+      timeline: thread ? thread.deal.timeline : '4 weeks',
+      amount: offer.amount,
+      videos: offer.videos
+    };
+  });
+
+  if (!isMulti) {
+    var p = parties[0];
+    var videosLabel = p.videos + ' video' + (p.videos === 1 ? '' : 's');
+    return (
+      'SPONSORSHIP AGREEMENT\n\n' +
+      'This Sponsorship Agreement ("Agreement") is entered into on ' + today + ' by and between:\n\n' +
+      'Creator: @' + myUsername + '\n' +
+      'Brand: ' + p.brand + ' (@' + p.username + ')\n\n' +
+      '1. SCOPE OF WORK\n' +
+      'The Creator agrees to produce and deliver ' + videosLabel + ' promoting the Brand, in line with the ' +
+      'creative direction discussed between the parties.\n\n' +
+      '2. COMPENSATION\n' +
+      'The Brand agrees to pay the Creator a total of $' + p.amount.toLocaleString() + ' USD for the deliverables ' +
+      'described in this Agreement, payable within 15 days of final content approval.\n\n' +
+      '3. TIMELINE\n' +
+      'All deliverables shall be completed and submitted for review within ' + p.timeline + ' of the Effective Date.\n\n' +
+      '4. CONTENT OWNERSHIP & USAGE\n' +
+      'The Creator retains ownership of the original content. The Brand is granted a non-exclusive license to repost ' +
+      'and share the delivered content on its own channels for promotional purposes.\n\n' +
+      '5. APPROVAL\n' +
+      'The Brand may review content prior to publishing and request reasonable revisions before delivery is considered final.\n\n' +
+      '6. TERMINATION\n' +
+      'Either party may terminate this Agreement with written notice if the other party fails to meet its obligations herein.\n\n' +
+      '7. ENTIRE AGREEMENT\n' +
+      'This Agreement represents the full understanding between the parties regarding this collaboration and supersedes ' +
+      'any prior discussions.\n\n' +
+      'SIGNATURES\n' +
+      'This Agreement is not binding until signed by both parties below.'
+    );
+  }
+
+  var partiesBlock = parties.map(function (party) {
+    return 'Party: ' + party.brand + ' (@' + party.username + ')\n' +
+      '  - Deliverables: ' + party.videos + ' video' + (party.videos === 1 ? '' : 's') + '\n' +
+      '  - Compensation: $' + party.amount.toLocaleString() + ' USD\n' +
+      '  - Timeline: ' + party.timeline;
+  }).join('\n\n');
 
   return (
-    'SPONSORSHIP AGREEMENT\n\n' +
-    'This Sponsorship Agreement ("Agreement") is entered into on ' + today + ' by and between:\n\n' +
-    'Creator: @' + myUsername + '\n' +
-    'Brand: ' + brand + ' (@' + counterpartUsername + ')\n\n' +
+    'MULTI-PARTY SPONSORSHIP AGREEMENT\n\n' +
+    'This Agreement is entered into on ' + today + ' by and between:\n\n' +
+    'Creator: @' + myUsername + '\n\n' +
+    partiesBlock + '\n\n' +
     '1. SCOPE OF WORK\n' +
-    'The Creator agrees to produce and deliver ' + videosLabel + ' promoting the Brand, in line with the ' +
-    'creative direction discussed between the parties.\n\n' +
+    'The Creator agrees to produce and deliver the content described above for each party individually, in line ' +
+    'with the creative direction discussed with each.\n\n' +
     '2. COMPENSATION\n' +
-    'The Brand agrees to pay the Creator a total of $' + offer.amount.toLocaleString() + ' USD for the deliverables ' +
-    'described in this Agreement, payable within 15 days of final content approval.\n\n' +
-    '3. TIMELINE\n' +
-    'All deliverables shall be completed and submitted for review within ' + timeline + ' of the Effective Date.\n\n' +
-    '4. CONTENT OWNERSHIP & USAGE\n' +
-    'The Creator retains ownership of the original content. The Brand is granted a non-exclusive license to repost ' +
-    'and share the delivered content on its own channels for promotional purposes.\n\n' +
-    '5. APPROVAL\n' +
-    'The Brand may review content prior to publishing and request reasonable revisions before delivery is considered final.\n\n' +
-    '6. TERMINATION\n' +
-    'Either party may terminate this Agreement with written notice if the other party fails to meet its obligations herein.\n\n' +
-    '7. ENTIRE AGREEMENT\n' +
-    'This Agreement represents the full understanding between the parties regarding this collaboration and supersedes ' +
-    'any prior discussions.\n\n' +
+    'Each party agrees to pay the Creator the amount listed above for its respective deliverables, payable within ' +
+    '15 days of final content approval.\n\n' +
+    '3. CONTENT OWNERSHIP & USAGE\n' +
+    'The Creator retains ownership of the original content. Each party is granted a non-exclusive license to ' +
+    'repost and share the content delivered to it on its own channels for promotional purposes.\n\n' +
+    '4. APPROVAL\n' +
+    'Each party may review its content prior to publishing and request reasonable revisions before delivery is ' +
+    'considered final.\n\n' +
+    '5. TERMINATION\n' +
+    'Any party may terminate its portion of this Agreement with written notice if the Creator fails to meet the ' +
+    'obligations owed to it herein.\n\n' +
+    '6. ENTIRE AGREEMENT\n' +
+    'This Agreement represents the full understanding between all listed parties regarding this collaboration.\n\n' +
     'SIGNATURES\n' +
-    'This Agreement is not binding until signed by both parties below.'
+    'This Agreement is not binding until signed by all parties below.'
   );
 }
 
-function tbaBlankContractTemplate(myUsername, counterpartUsername) {
-  var thread = tbaGetMyThread(counterpartUsername);
-  var brand = thread ? thread.deal.brand : counterpartUsername;
+function tbaBlankContractTemplate(myUsername, participantUsernames) {
   var today = tbaFormatDateLong(new Date().toISOString());
+  var isMulti = participantUsernames.length > 1;
+
+  var partiesText = participantUsernames.map(function (u) {
+    var thread = tbaGetMyThread(u);
+    var brand = thread ? thread.deal.brand : u;
+    return 'Party: ' + brand + ' (@' + u + ')';
+  }).join('\n');
 
   return (
-    'SPONSORSHIP AGREEMENT\n\n' +
+    (isMulti ? 'MULTI-PARTY AGREEMENT' : 'AGREEMENT') + '\n\n' +
     'This Agreement is entered into on ' + today + ' by and between:\n\n' +
     'Creator: @' + myUsername + '\n' +
-    'Brand: ' + brand + ' (@' + counterpartUsername + ')\n\n' +
+    partiesText + '\n\n' +
     '1. SCOPE OF WORK\n[Describe the deliverables here]\n\n' +
     '2. COMPENSATION\n[Describe payment terms here]\n\n' +
     '3. TIMELINE\n[Describe the delivery timeline here]\n\n' +
     'SIGNATURES\n' +
-    'This Agreement is not binding until signed by both parties below.'
+    'This Agreement is not binding until signed by ' + (isMulti ? 'all parties' : 'both parties') + ' below.'
   );
 }
 
 // A small, plausible edit to simulate the other side revising a
 // contract you sent them — nudges the compensation line if present,
 // and adds a short note, rather than rewriting the whole document.
+// Only used for standard (single-counterpart) contracts.
 function tbaSimulateContractRevision(text, counterpartUsername) {
   var counterpart = tbaGetUserByUsername(counterpartUsername);
   var name = counterpart ? counterpart.name : counterpartUsername;
@@ -690,6 +743,97 @@ function tbaSimulateContractRevision(text, counterpartUsername) {
   });
   revised += '\n\n[Revision note from ' + name + ']: Adjusted the compensation slightly and otherwise this looks good to us.';
   return revised;
+}
+
+// --- Contract deadlines ---
+// Once a contract is fully signed, its due date is simply "when you
+// signed it, plus the timeline from the first linked conversation's
+// deal terms."
+
+function tbaParseTimelineDays(timelineStr) {
+  if (!timelineStr) return 14;
+  var m = /(\d+)\s*week/i.exec(timelineStr);
+  if (m) return parseInt(m[1], 10) * 7;
+  m = /(\d+)\s*day/i.exec(timelineStr);
+  if (m) return parseInt(m[1], 10);
+  return 14;
+}
+
+function tbaGetContractDueDate(contract) {
+  if (!contract || contract.status !== 'signed' || !contract.signatures.me) return null;
+  var thread = tbaGetMyThread(contract.participants[0]);
+  var days = tbaParseTimelineDays(thread ? thread.deal.timeline : null);
+  var due = new Date(contract.signatures.me.signedAt);
+  due.setDate(due.getDate() + days);
+  return due.toISOString();
+}
+
+function tbaGetUpcomingDeadlines() {
+  return tbaGetContracts()
+    .filter(function (c) { return c.status === 'signed'; })
+    .map(function (c) {
+      var due = tbaGetContractDueDate(c);
+      if (!due) return null;
+      return { contract: c, dueDate: due, daysLeft: Math.ceil((new Date(due) - new Date()) / 86400000) };
+    })
+    .filter(Boolean)
+    .sort(function (a, b) { return new Date(a.dueDate) - new Date(b.dueDate); });
+}
+
+// --- Activity feed ---
+// Derived on the fly from data that already exists elsewhere (no
+// separate event log to keep in sync) — verification status, closed
+// deals, network connections, and signed contracts — so it works the
+// same way for your own profile and for anyone else's.
+function tbaGetActivityFor(username) {
+  var myUsername = localStorage.getItem('tba_username');
+  var isYou = !!(myUsername && myUsername.toLowerCase() === username.toLowerCase());
+  var activities = [];
+
+  if (tbaIsVerified(username)) {
+    var logEntry = tbaGetVerificationDecisionLog().find(function (l) {
+      return l.username.toLowerCase() === username.toLowerCase() && l.decision === 'approved';
+    });
+    activities.push({ icon: '✅', text: 'Became a verified account', date: logEntry ? logEntry.decidedAt : null });
+  }
+
+  if (isYou) {
+    TBA_MY_THREADS_SEED.forEach(function (t) {
+      if (t.status === 'closed') {
+        activities.push({ icon: '🤝', text: 'Closed a deal with ' + t.displayName, date: null });
+      }
+    });
+  } else {
+    tbaGetUserThreads(username).forEach(function (t) {
+      if (t.status === 'closed') {
+        activities.push({ icon: '🤝', text: 'Closed a deal with ' + t.counterpart, date: null });
+      }
+    });
+  }
+
+  tbaGetNetworkFor(username).forEach(function (member) {
+    activities.push({ icon: '🔗', text: 'Connected with ' + member.name, date: null });
+  });
+
+  tbaGetContracts().forEach(function (c) {
+    if (c.status !== 'signed') return;
+    var involved = isYou || c.participants.some(function (p) { return p.toLowerCase() === username.toLowerCase(); });
+    if (!involved) return;
+    var sig = isYou ? c.signatures.me : c.signatures[username];
+    var otherNames = isYou
+      ? c.participants.map(function (p) { var u = tbaGetUserByUsername(p); return u ? u.name : p; }).join(', ')
+      : '@' + myUsername;
+    activities.push({ icon: '📄', text: 'Signed "' + c.name + '" with ' + otherNames, date: sig ? sig.signedAt : null });
+  });
+
+  activities.sort(function (a, b) {
+    if (a.date && b.date) return new Date(b.date) - new Date(a.date);
+    if (a.date) return -1;
+    if (b.date) return 1;
+    return 0;
+  });
+
+  return activities.slice(0, 12);
 }
 
 // --- The Network ---

@@ -208,6 +208,25 @@ h1 {
 
 .panel h2 { font-size: 16px; margin: 0 0 18px; font-weight: 700; }
 
+.deadlines-panel { margin-bottom: 40px; }
+
+.deadline-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+
+.deadline-link {
+  display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px;
+  border: 1px solid var(--border); text-decoration: none; color: inherit; transition: border-color 0.15s ease;
+}
+.deadline-link:hover { border-color: var(--accent, #3ea6ff); }
+
+.deadline-icon { font-size: 18px; }
+
+.deadline-text { display: flex; flex-direction: column; gap: 2px; }
+.deadline-name { font-weight: 700; font-size: 14px; }
+.deadline-meta { font-size: 12.5px; color: var(--text-soft, #8a8f98); }
+
+.deadline-item.overdue .deadline-link { border-color: rgba(224,90,90,0.5); background: rgba(224,90,90,0.06); }
+.deadline-item.overdue .deadline-meta { color: #c23b3b; font-weight: 600; }
+
 .bar-chart {
   display: flex;
   align-items: flex-end;
