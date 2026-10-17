@@ -567,6 +567,131 @@ function tbaPickAutoReply() {
   return TBA_AUTO_REPLIES[Math.floor(Math.random() * TBA_AUTO_REPLIES.length)];
 }
 
+// --- Contracts ---
+// Stored as one flat list in localStorage. Each contract belongs to
+// one of your conversations and keeps a full version history — every
+// save (yours or a simulated revision from the other side) appends a
+// new version rather than overwriting the last one.
+
+function tbaGetContracts() {
+  try {
+    return JSON.parse(localStorage.getItem('tba_contracts') || '[]');
+  } catch (e) {
+    return [];
+  }
+}
+
+function tbaSaveContracts(list) {
+  localStorage.setItem('tba_contracts', JSON.stringify(list));
+}
+
+function tbaGetContract(id) {
+  return tbaGetContracts().find(function (c) { return c.id === id; }) || null;
+}
+
+function tbaCreateContract(contract) {
+  var list = tbaGetContracts();
+  list.unshift(contract);
+  tbaSaveContracts(list);
+  return contract;
+}
+
+function tbaUpdateContract(id, patch) {
+  var list = tbaGetContracts();
+  var idx = list.findIndex(function (c) { return c.id === id; });
+  if (idx === -1) return null;
+  list[idx] = Object.assign({}, list[idx], patch);
+  tbaSaveContracts(list);
+  return list[idx];
+}
+
+function tbaGetContractsForThread(username) {
+  return tbaGetContracts().filter(function (c) { return c.username === username; });
+}
+
+function tbaNewContractId() {
+  return 'c_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+function tbaFormatDateLong(iso) {
+  return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+// A lightweight stand-in for an AI drafting assistant: it pulls the
+// real terms already on the table for this thread (current offer,
+// brand, timeline) into a standard sponsorship-contract shape. There's
+// no backend here to actually call a model from, so this is an
+// honest "smart template," not a live AI call.
+function tbaGenerateContractDraft(myUsername, counterpartUsername) {
+  var thread = tbaGetMyThread(counterpartUsername);
+  var counterpart = tbaGetUserByUsername(counterpartUsername);
+  var offer = tbaGetCurrentOffer(counterpartUsername);
+  var today = tbaFormatDateLong(new Date().toISOString());
+  var brand = thread ? thread.deal.brand : (counterpart ? counterpart.name : counterpartUsername);
+  var timeline = thread ? thread.deal.timeline : '4 weeks';
+  var videosLabel = offer.videos + ' video' + (offer.videos === 1 ? '' : 's');
+
+  return (
+    'SPONSORSHIP AGREEMENT\n\n' +
+    'This Sponsorship Agreement ("Agreement") is entered into on ' + today + ' by and between:\n\n' +
+    'Creator: @' + myUsername + '\n' +
+    'Brand: ' + brand + ' (@' + counterpartUsername + ')\n\n' +
+    '1. SCOPE OF WORK\n' +
+    'The Creator agrees to produce and deliver ' + videosLabel + ' promoting the Brand, in line with the ' +
+    'creative direction discussed between the parties.\n\n' +
+    '2. COMPENSATION\n' +
+    'The Brand agrees to pay the Creator a total of $' + offer.amount.toLocaleString() + ' USD for the deliverables ' +
+    'described in this Agreement, payable within 15 days of final content approval.\n\n' +
+    '3. TIMELINE\n' +
+    'All deliverables shall be completed and submitted for review within ' + timeline + ' of the Effective Date.\n\n' +
+    '4. CONTENT OWNERSHIP & USAGE\n' +
+    'The Creator retains ownership of the original content. The Brand is granted a non-exclusive license to repost ' +
+    'and share the delivered content on its own channels for promotional purposes.\n\n' +
+    '5. APPROVAL\n' +
+    'The Brand may review content prior to publishing and request reasonable revisions before delivery is considered final.\n\n' +
+    '6. TERMINATION\n' +
+    'Either party may terminate this Agreement with written notice if the other party fails to meet its obligations herein.\n\n' +
+    '7. ENTIRE AGREEMENT\n' +
+    'This Agreement represents the full understanding between the parties regarding this collaboration and supersedes ' +
+    'any prior discussions.\n\n' +
+    'SIGNATURES\n' +
+    'This Agreement is not binding until signed by both parties below.'
+  );
+}
+
+function tbaBlankContractTemplate(myUsername, counterpartUsername) {
+  var thread = tbaGetMyThread(counterpartUsername);
+  var brand = thread ? thread.deal.brand : counterpartUsername;
+  var today = tbaFormatDateLong(new Date().toISOString());
+
+  return (
+    'SPONSORSHIP AGREEMENT\n\n' +
+    'This Agreement is entered into on ' + today + ' by and between:\n\n' +
+    'Creator: @' + myUsername + '\n' +
+    'Brand: ' + brand + ' (@' + counterpartUsername + ')\n\n' +
+    '1. SCOPE OF WORK\n[Describe the deliverables here]\n\n' +
+    '2. COMPENSATION\n[Describe payment terms here]\n\n' +
+    '3. TIMELINE\n[Describe the delivery timeline here]\n\n' +
+    'SIGNATURES\n' +
+    'This Agreement is not binding until signed by both parties below.'
+  );
+}
+
+// A small, plausible edit to simulate the other side revising a
+// contract you sent them — nudges the compensation line if present,
+// and adds a short note, rather than rewriting the whole document.
+function tbaSimulateContractRevision(text, counterpartUsername) {
+  var counterpart = tbaGetUserByUsername(counterpartUsername);
+  var name = counterpart ? counterpart.name : counterpartUsername;
+  var revised = text.replace(/\$([\d,]+) USD/, function (match, amountStr) {
+    var amount = parseInt(amountStr.replace(/,/g, ''), 10);
+    var nudged = Math.max(100, Math.round((amount * (0.95 + Math.random() * 0.1)) / 25) * 25);
+    return '$' + nudged.toLocaleString() + ' USD';
+  });
+  revised += '\n\n[Revision note from ' + name + ']: Adjusted the compensation slightly and otherwise this looks good to us.';
+  return revised;
+}
+
 // --- The Network ---
 // Landing a deal (a thread whose status is "closed") lets both sides
 // add each other to their network, but only once both accept. Seed

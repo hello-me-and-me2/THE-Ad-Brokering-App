@@ -47,6 +47,7 @@
 
   <div class="msg-tabs">
     <button type="button" class="msg-tab active" data-tab="conversations">Conversations</button>
+    <button type="button" class="msg-tab" data-tab="contracts">Contracts</button>
     <button type="button" class="msg-tab" data-tab="find">Find People &amp; Requests</button>
   </div>
 
@@ -82,6 +83,10 @@
 
     <div class="deal-panel" id="deal-panel"></div>
   </div>
+  </div>
+
+  <div class="tab-panel" id="tab-contracts" hidden>
+    <div id="contracts-view"></div>
   </div>
 
   <div class="tab-panel" id="tab-find" hidden>
@@ -127,7 +132,9 @@
       tabButtons.forEach(function (b) { b.classList.remove('active'); });
       btn.classList.add('active');
       document.getElementById('tab-conversations').hidden = btn.dataset.tab !== 'conversations';
+      document.getElementById('tab-contracts').hidden = btn.dataset.tab !== 'contracts';
       document.getElementById('tab-find').hidden = btn.dataset.tab !== 'find';
+      if (btn.dataset.tab === 'contracts') renderContractsList();
     });
   });
 
@@ -159,6 +166,9 @@
     if (last.type === 'offer') {
       return (last.from === 'me' ? 'Your offer: ' : 'Their offer: ') +
         '$' + last.amount.toLocaleString() + ' for ' + last.videos + ' video' + (last.videos === 1 ? '' : 's');
+    }
+    if (last.type === 'contract') {
+      return (last.from === 'me' ? 'You sent a contract: ' : 'They sent a contract: ') + last.contractName;
     }
     return last.text;
   }
@@ -198,6 +208,19 @@
         '</div>'
       );
     }
+    if (m.type === 'contract') {
+      var actionLabel = m.action === 'sent' ? 'sent a contract' : 'sent a revised contract';
+      return (
+        '<div class="bubble contract-bubble ' + (m.from === 'me' ? 'me' : 'them') + '">' +
+        '<div class="contract-bubble-icon">📄</div>' +
+        '<div class="contract-bubble-body">' +
+        '<div class="contract-bubble-title">' + escapeHtml(m.contractName) + '</div>' +
+        '<div class="contract-bubble-sub">' + (m.from === 'me' ? 'You ' : 'They ') + actionLabel + '</div>' +
+        '<button type="button" class="contract-bubble-view-btn" data-contract-id="' + m.contractId + '">View Contract</button>' +
+        '</div>' +
+        '</div>'
+      );
+    }
     return '<div class="bubble ' + (m.from === 'me' ? 'me' : 'them') + '">' + escapeHtml(m.text) + '</div>';
   }
 
@@ -233,6 +256,13 @@
     var messages = tbaGetMyThreadMessages(activeThreadUsername);
     chatBodyEl.innerHTML = messages.map(renderBubble).join('');
     scrollChatToBottom();
+
+    chatBodyEl.querySelectorAll('.contract-bubble-view-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        document.querySelector('.msg-tab[data-tab="contracts"]').click();
+        renderContractViewer(btn.getAttribute('data-contract-id'));
+      });
+    });
 
     renderDealPanel(thread);
   }
@@ -332,6 +362,381 @@
 
   renderThreadList();
   renderChat();
+
+  // --- Contracts ---
+
+  var contractsViewEl = document.getElementById('contracts-view');
+  var contractState = { view: 'list', selectedThread: null, editingContractId: null };
+
+  function contractStatusLabel(status) {
+    return { draft: 'Draft', sent: 'Sent', revised: 'Revised', signed: 'Signed' }[status] || status;
+  }
+
+  function renderContractsList() {
+    contractState.view = 'list';
+    var contracts = tbaGetContracts();
+
+    var html =
+      '<div class="contracts-head">' +
+      '<div><h2>Contracts</h2><p>Every agreement you\'ve drafted, across every conversation.</p></div>' +
+      '<button type="button" class="btn-new-contract" id="new-contract-btn">+ New Contract</button>' +
+      '</div>';
+
+    if (contracts.length === 0) {
+      html += '<p class="contracts-empty">You haven\'t created any contracts yet. Start one from a conversation above.</p>';
+    } else {
+      html += '<div class="contracts-grid">' + contracts.map(function (c) {
+        var counterpart = tbaGetUserByUsername(c.username);
+        var latest = c.versions[c.versions.length - 1];
+        return (
+          '<div class="contract-card" data-id="' + c.id + '">' +
+          '<span class="contract-status status-' + c.status + '">' + contractStatusLabel(c.status) + '</span>' +
+          '<h3>' + escapeHtml(c.name) + '</h3>' +
+          '<p class="contract-card-counterpart">With ' + escapeHtml(counterpart ? counterpart.name : c.username) + '</p>' +
+          '<p class="contract-card-meta">v' + c.versions.length + ' · updated ' + tbaFormatDateLong(latest.createdAt) + '</p>' +
+          '</div>'
+        );
+      }).join('') + '</div>';
+    }
+
+    contractsViewEl.innerHTML = html;
+    document.getElementById('new-contract-btn').addEventListener('click', renderContractSelectThread);
+    contractsViewEl.querySelectorAll('.contract-card').forEach(function (card) {
+      card.addEventListener('click', function () { renderContractViewer(card.getAttribute('data-id')); });
+    });
+  }
+
+  function renderContractSelectThread() {
+    contractState.view = 'select-thread';
+    var html =
+      '<a class="contracts-back" id="contracts-back-1">&larr; Back to Contracts</a>' +
+      '<h2>New Contract</h2>' +
+      '<p class="contracts-sub">Which conversation is this contract for?</p>' +
+      '<div class="thread-select-grid">' +
+      TBA_MY_THREADS_SEED.map(function (t) {
+        return (
+          '<button type="button" class="thread-select-card" data-username="' + t.username + '">' +
+          '<span class="t-name">' + escapeHtml(t.displayName) + '</span>' +
+          '<span class="t-tag ' + t.status + '">' + escapeHtml(t.statusLabel) + '</span>' +
+          '</button>'
+        );
+      }).join('') +
+      '</div>';
+
+    contractsViewEl.innerHTML = html;
+    document.getElementById('contracts-back-1').addEventListener('click', renderContractsList);
+    contractsViewEl.querySelectorAll('.thread-select-card').forEach(function (card) {
+      card.addEventListener('click', function () {
+        contractState.selectedThread = card.getAttribute('data-username');
+        renderContractAiOrManual();
+      });
+    });
+  }
+
+  function renderContractAiOrManual() {
+    contractState.view = 'ai-or-manual';
+    var thread = tbaGetMyThread(contractState.selectedThread);
+
+    var html =
+      '<a class="contracts-back" id="contracts-back-2">&larr; Back</a>' +
+      '<h2>New Contract — ' + escapeHtml(thread.displayName) + '</h2>' +
+      '<p class="contracts-sub">Would you like to use AI to draft this contract, or write it yourself?</p>' +
+      '<div class="contract-choice-grid">' +
+      '<button type="button" class="contract-choice-card" id="choice-ai">' +
+      '<span class="choice-icon">✨</span><h3>Use AI to Draft It</h3>' +
+      '<p>Generates a standard sponsorship agreement from this deal’s current offer, brand, and timeline.</p>' +
+      '</button>' +
+      '<button type="button" class="contract-choice-card" id="choice-manual">' +
+      '<span class="choice-icon">✍️</span><h3>Write It Myself</h3>' +
+      '<p>Start from a short template and write the terms in your own words.</p>' +
+      '</button>' +
+      '</div>';
+
+    contractsViewEl.innerHTML = html;
+    document.getElementById('contracts-back-2').addEventListener('click', renderContractSelectThread);
+    document.getElementById('choice-ai').addEventListener('click', function () {
+      var text = tbaGenerateContractDraft(localStorage.getItem('tba_username'), contractState.selectedThread);
+      renderContractEditor({ text: text, name: thread.deal.brand + ' Agreement', isNew: true, aiGenerated: true });
+    });
+    document.getElementById('choice-manual').addEventListener('click', function () {
+      var text = tbaBlankContractTemplate(localStorage.getItem('tba_username'), contractState.selectedThread);
+      renderContractEditor({ text: text, name: '', isNew: true, aiGenerated: false });
+    });
+  }
+
+  function renderContractEditor(opts) {
+    contractState.view = 'editor';
+    var counterpartUsername = opts.isNew ? contractState.selectedThread : tbaGetContract(opts.contractId).username;
+    var thread = tbaGetMyThread(counterpartUsername);
+    var backId = 'contracts-back-editor';
+
+    var html =
+      '<a class="contracts-back" id="' + backId + '">&larr; Back</a>' +
+      '<h2>' + (opts.isNew ? 'New Contract' : 'Revise Contract') + ' — ' + escapeHtml(thread.displayName) + '</h2>' +
+      (opts.aiGenerated ? '<p class="ai-note">✨ AI-drafted from this deal’s current terms — review and edit before saving.</p>' : '') +
+      '<label class="contract-name-label" for="contract-name-input">Contract Name</label>' +
+      '<input type="text" id="contract-name-input" class="contract-name-input" placeholder="e.g. Skyline Coffee Sponsorship Agreement" value="' + escapeHtml(opts.name) + '">' +
+      '<label class="contract-name-label" for="contract-text-input">Contract Text</label>' +
+      '<textarea id="contract-text-input" class="contract-textarea">' + escapeHtml(opts.text) + '</textarea>' +
+      '<div class="contract-editor-actions">' +
+      '<button type="button" class="btn-save-contract" id="save-contract-btn">Save Contract</button>' +
+      '</div>' +
+      '<p class="contract-save-status" id="contract-save-status" hidden></p>';
+
+    contractsViewEl.innerHTML = html;
+
+    document.getElementById(backId).addEventListener('click', function () {
+      if (opts.isNew) renderContractAiOrManual(); else renderContractViewer(opts.contractId);
+    });
+
+    document.getElementById('save-contract-btn').addEventListener('click', function () {
+      var name = document.getElementById('contract-name-input').value.trim();
+      var text = document.getElementById('contract-text-input').value;
+      var statusEl = document.getElementById('contract-save-status');
+
+      if (!name) {
+        statusEl.textContent = 'Give the contract a name before saving.';
+        statusEl.hidden = false;
+        document.getElementById('contract-name-input').focus();
+        return;
+      }
+
+      if (opts.isNew) {
+        var contract = {
+          id: tbaNewContractId(),
+          name: name,
+          username: counterpartUsername,
+          createdAt: new Date().toISOString(),
+          status: 'draft',
+          currentHolder: 'me',
+          versions: [{ author: 'me', text: text, createdAt: new Date().toISOString() }],
+          signatures: { me: null, them: null }
+        };
+        tbaCreateContract(contract);
+        renderContractViewer(contract.id);
+      } else {
+        var existing = tbaGetContract(opts.contractId);
+        var versions = existing.versions.concat([{ author: 'me', text: text, createdAt: new Date().toISOString() }]);
+        tbaUpdateContract(opts.contractId, { name: name, versions: versions, status: 'revised', currentHolder: 'them' });
+        tbaAppendMyThreadMessage(counterpartUsername, { from: 'me', type: 'contract', contractId: opts.contractId, contractName: name, action: 'revised' });
+        if (counterpartUsername === activeThreadUsername) renderChat();
+        renderThreadList();
+        simulateContractReaction(opts.contractId, counterpartUsername);
+        renderContractViewer(opts.contractId);
+      }
+    });
+  }
+
+  function renderSignatureSection(contract) {
+    if (contract.status === 'draft') return '';
+    var counterpart = tbaGetUserByUsername(contract.username);
+    var counterpartName = counterpart ? counterpart.name : contract.username;
+
+    function sigBlock(role, label, sig) {
+      if (sig) {
+        return (
+          '<div class="signature-block signed">' +
+          '<h4>' + label + '</h4>' +
+          '<div class="signature-script">' + escapeHtml(sig.username) + '</div>' +
+          '<p class="signature-meta">Signed ' + tbaFormatDateLong(sig.signedAt) + ' · ' + escapeHtml(sig.email) + '</p>' +
+          '</div>'
+        );
+      }
+      if (role === 'them') {
+        return '<div class="signature-block pending"><h4>' + escapeHtml(label) + '</h4><p class="signature-meta">Waiting for signature…</p></div>';
+      }
+      return (
+        '<div class="signature-block">' +
+        '<h4>' + label + '</h4>' +
+        '<label class="sig-check"><input type="checkbox" id="sig-agree"> I agree to the terms of this contract and want to sign it digitally.</label>' +
+        '<input type="text" id="sig-username" placeholder="Username" value="' + escapeHtml(localStorage.getItem('tba_username') || '') + '">' +
+        '<input type="email" id="sig-email" placeholder="Email">' +
+        '<input type="password" id="sig-password" placeholder="Password">' +
+        '<button type="button" class="btn-sign" id="sign-btn" disabled>Sign Contract</button>' +
+        '<p class="sig-error" id="sig-error" hidden></p>' +
+        '</div>'
+      );
+    }
+
+    return (
+      '<div class="signature-section">' +
+      '<h3>Signatures</h3>' +
+      '<div class="signature-grid">' +
+      sigBlock('me', 'You', contract.signatures.me) +
+      sigBlock('them', escapeHtml(counterpartName), contract.signatures.them) +
+      '</div>' +
+      '</div>'
+    );
+  }
+
+  function wireSignatureForm(contract) {
+    if (contract.status === 'draft' || contract.signatures.me) return;
+    var agree = document.getElementById('sig-agree');
+    var signBtn = document.getElementById('sign-btn');
+    if (!agree || !signBtn) return;
+
+    agree.addEventListener('change', function () { signBtn.disabled = !agree.checked; });
+
+    signBtn.addEventListener('click', function () {
+      var usernameVal = document.getElementById('sig-username').value.trim();
+      var emailVal = document.getElementById('sig-email').value.trim();
+      var passwordVal = document.getElementById('sig-password').value;
+      var errorEl = document.getElementById('sig-error');
+
+      if (!agree.checked || !usernameVal || !emailVal || !passwordVal) {
+        errorEl.textContent = 'Check the box and fill in all fields to sign.';
+        errorEl.hidden = false;
+        return;
+      }
+
+      var signature = { username: usernameVal, email: emailVal, signedAt: new Date().toISOString() };
+      tbaUpdateContract(contract.id, { signatures: Object.assign({}, contract.signatures, { me: signature }) });
+      tbaAppendMyThreadMessage(contract.username, { from: 'me', text: '✅ You signed "' + contract.name + '".' });
+      renderThreadList();
+      if (contract.username === activeThreadUsername) renderChat();
+
+      renderContractViewer(contract.id);
+      simulateCounterpartSignature(contract.id);
+    });
+  }
+
+  function simulateCounterpartSignature(id) {
+    setTimeout(function () {
+      var contract = tbaGetContract(id);
+      if (!contract || contract.signatures.them || !contract.signatures.me) return;
+      var counterpart = tbaGetUserByUsername(contract.username);
+      var name = counterpart ? counterpart.name : contract.username;
+      var email = contract.username + '@' + contract.username.replace(/[^a-z0-9]/gi, '') + '.co';
+      var signature = { username: counterpart ? counterpart.username : contract.username, email: email, signedAt: new Date().toISOString() };
+      tbaUpdateContract(id, { signatures: Object.assign({}, contract.signatures, { them: signature }), status: 'signed' });
+      tbaAppendMyThreadMessage(contract.username, { from: 'them', text: '✅ ' + name + ' signed "' + contract.name + '". The contract is now fully executed.' });
+      bumpDealProgress(contract.username);
+      renderThreadList();
+      if (contract.username === activeThreadUsername) renderChat();
+      if (contractState.view === 'viewer' && contractState.editingContractId === id) renderContractViewer(id);
+    }, 1600 + Math.random() * 900);
+  }
+
+  function downloadContract(contract) {
+    var latest = contract.versions[contract.versions.length - 1];
+    var blob = new Blob([latest.text], { type: 'text/plain' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = contract.name.replace(/[^a-z0-9]+/gi, '-').toLowerCase() + '.txt';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  function sendContract(id) {
+    var contract = tbaGetContract(id);
+    tbaUpdateContract(id, { status: 'sent', currentHolder: 'them' });
+    tbaAppendMyThreadMessage(contract.username, { from: 'me', type: 'contract', contractId: id, contractName: contract.name, action: 'sent' });
+    if (contract.username === activeThreadUsername) renderChat();
+    renderThreadList();
+    simulateContractReaction(id, contract.username);
+    renderContractViewer(id);
+  }
+
+  // Stands in for the other side reviewing a contract you sent or
+  // revised — either they send back a small revision, or they signal
+  // they're ready to sign. Same "simulate it locally" approach used
+  // throughout this app.
+  function simulateContractReaction(id, username) {
+    setTimeout(function () {
+      var contract = tbaGetContract(id);
+      if (!contract || contract.status === 'signed') return;
+      var latest = contract.versions[contract.versions.length - 1];
+
+      if (Math.random() < 0.45) {
+        var revisedText = tbaSimulateContractRevision(latest.text, username);
+        var versions = contract.versions.concat([{ author: 'them', text: revisedText, createdAt: new Date().toISOString() }]);
+        tbaUpdateContract(id, { versions: versions, status: 'revised', currentHolder: 'me' });
+        tbaAppendMyThreadMessage(username, { from: 'them', type: 'contract', contractId: id, contractName: contract.name, action: 'revised' });
+      } else {
+        tbaUpdateContract(id, { currentHolder: 'me' });
+        tbaAppendMyThreadMessage(username, { from: 'them', text: 'This looks good on our end — ready to sign when you are.' });
+      }
+
+      bumpDealProgress(username);
+      if (username === activeThreadUsername) renderChat();
+      renderThreadList();
+      if (contractState.view === 'viewer' && contractState.editingContractId === id) renderContractViewer(id);
+    }, 1500 + Math.random() * 900);
+  }
+
+  function renderContractViewer(id) {
+    var contract = tbaGetContract(id);
+    if (!contract) { renderContractsList(); return; }
+    contractState.view = 'viewer';
+    contractState.editingContractId = id;
+
+    var thread = tbaGetMyThread(contract.username);
+    var counterpart = tbaGetUserByUsername(contract.username);
+    var latest = contract.versions[contract.versions.length - 1];
+
+    var versionsHtml = contract.versions.length > 1
+      ? '<div class="version-chips">' + contract.versions.map(function (v, i) {
+          return '<button type="button" class="version-chip' + (i === contract.versions.length - 1 ? ' active' : '') + '" data-index="' + i + '">' +
+            'v' + (i + 1) + ' · ' + (v.author === 'me' ? 'You' : (counterpart ? counterpart.name : contract.username)) +
+            '</button>';
+        }).join('') + '</div>'
+      : '';
+
+    var actionsHtml = '';
+    if (contract.status === 'draft') {
+      actionsHtml += '<button type="button" class="btn-contract-action" id="send-contract-btn">Send to ' + escapeHtml(thread.displayName) + '</button>';
+    } else if (contract.status !== 'signed') {
+      if (contract.currentHolder === 'me') {
+        actionsHtml += '<button type="button" class="btn-contract-action" id="revise-contract-btn">Revise</button>';
+        actionsHtml += '<button type="button" class="btn-contract-action" id="send-contract-btn">Send Back to ' + escapeHtml(thread.displayName) + '</button>';
+      } else {
+        actionsHtml += '<p class="contract-waiting">Waiting on ' + escapeHtml(counterpart ? counterpart.name : contract.username) + ' to review…</p>';
+      }
+    }
+    actionsHtml += '<button type="button" class="btn-contract-action btn-download" id="download-contract-btn">Download</button>';
+
+    var html =
+      '<a class="contracts-back" id="contracts-back-viewer">&larr; Back to Contracts</a>' +
+      '<div class="contract-viewer-head">' +
+      '<div><h2>' + escapeHtml(contract.name) + '</h2><p>With ' + escapeHtml(counterpart ? counterpart.name : contract.username) + '</p></div>' +
+      '<span class="contract-status status-' + contract.status + '">' + contractStatusLabel(contract.status) + '</span>' +
+      '</div>' +
+      versionsHtml +
+      '<pre class="contract-text-block" id="contract-text-block">' + escapeHtml(latest.text) + '</pre>' +
+      '<div class="contract-actions-row">' + actionsHtml + '</div>' +
+      renderSignatureSection(contract);
+
+    contractsViewEl.innerHTML = html;
+
+    document.getElementById('contracts-back-viewer').addEventListener('click', renderContractsList);
+
+    contractsViewEl.querySelectorAll('.version-chip').forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        contractsViewEl.querySelectorAll('.version-chip').forEach(function (c) { c.classList.remove('active'); });
+        chip.classList.add('active');
+        var idx = parseInt(chip.getAttribute('data-index'), 10);
+        document.getElementById('contract-text-block').textContent = contract.versions[idx].text;
+      });
+    });
+
+    var downloadBtn = document.getElementById('download-contract-btn');
+    if (downloadBtn) downloadBtn.addEventListener('click', function () { downloadContract(contract); });
+
+    var sendBtn = document.getElementById('send-contract-btn');
+    if (sendBtn) sendBtn.addEventListener('click', function () { sendContract(contract.id); });
+
+    var reviseBtn = document.getElementById('revise-contract-btn');
+    if (reviseBtn) {
+      reviseBtn.addEventListener('click', function () {
+        renderContractEditor({ text: latest.text, name: contract.name, isNew: false, aiGenerated: false, contractId: contract.id });
+      });
+    }
+
+    wireSignatureForm(contract);
+  }
 
   // Find People directory + message requests
   var allUsers = tbaGetAllUsers();
