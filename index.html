@@ -120,6 +120,12 @@
               </div>
             </div>
 
+            <label class="terms-check">
+              <input type="checkbox" id="signup-terms-checkbox" required>
+              <span>I agree to the <a href="terms.html" target="_blank" rel="noopener">Terms of Service</a> and <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>, including that this app is not legal advice and that signing a contract here does not make it legally binding.</span>
+            </label>
+            <p class="field-error" id="signup-terms-error" hidden>Please agree to the Terms of Service to continue.</p>
+
             <button type="submit" class="btn-submit">Create Account</button>
           </form>
 
@@ -226,6 +232,16 @@
     }
 
     usernameError.hidden = true;
+
+    var termsCheckbox = document.getElementById('signup-terms-checkbox');
+    var termsError = document.getElementById('signup-terms-error');
+    if (!termsCheckbox.checked) {
+      termsError.hidden = false;
+      termsCheckbox.focus();
+      return;
+    }
+    termsError.hidden = true;
+    tbaAcceptTerms();
 
     var role = document.querySelector('input[name="role"]:checked').value;
 

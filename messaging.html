@@ -597,6 +597,7 @@
       return (
         '<div class="signature-block">' +
         '<h4>' + label + '</h4>' +
+        '<p class="sig-legal-note">This demo signature isn\'t legal advice and doesn\'t make this contract a legally binding agreement — see the <a href="terms.html" target="_blank" rel="noopener">Terms of Service</a>.</p>' +
         '<label class="sig-check"><input type="checkbox" id="sig-agree"> I agree to the terms of this contract and want to sign it digitally.</label>' +
         '<input type="text" id="sig-username" placeholder="Username" value="' + escapeHtml(localStorage.getItem('tba_username') || '') + '">' +
         '<input type="email" id="sig-email" placeholder="Email">' +

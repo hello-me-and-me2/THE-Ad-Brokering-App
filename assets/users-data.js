@@ -1405,3 +1405,89 @@ function tbaShowToast(message, type) {
     setTimeout(function () { toast.remove(); }, 300);
   }, 3200);
 }
+
+// --- Terms & legal-notice acceptance gate ---
+// A real sponsorship-deal platform would need explicit, logged
+// acceptance of its terms before anyone could use it — especially one
+// that lets people draft and "sign" contracts. This blocks the app
+// (not the public marketing/legal pages) behind a one-time acceptance
+// screen until tba_terms_accepted is set, the same way the auth guard
+// blocks unauthenticated access. It is disclosure, not magic: nothing
+// here — or anywhere else in this demo — makes a contract made in this
+// app an actual legally binding agreement. See terms.html for the
+// full notices this screen summarizes.
+function tbaHasAcceptedTerms() {
+  return localStorage.getItem('tba_terms_accepted') === '1';
+}
+
+function tbaAcceptTerms() {
+  localStorage.setItem('tba_terms_accepted', '1');
+  localStorage.setItem('tba_terms_accepted_at', new Date().toISOString());
+}
+
+function tbaEnsureTermsGateStyles() {
+  if (document.getElementById('tba-terms-gate-styles')) return;
+  var style = document.createElement('style');
+  style.id = 'tba-terms-gate-styles';
+  style.textContent =
+    '.tba-terms-overlay { position: fixed; inset: 0; z-index: 10000; background: rgba(10,8,5,0.72); display: flex; align-items: center; justify-content: center; padding: 20px; font-family: "Inter", "Helvetica Neue", Arial, sans-serif; }' +
+    '.tba-terms-card { background: #fffbf3; color: #2e2417; max-width: 520px; width: 100%; max-height: 88vh; overflow-y: auto; border-radius: 20px; padding: 32px 30px 26px; box-shadow: 0 30px 70px rgba(0,0,0,0.45); }' +
+    '.tba-terms-card h2 { font-size: 20px; margin: 0 0 4px; font-family: Georgia, "Times New Roman", serif; }' +
+    '.tba-terms-card .tba-terms-sub { font-size: 13px; color: #7a6d5a; margin: 0 0 18px; }' +
+    '.tba-terms-card ul { margin: 0 0 18px; padding-left: 20px; }' +
+    '.tba-terms-card li { font-size: 13.5px; line-height: 1.55; margin-bottom: 10px; }' +
+    '.tba-terms-card li b { color: #9b4d1f; }' +
+    '.tba-terms-card .tba-terms-link { font-size: 13px; margin: 0 0 20px; }' +
+    '.tba-terms-card .tba-terms-link a { color: #c1652c; font-weight: 600; }' +
+    '.tba-terms-check { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; line-height: 1.5; margin-bottom: 18px; cursor: pointer; }' +
+    '.tba-terms-check input { margin-top: 3px; flex-shrink: 0; width: 16px; height: 16px; }' +
+    '.tba-terms-btn { width: 100%; background: #c1652c; color: #fff; border: none; border-radius: 999px; padding: 13px 20px; font-size: 14.5px; font-weight: 700; cursor: pointer; transition: background 0.15s ease, opacity 0.15s ease; }' +
+    '.tba-terms-btn:disabled { opacity: 0.45; cursor: not-allowed; }' +
+    '.tba-terms-btn:not(:disabled):hover { background: #9b4d1f; }';
+  document.head.appendChild(style);
+}
+
+function tbaShowTermsGate() {
+  tbaEnsureTermsGateStyles();
+  document.body.style.overflow = 'hidden';
+
+  var overlay = document.createElement('div');
+  overlay.className = 'tba-terms-overlay';
+  overlay.innerHTML =
+    '<div class="tba-terms-card">' +
+    '<h2>Before you continue</h2>' +
+    '<p class="tba-terms-sub">A few things to know about THE INTROductory before you use it.</p>' +
+    '<ul>' +
+    '<li><b>Not legal advice.</b> Nothing here — including AI-drafted contracts — is legal advice, and using this app creates no attorney-client relationship.</li>' +
+    '<li><b>Contracts aren\'t guaranteed enforceable.</b> Agreements drafted or signed here are a demonstration, not a substitute for one prepared or reviewed by a lawyer.</li>' +
+    '<li><b>Signatures here are simulated.</b> The signing flow does not meet the requirements of the ESIGN Act, UETA, or similar laws, and does not make a contract legally binding.</li>' +
+    '<li><b>It\'s a local demo.</b> Everything you enter stays in your browser\'s local storage — nothing is sent to a server.</li>' +
+    '</ul>' +
+    '<p class="tba-terms-link">Full details: <a href="terms.html" target="_blank" rel="noopener">Terms of Service</a> &middot; <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a></p>' +
+    '<label class="tba-terms-check"><input type="checkbox" id="tba-terms-checkbox"> I have read and agree to the Terms of Service, Privacy Policy, and the notices above — including that this app does not provide legal advice and that nothing signed here is a guaranteed legally binding contract.</label>' +
+    '<button type="button" class="tba-terms-btn" id="tba-terms-accept-btn" disabled>I Agree &amp; Continue</button>' +
+    '</div>';
+  document.body.appendChild(overlay);
+
+  var checkbox = document.getElementById('tba-terms-checkbox');
+  var acceptBtn = document.getElementById('tba-terms-accept-btn');
+  checkbox.addEventListener('change', function () { acceptBtn.disabled = !checkbox.checked; });
+  acceptBtn.addEventListener('click', function () {
+    if (!checkbox.checked) return;
+    tbaAcceptTerms();
+    overlay.remove();
+    document.body.style.overflow = '';
+  });
+}
+
+// Runs on every page load; only actually shows the gate on pages
+// where you're signed into the app and haven't accepted yet — the
+// public marketing and legal pages, and the sign-in screen itself,
+// are left alone.
+(function () {
+  document.addEventListener('DOMContentLoaded', function () {
+    if (localStorage.getItem('tba_authed') !== '1') return;
+    if (tbaHasAcceptedTerms()) return;
+    tbaShowTermsGate();
+  });
+})();
