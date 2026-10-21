@@ -583,25 +583,46 @@
 
     function sigBlock(label, sig, isMe) {
       if (sig) {
+        var auditHtml =
+          '<p class="signature-meta">Signed ' + tbaFormatDateLong(sig.signedAt) + ' · ' + escapeHtml(sig.email) + '</p>' +
+          '<div class="signature-audit">' +
+          '<span>Document hash (SHA-256): <code>' + escapeHtml((sig.documentHash || '').slice(0, 16)) + '…</code></span>' +
+          '<span>Identity check: ' + (sig.verification ? 'Email code verified ✓' : 'Not verified') + '</span>' +
+          '<span>E-sign consent: ' + (sig.consentTimestamp ? 'Recorded ' + tbaFormatDateLong(sig.consentTimestamp) : 'Not recorded') + '</span>' +
+          '<span class="signature-audit-pending">IP address &amp; independent sealed copy: pending backend</span>' +
+          '</div>';
         return (
           '<div class="signature-block signed">' +
           '<h4>' + escapeHtml(label) + '</h4>' +
           '<div class="signature-script">' + escapeHtml(sig.username) + '</div>' +
-          '<p class="signature-meta">Signed ' + tbaFormatDateLong(sig.signedAt) + ' · ' + escapeHtml(sig.email) + '</p>' +
+          auditHtml +
           '</div>'
         );
       }
       if (!isMe) {
         return '<div class="signature-block pending"><h4>' + escapeHtml(label) + '</h4><p class="signature-meta">Waiting for signature…</p></div>';
       }
+      if (!tbaHasConsentedESign()) {
+        return (
+          '<div class="signature-block">' +
+          '<h4>' + label + '</h4>' +
+          '<p class="sig-legal-note">Signing requires consenting to receive records and sign electronically, per the ESIGN Act and UETA.</p>' +
+          '<button type="button" class="btn-sign" id="esign-consent-btn">Review &amp; Consent to E-Sign</button>' +
+          '</div>'
+        );
+      }
       return (
         '<div class="signature-block">' +
         '<h4>' + label + '</h4>' +
-        '<p class="sig-legal-note">This demo signature isn\'t legal advice and doesn\'t make this contract a legally binding agreement — see the <a href="terms.html" target="_blank" rel="noopener">Terms of Service</a>.</p>' +
+        '<p class="sig-legal-note">This demo signature isn\'t legal advice and, without a backend to verify identity and independently seal the record, doesn\'t yet make this contract legally binding — see the <a href="terms.html" target="_blank" rel="noopener">Terms of Service</a>.</p>' +
         '<label class="sig-check"><input type="checkbox" id="sig-agree"> I agree to the terms of this contract and want to sign it digitally.</label>' +
         '<input type="text" id="sig-username" placeholder="Username" value="' + escapeHtml(localStorage.getItem('tba_username') || '') + '">' +
         '<input type="email" id="sig-email" placeholder="Email">' +
         '<input type="password" id="sig-password" placeholder="Password">' +
+        '<div class="sig-verify-row">' +
+        '<input type="text" id="sig-verify-code" placeholder="6-digit code" maxlength="6" inputmode="numeric">' +
+        '<button type="button" class="btn-sign-secondary" id="sig-send-code-btn">Send Code</button>' +
+        '</div>' +
         '<button type="button" class="btn-sign" id="sign-btn" disabled>Sign Contract</button>' +
         '<p class="sig-error" id="sig-error" hidden></p>' +
         '</div>'
@@ -614,26 +635,90 @@
       return sigBlock(u ? u.name : p, contract.signatures[p], false);
     }).join('');
 
+    var certificateHtml = contract.status === 'signed' ? renderCertificateOfCompletion(contract) : '';
+
     return (
       '<div class="signature-section">' +
       '<h3>Signatures</h3>' +
       '<div class="signature-grid">' + blocks + '</div>' +
+      certificateHtml +
+      '</div>'
+    );
+  }
+
+  // A Certificate of Completion, the kind of summary record a real
+  // e-signature provider attaches to a fully executed document —
+  // every signer, when and how they signed, and the document hash
+  // each of them actually signed against. Built entirely from fields
+  // genuinely captured at signing time; nothing here is invented.
+  function renderCertificateOfCompletion(contract) {
+    var allSigs = [{ label: 'You', sig: contract.signatures.me }].concat(
+      contract.participants.map(function (p) {
+        var u = tbaGetUserByUsername(p);
+        return { label: u ? u.name : p, sig: contract.signatures[p] };
+      })
+    );
+
+    var rows = allSigs.map(function (s) {
+      return (
+        '<tr>' +
+        '<td>' + escapeHtml(s.label) + '</td>' +
+        '<td>' + escapeHtml(s.sig.email) + '</td>' +
+        '<td>' + tbaFormatDateLong(s.sig.signedAt) + '</td>' +
+        '<td><code>' + escapeHtml((s.sig.documentHash || '').slice(0, 12)) + '…</code></td>' +
+        '</tr>'
+      );
+    }).join('');
+
+    return (
+      '<div class="certificate-of-completion">' +
+      '<h3>Certificate of Completion</h3>' +
+      '<p class="cert-note">Generated client-side from this browser\'s own records. Once a backend exists, this certificate would also carry a server-verified IP address per signer and an independently-sealed copy of the executed document.</p>' +
+      '<table class="cert-table"><thead><tr><th>Signer</th><th>Email</th><th>Signed</th><th>Document Hash</th></tr></thead><tbody>' + rows + '</tbody></table>' +
       '</div>'
     );
   }
 
   function wireSignatureForm(contract) {
     if (contract.status === 'draft' || contract.signatures.me) return;
+
+    var consentBtn = document.getElementById('esign-consent-btn');
+    if (consentBtn) {
+      consentBtn.addEventListener('click', function () {
+        tbaShowESignConsentModal(function () { renderContractViewer(contract.id); });
+      });
+      return;
+    }
+
     var agree = document.getElementById('sig-agree');
     var signBtn = document.getElementById('sign-btn');
     if (!agree || !signBtn) return;
 
-    agree.addEventListener('change', function () { signBtn.disabled = !agree.checked; });
+    var sentCode = null;
+    var sendCodeBtn = document.getElementById('sig-send-code-btn');
+    var codeInput = document.getElementById('sig-verify-code');
+
+    function refreshSignEnabled() {
+      signBtn.disabled = !agree.checked;
+    }
+    agree.addEventListener('change', refreshSignEnabled);
+
+    sendCodeBtn.addEventListener('click', function () {
+      var emailVal = document.getElementById('sig-email').value.trim();
+      if (!emailVal) {
+        document.getElementById('sig-email').focus();
+        return;
+      }
+      sentCode = tbaRequestSignatureVerificationCode(emailVal);
+      sendCodeBtn.textContent = 'Resend Code';
+      codeInput.focus();
+    });
 
     signBtn.addEventListener('click', function () {
       var usernameVal = document.getElementById('sig-username').value.trim();
       var emailVal = document.getElementById('sig-email').value.trim();
       var passwordVal = document.getElementById('sig-password').value;
+      var codeVal = codeInput.value.trim();
       var errorEl = document.getElementById('sig-error');
 
       if (!agree.checked || !usernameVal || !emailVal || !passwordVal) {
@@ -641,19 +726,45 @@
         errorEl.hidden = false;
         return;
       }
+      if (!sentCode) {
+        errorEl.textContent = 'Click "Send Code" and enter the verification code before signing.';
+        errorEl.hidden = false;
+        return;
+      }
+      if (codeVal !== sentCode) {
+        errorEl.textContent = 'That verification code doesn\'t match. Check the code and try again.';
+        errorEl.hidden = false;
+        return;
+      }
+      errorEl.hidden = true;
 
-      var signature = { username: usernameVal, email: emailVal, signedAt: new Date().toISOString() };
-      tbaUpdateContract(contract.id, { signatures: Object.assign({}, contract.signatures, { me: signature }) });
+      signBtn.disabled = true;
+      signBtn.textContent = 'Signing…';
 
-      contract.participants.forEach(function (p) {
-        tbaAppendMyThreadMessage(p, { from: 'me', text: '✅ You signed "' + contract.name + '".' });
+      var latestText = contract.versions[contract.versions.length - 1].text;
+      tbaSha256Hex(latestText).then(function (hash) {
+        var signature = {
+          username: usernameVal,
+          email: emailVal,
+          signedAt: new Date().toISOString(),
+          documentHash: hash,
+          userAgent: navigator.userAgent,
+          consentTimestamp: localStorage.getItem('tba_esign_consent_accepted_at'),
+          verification: { method: 'email_code_demo', verifiedAt: new Date().toISOString() },
+          ipAddress: null
+        };
+        tbaUpdateContract(contract.id, { signatures: Object.assign({}, contract.signatures, { me: signature }) });
+
+        contract.participants.forEach(function (p) {
+          tbaAppendMyThreadMessage(p, { from: 'me', text: '✅ You signed "' + contract.name + '".' });
+        });
+        renderThreadList();
+        renderChat();
+
+        renderContractViewer(contract.id);
+        simulateCounterpartSignatures(contract.id);
+        tbaShowToast('You signed the contract', 'success');
       });
-      renderThreadList();
-      renderChat();
-
-      renderContractViewer(contract.id);
-      simulateCounterpartSignatures(contract.id);
-      tbaShowToast('You signed the contract', 'success');
     });
   }
 
@@ -672,21 +783,34 @@
         var counterpart = tbaGetUserByUsername(p);
         var name = counterpart ? counterpart.name : p;
         var email = p + '@' + p.replace(/[^a-z0-9]/gi, '') + '.co';
-        var signature = { username: counterpart ? counterpart.username : p, email: email, signedAt: new Date().toISOString() };
-        var newSigs = Object.assign({}, current.signatures);
-        newSigs[p] = signature;
+        var latestText = current.versions[current.versions.length - 1].text;
 
-        var allSigned = Object.keys(newSigs).every(function (k) { return newSigs[k]; });
-        tbaUpdateContract(id, { signatures: newSigs, status: allSigned ? 'signed' : current.status });
+        tbaSha256Hex(latestText).then(function (hash) {
+          var signature = {
+            username: counterpart ? counterpart.username : p,
+            email: email,
+            signedAt: new Date().toISOString(),
+            documentHash: hash,
+            userAgent: 'simulated-counterpart — no real second party in this demo',
+            consentTimestamp: null,
+            verification: null,
+            ipAddress: null
+          };
+          var newSigs = Object.assign({}, current.signatures);
+          newSigs[p] = signature;
 
-        tbaAppendMyThreadMessage(p, {
-          from: 'them',
-          text: '✅ ' + name + ' signed "' + current.name + '".' + (allSigned ? ' The contract is now fully executed.' : '')
+          var allSigned = Object.keys(newSigs).every(function (k) { return newSigs[k]; });
+          tbaUpdateContract(id, { signatures: newSigs, status: allSigned ? 'signed' : current.status });
+
+          tbaAppendMyThreadMessage(p, {
+            from: 'them',
+            text: '✅ ' + name + ' signed "' + current.name + '".' + (allSigned ? ' The contract is now fully executed.' : '')
+          });
+          bumpDealProgress(p);
+          if (p === activeThreadUsername) renderChat();
+          renderThreadList();
+          if (contractState.view === 'viewer' && contractState.editingContractId === id) renderContractViewer(id);
         });
-        bumpDealProgress(p);
-        if (p === activeThreadUsername) renderChat();
-        renderThreadList();
-        if (contractState.view === 'viewer' && contractState.editingContractId === id) renderContractViewer(id);
       }, 1600 + Math.random() * 1400);
     });
   }

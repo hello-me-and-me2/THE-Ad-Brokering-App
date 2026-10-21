@@ -122,6 +122,26 @@
       '</form>';
   }
 
+  function renderAccountSection(user) {
+    var consented = tbaHasConsentedESign();
+    return (
+      '<div class="profile-account-section">' +
+      '<h3>Account</h3>' +
+      '<div class="esign-consent-row">' +
+      '<div>' +
+      '<p class="esign-consent-label">Consent to sign documents electronically</p>' +
+      '<p class="esign-consent-status">' + (consented
+        ? 'Given ' + tbaFormatDateLong(localStorage.getItem('tba_esign_consent_accepted_at'))
+        : 'Not given yet — you\'ll be asked next time you sign a contract.') + '</p>' +
+      '</div>' +
+      (consented
+        ? '<button type="button" class="btn-edit" id="withdraw-esign-btn">Withdraw Consent</button>'
+        : '') +
+      '</div>' +
+      '</div>'
+    );
+  }
+
   function renderNetworkSection(user) {
     var members = tbaGetNetworkFor(user.username);
     var isYou = !!user.isYou;
@@ -256,10 +276,21 @@
       renderNetworkSection(user) +
       renderActivitySection(user) +
       (isYou ? renderVerifySection(user, verifyStatus) : '') +
+      (isYou ? renderAccountSection(user) : '') +
       (isYou ? renderEditForm(user) : '') +
       '</div>';
 
     if (isYou) {
+      var withdrawBtn = document.getElementById('withdraw-esign-btn');
+      if (withdrawBtn) {
+        withdrawBtn.addEventListener('click', function () {
+          localStorage.removeItem('tba_esign_consent_accepted');
+          localStorage.removeItem('tba_esign_consent_accepted_at');
+          render();
+          tbaShowToast('E-sign consent withdrawn');
+        });
+      }
+
       var verifyForm = document.getElementById('verify-apply-form');
       if (verifyForm) {
         verifyForm.addEventListener('submit', function (e) {

@@ -691,6 +691,32 @@ footer { padding: 28px 24px; text-align: center; color: var(--text-soft); font-s
 
 .sig-error { color: #f16565; font-size: 12px; margin: 8px 0 0; }
 
+.signature-audit {
+  display: flex; flex-direction: column; gap: 3px; margin-top: 8px; padding-top: 8px;
+  border-top: 1px dashed var(--line); font-size: 10.5px; color: var(--text-soft);
+}
+.signature-audit code { font-family: "JetBrains Mono", ui-monospace, monospace; color: var(--text); }
+.signature-audit-pending { font-style: italic; opacity: 0.8; }
+
+.sig-verify-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.sig-verify-row input { margin-bottom: 0; flex: 1; }
+
+.btn-sign-secondary {
+  border: 1px solid var(--line); background: var(--panel-2); color: var(--text); font-family: inherit;
+  font-weight: 600; font-size: 12px; padding: 0 14px; border-radius: 8px; cursor: pointer; white-space: nowrap;
+}
+.btn-sign-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+.certificate-of-completion {
+  grid-column: 1 / -1; margin-top: 8px; padding-top: 16px; border-top: 1px solid var(--line);
+}
+.certificate-of-completion h3 { margin: 0 0 6px; }
+.cert-note { font-size: 11.5px; color: var(--text-soft); margin: 0 0 12px; line-height: 1.5; }
+.cert-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.cert-table th { text-align: left; color: var(--text-soft); font-weight: 600; padding: 6px 10px; border-bottom: 1px solid var(--line); }
+.cert-table td { padding: 8px 10px; border-bottom: 1px solid var(--line); color: var(--text); }
+.cert-table code { font-family: "JetBrains Mono", ui-monospace, monospace; }
+
 .bubble.contract-bubble {
   display: flex; align-items: center; gap: 12px; max-width: 80%; padding: 12px 14px;
   background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px;
@@ -783,11 +809,17 @@ footer { padding: 28px 24px; text-align: center; color: var(--text-soft); font-s
   #contracts-view .version-chips,
   #contracts-view .sig-check,
   #contracts-view input,
-  #contracts-view .btn-sign { display: none !important; }
+  #contracts-view .btn-sign,
+  #contracts-view .btn-sign-secondary,
+  #contracts-view .sig-verify-row { display: none !important; }
   .contract-text-block { border: none; color: #000; background: #fff; font-size: 12px; }
-  .contract-viewer-head, .signature-section h3 { color: #000; }
+  .contract-viewer-head, .signature-section h3, .certificate-of-completion h3 { color: #000; }
   .signature-block { border: 1px solid #999; background: #fff; }
   .signature-block.pending { opacity: 1; }
   .signature-script { color: #000; }
   .signature-meta { color: #333; }
+  .signature-audit { color: #333; border-top-color: #ccc; }
+  .signature-audit code { color: #000; }
+  .cert-note { color: #333; }
+  .cert-table th, .cert-table td { color: #000; border-bottom-color: #ccc; }
 }

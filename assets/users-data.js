@@ -1491,3 +1491,102 @@ function tbaShowTermsGate() {
     tbaShowTermsGate();
   });
 })();
+
+// --- E-signature compliance scaffolding ---
+// These functions build the pieces an ESIGN Act / UETA-compliant
+// signing flow actually needs, so the data model and UX are ready to
+// carry real legal weight the moment this app has a real backend,
+// verified identity, and a real counterparty. Two things here are
+// already genuine, not simulated: the SHA-256 document hash (a real
+// cryptographic binding between a signature and the exact contract
+// text at the moment of signing) and the audit-trail fields this
+// browser can actually observe (timestamps, user agent, the consent
+// actions themselves). Everything that depends on a server —
+// delivering the verification code by real email, capturing a real
+// IP address, independently sealing the signed copy so neither party
+// can alter it after the fact — is clearly labeled as backend-pending
+// rather than faked.
+
+function tbaHasConsentedESign() {
+  return localStorage.getItem('tba_esign_consent_accepted') === '1';
+}
+
+function tbaAcceptESignConsent() {
+  localStorage.setItem('tba_esign_consent_accepted', '1');
+  localStorage.setItem('tba_esign_consent_accepted_at', new Date().toISOString());
+}
+
+// A real SHA-256 hash of the exact contract text being signed — this
+// is genuine cryptography, computed in-browser, not a placeholder.
+// Once a backend exists, the same hash lets anyone verify a signed
+// copy hasn't been altered since the moment it was signed.
+function tbaSha256Hex(text) {
+  var data = new TextEncoder().encode(text);
+  return crypto.subtle.digest('SHA-256', data).then(function (buf) {
+    return Array.prototype.map.call(new Uint8Array(buf), function (b) {
+      return b.toString(16).padStart(2, '0');
+    }).join('');
+  });
+}
+
+function tbaEnsureESignGateStyles() {
+  if (document.getElementById('tba-esign-gate-styles')) return;
+  var style = document.createElement('style');
+  style.id = 'tba-esign-gate-styles';
+  style.textContent =
+    '.tba-terms-card .tba-esign-sub-note { font-size: 12px; color: #9b4d1f; background: rgba(193,101,44,0.08); border: 1px solid rgba(193,101,44,0.25); border-radius: 8px; padding: 8px 10px; margin: -6px 0 16px; }';
+  document.head.appendChild(style);
+}
+
+// A distinct consent action from the general Terms gate, shown once
+// before the first time someone signs anything — ESIGN requires this
+// disclosure and an affirmative "I consent" action separate from a
+// site's general terms of use.
+function tbaShowESignConsentModal(onAccept) {
+  tbaEnsureTermsGateStyles();
+  tbaEnsureESignGateStyles();
+  document.body.style.overflow = 'hidden';
+
+  var overlay = document.createElement('div');
+  overlay.className = 'tba-terms-overlay';
+  overlay.innerHTML =
+    '<div class="tba-terms-card">' +
+    '<h2>Consent to Electronic Signatures &amp; Records</h2>' +
+    '<p class="tba-terms-sub">Required before signing anything in THE INTROductory, per the U.S. ESIGN Act and UETA.</p>' +
+    '<p class="tba-esign-sub-note">This demo cannot yet verify your identity or deliver anything by real email — see the notes below marking what still needs a backend.</p>' +
+    '<ul>' +
+    '<li><b>Scope.</b> This consent covers every document you sign electronically in this app, not just one transaction.</li>' +
+    '<li><b>Paper copies.</b> You can get a paper copy of anything you sign at any time using its Download or Print/Save as PDF button — no fee. This demo has no way to mail a physical copy.</li>' +
+    '<li><b>Withdrawing consent.</b> You can withdraw consent to sign electronically at any time from Profile → Account, before or after signing a given document — withdrawal doesn\'t undo a document already executed.</li>' +
+    '<li><b>Updating contact info.</b> Keep your email current from your Profile page so records and notices reach you.</li>' +
+    '<li><b>Requirements to access records.</b> A modern web browser with JavaScript enabled and the ability to view or print a PDF/text file — nothing else.</li>' +
+    '</ul>' +
+    '<p class="tba-terms-link">Full disclosure: <a href="terms.html#esign" target="_blank" rel="noopener">Terms of Service, Section 9</a></p>' +
+    '<label class="tba-terms-check"><input type="checkbox" id="tba-esign-checkbox"> I consent to sign documents and receive records electronically, and confirm I can access, download, and print them from this device.</label>' +
+    '<button type="button" class="tba-terms-btn" id="tba-esign-accept-btn" disabled>I Consent &amp; Continue</button>' +
+    '</div>';
+  document.body.appendChild(overlay);
+
+  var checkbox = document.getElementById('tba-esign-checkbox');
+  var acceptBtn = document.getElementById('tba-esign-accept-btn');
+  checkbox.addEventListener('change', function () { acceptBtn.disabled = !checkbox.checked; });
+  acceptBtn.addEventListener('click', function () {
+    if (!checkbox.checked) return;
+    tbaAcceptESignConsent();
+    overlay.remove();
+    document.body.style.overflow = '';
+    if (onAccept) onAccept();
+  });
+}
+
+// Stands in for emailing a one-time verification code — the one
+// piece of identity assurance a real e-signature flow needs that this
+// demo genuinely cannot provide without a backend to send real email.
+// The code is shown directly, clearly labeled as a stand-in, rather
+// than silently treating the signer as "verified" without checking
+// anything.
+function tbaRequestSignatureVerificationCode(email) {
+  var code = String(Math.floor(100000 + Math.random() * 900000));
+  tbaShowToast('[Demo] Verification code for ' + email + ' (emailed for real once a backend exists): ' + code);
+  return code;
+}

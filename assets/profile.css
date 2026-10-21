@@ -294,6 +294,21 @@ img.profile-avatar-lg { object-fit: cover; }
 }
 .profile-activity-section h3 { font-size: 15px; margin: 0 0 14px; font-weight: 700; color: var(--ink); }
 
+.profile-account-section {
+  margin-top: 30px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  text-align: left;
+}
+.profile-account-section h3 { font-size: 15px; margin: 0 0 14px; font-weight: 700; color: var(--ink); }
+
+.esign-consent-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  background: var(--border); border-radius: 12px; padding: 14px 16px;
+}
+.esign-consent-label { font-weight: 700; font-size: 13.5px; margin: 0 0 3px; }
+.esign-consent-status { font-size: 12.5px; color: var(--ink-soft); margin: 0; }
+
 .activity-feed-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 
 .activity-feed-item {
