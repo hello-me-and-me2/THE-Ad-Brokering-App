@@ -79,6 +79,10 @@
   var myUsername = localStorage.getItem('tba_username');
   var viewUsername = requestedUsername || myUsername;
 
+  // Recorded once per page load, not per render() — render() re-runs
+  // after every save/submit, and this is a page view, not an edit.
+  if (tbaGetUserByUsername(viewUsername)) tbaRecordProfileView(viewUsername);
+
   var content = document.getElementById('profile-content');
   var sentRequests = tbaGetSentRequests();
 

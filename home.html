@@ -54,13 +54,13 @@
   <div class="stat-grid">
     <div class="stat-card">
       <div class="label">Profile Views</div>
-      <div class="value">428</div>
-      <div class="delta up">+12% this week</div>
+      <div class="value" id="profile-views-stat">0</div>
+      <div class="delta up" id="profile-views-delta">No views yet</div>
     </div>
     <div class="stat-card">
       <div class="label">Active Conversations</div>
-      <div class="value">4</div>
-      <div class="delta up">1 new offer</div>
+      <div class="value" id="active-conversations-stat">0</div>
+      <div class="delta up" id="active-conversations-delta">No open threads</div>
     </div>
     <div class="stat-card">
       <div class="label">Requests Sent</div>
@@ -69,50 +69,26 @@
     </div>
     <div class="stat-card">
       <div class="label">Response Rate</div>
-      <div class="value">86%</div>
-      <div class="delta up">Above average</div>
+      <div class="value" id="response-rate-stat">—</div>
+      <div class="delta up" id="response-rate-delta">No replies yet</div>
     </div>
     <div class="stat-card">
       <div class="label">Deals Closed</div>
-      <div class="value">7</div>
-      <div class="delta up">+2 this month</div>
+      <div class="value" id="deals-closed-stat">0</div>
+      <div class="delta up" id="deals-closed-delta">None yet</div>
     </div>
   </div>
 
   <div class="dash-grid">
     <div class="panel">
       <h2>Profile Views — Last 7 Days</h2>
-      <div class="bar-chart">
-        <div class="bar-col"><div class="bar" style="height: 38%;" data-tooltip="54 views"></div><span class="bar-label">Mon</span></div>
-        <div class="bar-col"><div class="bar" style="height: 52%;" data-tooltip="74 views"></div><span class="bar-label">Tue</span></div>
-        <div class="bar-col"><div class="bar" style="height: 46%;" data-tooltip="66 views"></div><span class="bar-label">Wed</span></div>
-        <div class="bar-col"><div class="bar" style="height: 64%;" data-tooltip="92 views"></div><span class="bar-label">Thu</span></div>
-        <div class="bar-col"><div class="bar" style="height: 58%;" data-tooltip="83 views"></div><span class="bar-label">Fri</span></div>
-        <div class="bar-col"><div class="bar" style="height: 82%;" data-tooltip="117 views"></div><span class="bar-label">Sat</span></div>
-        <div class="bar-col"><div class="bar" style="height: 100%;" data-tooltip="143 views"></div><span class="bar-label">Sun</span></div>
-      </div>
+      <div class="bar-chart" id="views-bar-chart"></div>
     </div>
 
     <div class="panel">
       <h2>Recent Activity</h2>
-      <ul class="activity-list">
-        <li>
-          <div class="activity-title">Maren Cole sent a counter-offer</div>
-          <div class="activity-meta">Skyline Coffee Co. &middot; 2 hours ago</div>
-        </li>
-        <li>
-          <div class="activity-title">Riverside Outdoor Gear viewed your profile</div>
-          <div class="activity-meta">1 day ago</div>
-        </li>
-        <li>
-          <div class="activity-title">Deal closed with Jordan Blake</div>
-          <div class="activity-meta">$1,800 &middot; 2 days ago</div>
-        </li>
-        <li>
-          <div class="activity-title">Pear &amp; Co. Skincare paused negotiation</div>
-          <div class="activity-meta">3 days ago</div>
-        </li>
-      </ul>
+      <ul class="activity-list" id="recent-activity-list"></ul>
+      <p class="activity-empty" id="recent-activity-empty" hidden>Nothing to show yet — activity will show up here as deals, contracts, and connections happen.</p>
     </div>
   </div>
 
@@ -152,6 +128,51 @@
   document.getElementById('welcome-heading').textContent = myUsername
     ? 'Welcome back, @' + myUsername
     : 'Welcome back';
+
+  // --- Stat cards, all computed from real thread/contract/view data ---
+
+  var profileViews = tbaGetProfileViews(myUsername);
+  document.getElementById('profile-views-stat').textContent = profileViews.length;
+  var viewsThisWeek = tbaGetProfileViewsLast7Days(myUsername).reduce(function (sum, d) { return sum + d.count; }, 0);
+  document.getElementById('profile-views-delta').textContent =
+    profileViews.length === 0 ? 'No views yet' : viewsThisWeek + ' in the last 7 days';
+
+  var activeConversations = tbaGetActiveConversationsCount();
+  document.getElementById('active-conversations-stat').textContent = activeConversations;
+  var newOffers = tbaGetNewOffersCount();
+  document.getElementById('active-conversations-delta').textContent =
+    newOffers > 0 ? newOffers + ' new offer' + (newOffers === 1 ? '' : 's') : (activeConversations === 0 ? 'No open threads' : 'Up to date');
+
+  var responseRate = tbaGetResponseRate();
+  document.getElementById('response-rate-stat').textContent = responseRate === null ? '—' : responseRate + '%';
+  document.getElementById('response-rate-delta').textContent =
+    responseRate === null ? 'No replies yet' : (responseRate >= 80 ? 'Above average' : responseRate >= 50 ? 'Steady' : 'Needs attention');
+  if (responseRate !== null && responseRate < 50) {
+    document.getElementById('response-rate-delta').classList.remove('up');
+    document.getElementById('response-rate-delta').classList.add('down');
+  }
+
+  var dealsClosed = tbaGetDealsClosedCount();
+  document.getElementById('deals-closed-stat').textContent = dealsClosed;
+  document.getElementById('deals-closed-delta').textContent = dealsClosed === 0 ? 'None yet' : 'All time';
+
+  var chartDays = tbaGetProfileViewsLast7Days(myUsername);
+  var maxCount = Math.max.apply(null, chartDays.map(function (d) { return d.count; }).concat([1]));
+  document.getElementById('views-bar-chart').innerHTML = chartDays.map(function (d) {
+    var heightPct = Math.max(6, Math.round((d.count / maxCount) * 100));
+    return '<div class="bar-col"><div class="bar" style="height: ' + heightPct + '%;" data-tooltip="' + d.count + ' view' + (d.count === 1 ? '' : 's') + '"></div><span class="bar-label">' + d.label + '</span></div>';
+  }).join('');
+
+  var activities = tbaGetActivityFor(myUsername);
+  var activityListEl = document.getElementById('recent-activity-list');
+  document.getElementById('recent-activity-empty').hidden = activities.length > 0;
+  activityListEl.innerHTML = activities.slice(0, 6).map(function (a) {
+    return '<li><div class="activity-title">' + a.icon + ' ' + a.text.replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    }) + '</div>' +
+    (a.date ? '<div class="activity-meta">' + tbaFormatDateLong(a.date) + '</div>' : '') +
+    '</li>';
+  }).join('');
 
   var deadlines = tbaGetUpcomingDeadlines();
   if (deadlines.length > 0) {

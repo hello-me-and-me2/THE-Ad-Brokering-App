@@ -796,6 +796,102 @@ function tbaGetUpcomingDeadlines() {
     .sort(function (a, b) { return new Date(a.dueDate) - new Date(b.dueDate); });
 }
 
+// --- Profile views ---
+// A real, if modest, view counter: every time a profile page loads,
+// the account being viewed gets one recorded visit, timestamped. In a
+// single-browser demo that mostly means your own visits to your own
+// profile — the dashboard shows that real (if small) number instead
+// of a made-up one.
+function tbaRecordProfileView(username) {
+  if (!username) return;
+  var key = 'tba_profile_views_' + username.toLowerCase();
+  var views = tbaGetProfileViews(username);
+  views.push(new Date().toISOString());
+  localStorage.setItem(key, JSON.stringify(views.slice(-1000)));
+}
+
+function tbaGetProfileViews(username) {
+  if (!username) return [];
+  try {
+    return JSON.parse(localStorage.getItem('tba_profile_views_' + username.toLowerCase()) || '[]');
+  } catch (e) {
+    return [];
+  }
+}
+
+// Last 7 days' worth of view counts, oldest first, each labeled with
+// its weekday — what the dashboard's bar chart renders.
+function tbaGetProfileViewsLast7Days(username) {
+  var views = tbaGetProfileViews(username).map(function (iso) { return new Date(iso); });
+  var days = [];
+  for (var i = 6; i >= 0; i--) {
+    var day = new Date();
+    day.setHours(0, 0, 0, 0);
+    day.setDate(day.getDate() - i);
+    var next = new Date(day);
+    next.setDate(next.getDate() + 1);
+    var count = views.filter(function (v) { return v >= day && v < next; }).length;
+    days.push({ label: day.toLocaleDateString(undefined, { weekday: 'short' }), count: count });
+  }
+  return days;
+}
+
+// --- Dashboard stats ---
+// Everything here is computed from the same thread/contract data the
+// rest of the app already uses — no separate counters to keep in
+// sync, and no placeholder numbers.
+
+function tbaGetActiveConversationsCount() {
+  return TBA_MY_THREADS_SEED.filter(function (t) { return t.status !== 'closed'; }).length;
+}
+
+// Threads where the other side's most recent message is an offer you
+// haven't countered or accepted yet.
+function tbaGetNewOffersCount() {
+  return TBA_MY_THREADS_SEED.filter(function (t) {
+    var messages = tbaGetMyThreadMessages(t.username);
+    var last = messages[messages.length - 1];
+    return last && last.type === 'offer' && last.from === 'them';
+  }).length;
+}
+
+// Share of conversations with an incoming message that you've
+// actually replied to — a real response rate, not a vanity number.
+function tbaGetResponseRate() {
+  var withIncoming = 0;
+  var responded = 0;
+
+  TBA_MY_THREADS_SEED.forEach(function (t) {
+    var messages = tbaGetMyThreadMessages(t.username);
+    var firstIncomingIndex = messages.findIndex(function (m) { return m.from === 'them'; });
+    if (firstIncomingIndex === -1) return;
+    withIncoming++;
+    var repliedAfter = messages.slice(firstIncomingIndex + 1).some(function (m) { return m.from === 'me'; });
+    if (repliedAfter) responded++;
+  });
+
+  if (withIncoming === 0) return null;
+  return Math.round((responded / withIncoming) * 100);
+}
+
+// Deals you've actually closed — a thread marked closed, or any
+// contract that's reached fully signed.
+function tbaGetDealsClosedCount() {
+  var closedUsernames = TBA_MY_THREADS_SEED
+    .filter(function (t) { return t.status === 'closed'; })
+    .map(function (t) { return t.username.toLowerCase(); });
+
+  tbaGetContracts()
+    .filter(function (c) { return c.status === 'signed'; })
+    .forEach(function (c) {
+      c.participants.forEach(function (p) {
+        if (closedUsernames.indexOf(p.toLowerCase()) === -1) closedUsernames.push(p.toLowerCase());
+      });
+    });
+
+  return closedUsernames.length;
+}
+
 // --- Activity feed ---
 // Derived on the fly from data that already exists elsewhere (no
 // separate event log to keep in sync) — verification status, closed
