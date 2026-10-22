@@ -116,6 +116,8 @@ h1 { font-family: "Fraunces", Georgia, serif; font-weight: 700; }
 .pitch-stats .stat .num { font-family: "Fraunces", serif; font-size: 24px; font-weight: 700; color: var(--terracotta-dark); display: block; }
 .pitch-stats .stat .label { font-size: 12px; color: var(--ink-soft); }
 
+.pitch-stats-note { font-size: 11px; color: var(--ink-soft); line-height: 1.5; margin: 16px 0 0; font-style: italic; }
+
 .auth-panel { display: flex; }
 
 .signin-card {

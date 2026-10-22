@@ -37,21 +37,22 @@
       </p>
 
       <div class="pitch-stats">
-        <h3>Today on the platform</h3>
+        <h3>On the platform right now</h3>
         <div class="stat-row">
           <div class="stat">
-            <span class="num">1,240+</span>
+            <span class="num" id="stat-creators">—</span>
             <span class="label">Active Creators</span>
           </div>
           <div class="stat">
-            <span class="num">380+</span>
+            <span class="num" id="stat-brands">—</span>
             <span class="label">Brand Partners</span>
           </div>
           <div class="stat">
-            <span class="num">92%</span>
-            <span class="label">Deals Closed Fairly</span>
+            <span class="num" id="stat-verified">—</span>
+            <span class="label">Verified Accounts</span>
           </div>
         </div>
+        <p class="pitch-stats-note">The real directory on this device — this demo has no shared backend, so these numbers are what's actually here, not platform-wide marketing figures.</p>
       </div>
     </div>
 
@@ -145,6 +146,22 @@
 
 <script>
   tbaWireThemeToggle('theme-toggle-btn', 'light');
+
+  // The directory actually on this device — no shared backend means
+  // no real platform-wide numbers to report, so this shows the real
+  // (small) seed directory plus whoever has signed up in this browser,
+  // rather than an invented marketing figure.
+  (function () {
+    var allUsers = tbaGetAllUsers();
+    var creators = allUsers.filter(function (u) { return u.role === 'influencer'; }).length;
+    var brands = allUsers.filter(function (u) { return u.role === 'business'; }).length;
+    var verified = allUsers.filter(function (u) { return u.verified; }).length;
+    var verifiedPct = allUsers.length > 0 ? Math.round((verified / allUsers.length) * 100) : 0;
+
+    document.getElementById('stat-creators').textContent = creators;
+    document.getElementById('stat-brands').textContent = brands;
+    document.getElementById('stat-verified').textContent = verifiedPct + '%';
+  })();
 
   // Tab switching between Log In and Sign Up
   var tabButtons = document.querySelectorAll('.auth-tab');
