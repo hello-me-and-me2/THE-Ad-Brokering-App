@@ -40,16 +40,20 @@
         <h3>On the platform right now</h3>
         <div class="stat-row">
           <div class="stat">
-            <span class="num" id="stat-creators">—</span>
-            <span class="label">Active Creators</span>
-          </div>
-          <div class="stat">
             <span class="num" id="stat-brands">—</span>
-            <span class="label">Brand Partners</span>
+            <span class="label">Businesses</span>
           </div>
           <div class="stat">
-            <span class="num" id="stat-verified">—</span>
-            <span class="label">Verified Accounts</span>
+            <span class="num" id="stat-creators">—</span>
+            <span class="label">Influencers</span>
+          </div>
+          <div class="stat">
+            <span class="num" id="stat-deals">—</span>
+            <span class="label">Deals Closed</span>
+          </div>
+          <div class="stat">
+            <span class="num" id="stat-contracts">—</span>
+            <span class="label">Contracts Signed</span>
           </div>
         </div>
         <p class="pitch-stats-note">The real directory on this device — this demo has no shared backend, so these numbers are what's actually here, not platform-wide marketing figures.</p>
@@ -147,21 +151,27 @@
 <script>
   tbaWireThemeToggle('theme-toggle-btn', 'light');
 
-  // The directory actually on this device — no shared backend means
-  // no real platform-wide numbers to report, so this shows the real
-  // (small) seed directory plus whoever has signed up in this browser,
-  // rather than an invented marketing figure.
-  (function () {
+  // The directory and deal activity actually on this device — no
+  // shared backend means no real platform-wide numbers to report, so
+  // this shows what's genuinely here rather than an invented figure.
+  // Updates live via the storage event, which fires whenever another
+  // tab or window on this device changes localStorage (e.g. you sign
+  // a contract in a Messaging tab while this page is still open).
+  function renderLandingStats() {
     var allUsers = tbaGetAllUsers();
-    var creators = allUsers.filter(function (u) { return u.role === 'influencer'; }).length;
     var brands = allUsers.filter(function (u) { return u.role === 'business'; }).length;
-    var verified = allUsers.filter(function (u) { return u.verified; }).length;
-    var verifiedPct = allUsers.length > 0 ? Math.round((verified / allUsers.length) * 100) : 0;
+    var creators = allUsers.filter(function (u) { return u.role === 'influencer'; }).length;
+    var dealsClosed = tbaGetDealsClosedCount();
+    var contractsSigned = tbaGetContracts().filter(function (c) { return c.status === 'signed'; }).length;
 
-    document.getElementById('stat-creators').textContent = creators;
     document.getElementById('stat-brands').textContent = brands;
-    document.getElementById('stat-verified').textContent = verifiedPct + '%';
-  })();
+    document.getElementById('stat-creators').textContent = creators;
+    document.getElementById('stat-deals').textContent = dealsClosed;
+    document.getElementById('stat-contracts').textContent = contractsSigned;
+  }
+
+  renderLandingStats();
+  window.addEventListener('storage', renderLandingStats);
 
   // Tab switching between Log In and Sign Up
   var tabButtons = document.querySelectorAll('.auth-tab');
