@@ -179,11 +179,15 @@
     var body = activities.length === 0
       ? '<p class="no-links">✨ Nothing to show yet — activity will show up here as deals, contracts, and connections happen.</p>'
       : '<ul class="activity-feed-list">' + activities.map(function (a) {
+          var tag = a.link ? 'a' : 'div';
+          var hrefAttr = a.link ? ' href="' + a.link + '"' : '';
           return '<li class="activity-feed-item">' +
+            '<' + tag + ' class="activity-feed-link"' + hrefAttr + '>' +
             '<span class="activity-feed-icon">' + a.icon + '</span>' +
             '<span class="activity-feed-text">' + escapeHtml(a.text) +
             (a.date ? '<span class="activity-feed-date">' + tbaFormatDateLong(a.date) + '</span>' : '') +
             '</span>' +
+            '</' + tag + '>' +
             '</li>';
         }).join('') + '</ul>';
 

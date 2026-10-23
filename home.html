@@ -166,12 +166,19 @@
   var activities = tbaGetActivityFor(myUsername);
   var activityListEl = document.getElementById('recent-activity-list');
   document.getElementById('recent-activity-empty').hidden = activities.length > 0;
-  activityListEl.innerHTML = activities.slice(0, 6).map(function (a) {
-    return '<li><div class="activity-title">' + a.icon + ' ' + a.text.replace(/[&<>"']/g, function (c) {
+  function escapeHtmlForActivity(str) {
+    return String(str || '').replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-    }) + '</div>' +
+    });
+  }
+
+  activityListEl.innerHTML = activities.slice(0, 6).map(function (a) {
+    var tag = a.link ? 'a' : 'div';
+    var hrefAttr = a.link ? ' href="' + a.link + '"' : '';
+    return '<li><' + tag + ' class="activity-link"' + hrefAttr + '>' +
+    '<div class="activity-title">' + a.icon + ' ' + escapeHtmlForActivity(a.text) + '</div>' +
     (a.date ? '<div class="activity-meta">' + tbaFormatDateLong(a.date) + '</div>' : '') +
-    '</li>';
+    '</' + tag + '></li>';
   }).join('');
 
   var deadlines = tbaGetUpcomingDeadlines();

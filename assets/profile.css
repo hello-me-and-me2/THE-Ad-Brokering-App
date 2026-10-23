@@ -311,10 +311,13 @@ img.profile-avatar-lg { object-fit: cover; }
 
 .activity-feed-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 
-.activity-feed-item {
+.activity-feed-link {
   display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px;
   background: var(--border); border: 1px solid var(--border); border-radius: 12px;
+  text-decoration: none; color: inherit; transition: border-color 0.15s ease, transform 0.15s ease;
 }
+a.activity-feed-link { cursor: pointer; }
+a.activity-feed-link:hover { border-color: var(--terracotta); transform: translateX(2px); }
 
 .activity-feed-icon { font-size: 15px; line-height: 1.4; }
 

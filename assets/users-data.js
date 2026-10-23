@@ -906,25 +906,38 @@ function tbaGetActivityFor(username) {
     var logEntry = tbaGetVerificationDecisionLog().find(function (l) {
       return l.username.toLowerCase() === username.toLowerCase() && l.decision === 'approved';
     });
-    activities.push({ icon: '✅', text: 'Became a verified account', date: logEntry ? logEntry.decidedAt : null });
+    activities.push({
+      icon: '✅', text: 'Became a verified account', date: logEntry ? logEntry.decidedAt : null,
+      link: isYou ? 'profile.html' : 'profile.html?u=' + encodeURIComponent(username)
+    });
   }
 
   if (isYou) {
     TBA_MY_THREADS_SEED.forEach(function (t) {
       if (t.status === 'closed') {
-        activities.push({ icon: '🤝', text: 'Closed a deal with ' + t.displayName, date: null });
+        activities.push({
+          icon: '🤝', text: 'Closed a deal with ' + t.displayName, date: null,
+          link: 'messaging.html?thread=' + encodeURIComponent(t.username)
+        });
       }
     });
   } else {
     tbaGetUserThreads(username).forEach(function (t) {
       if (t.status === 'closed') {
-        activities.push({ icon: '🤝', text: 'Closed a deal with ' + t.counterpart, date: null });
+        // No real page shows this account's own deal thread with a
+        // third party — it's display-only seed history, so this one
+        // activity item is left unlinked rather than pointed at
+        // something that isn't actually there.
+        activities.push({ icon: '🤝', text: 'Closed a deal with ' + t.counterpart, date: null, link: null });
       }
     });
   }
 
   tbaGetNetworkFor(username).forEach(function (member) {
-    activities.push({ icon: '🔗', text: 'Connected with ' + member.name, date: null });
+    activities.push({
+      icon: '🔗', text: 'Connected with ' + member.name, date: null,
+      link: 'profile.html?u=' + encodeURIComponent(member.username)
+    });
   });
 
   tbaGetContracts().forEach(function (c) {
@@ -935,7 +948,10 @@ function tbaGetActivityFor(username) {
     var otherNames = isYou
       ? c.participants.map(function (p) { var u = tbaGetUserByUsername(p); return u ? u.name : p; }).join(', ')
       : '@' + myUsername;
-    activities.push({ icon: '📄', text: 'Signed "' + c.name + '" with ' + otherNames, date: sig ? sig.signedAt : null });
+    activities.push({
+      icon: '📄', text: 'Signed "' + c.name + '" with ' + otherNames, date: sig ? sig.signedAt : null,
+      link: 'messaging.html?contract=' + encodeURIComponent(c.id)
+    });
   });
 
   activities.sort(function (a, b) {
