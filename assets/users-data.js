@@ -1124,6 +1124,34 @@ tbaApplyTheme();
 // Wires up a theme-toggle button: reflects the current effective
 // theme (falling back to the page's own natural default when no
 // preference is saved yet) and flips it on click.
+// Hand-drawn line icons (currentColor strokes/fills, so each picks up
+// whatever text color the button already uses in its theme) in place
+// of emoji, which render as a different picture on every OS and don't
+// match this app's own visual language.
+function tbaIconSun() {
+  return '<svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">' +
+    '<circle cx="10" cy="10" r="3.6"/>' +
+    '<path d="M10 1.8v2.1M10 16.1v2.1M18.2 10h-2.1M3.9 10H1.8M15.73 4.27l-1.49 1.49M5.76 14.24l-1.49 1.49M15.73 15.73l-1.49-1.49M5.76 5.76L4.27 4.27"/>' +
+    '</svg>';
+}
+
+function tbaIconMoon() {
+  return '<svg viewBox="0 0 20 20" width="15" height="15" fill="currentColor" aria-hidden="true">' +
+    '<path d="M17.2 12.44A7.5 7.5 0 018.06 3.3a.8.8 0 00-1-1.02A8.5 8.5 0 1018.2 13.4a.8.8 0 00-1-.96z"/>' +
+    '</svg>';
+}
+
+// A bell with a small signature notch at the base — a deliberate
+// deviation from a plain bell outline so it reads as this app's icon
+// rather than a stock glyph, while staying recognizable at 16px.
+function tbaIconBell() {
+  return '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M5 8.2a5 5 0 0110 0c0 3.1 1.05 4.5 1.55 5.1a.6.6 0 01-.46 1H3.91a.6.6 0 01-.46-1C3.95 12.7 5 11.3 5 8.2z"/>' +
+    '<path d="M8.15 16.4a1.9 1.9 0 003.7 0"/>' +
+    '<path d="M8.6 8.2a1.4 1.4 0 012.8 0" stroke-width="1.3"/>' +
+    '</svg>';
+}
+
 function tbaWireThemeToggle(buttonId, naturalDefault) {
   var btn = document.getElementById(buttonId);
   if (!btn) return;
@@ -1134,7 +1162,7 @@ function tbaWireThemeToggle(buttonId, naturalDefault) {
 
   function render() {
     var current = effectiveTheme();
-    btn.textContent = current === 'dark' ? '☀️' : '🌙';
+    btn.innerHTML = current === 'dark' ? tbaIconSun() : tbaIconMoon();
     btn.setAttribute('aria-label', current === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
     btn.title = current === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
   }
@@ -1256,6 +1284,8 @@ function tbaWireNotificationBell(wrapId, btnId) {
   var wrap = document.getElementById(wrapId);
   var btn = document.getElementById(btnId);
   if (!wrap || !btn) return;
+
+  btn.innerHTML = tbaIconBell();
 
   var badge = document.createElement('span');
   badge.className = 'notif-badge';
@@ -1403,6 +1433,8 @@ function tbaWireAdminNotificationBell(wrapId, btnId) {
   var wrap = document.getElementById(wrapId);
   var btn = document.getElementById(btnId);
   if (!wrap || !btn) return;
+
+  btn.innerHTML = tbaIconBell();
 
   var badge = document.createElement('span');
   badge.className = 'notif-badge';
