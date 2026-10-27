@@ -1817,8 +1817,11 @@ function tbaEnsureButtonPressStyles() {
   if (document.getElementById('tba-button-press-styles')) return;
   var style = document.createElement('style');
   style.id = 'tba-button-press-styles';
-  var tags = ['button', '.auth-tab', '.role-option', '.theme-toggle-standalone', '[role="button"]'];
-  var bigger = ['.btn-submit', '.notfound-btn', 'a.notfound-btn'];
+  var tags = [
+    'button', '.auth-tab', '.role-option', '.theme-toggle-standalone', '[role="button"]',
+    'a.admin-btn', 'a.share-btn'
+  ];
+  var bigger = ['.btn-submit', '.notfound-btn', 'a.notfound-btn', 'a.btn-primary'];
   var all = tags.concat(bigger);
   function suffixed(list, suffix) {
     return list.map(function (s) { return s + suffix; }).join(', ');
@@ -1831,3 +1834,9 @@ function tbaEnsureButtonPressStyles() {
   document.head.appendChild(style);
 }
 tbaEnsureButtonPressStyles();
+
+// Mobile Safari (and some mobile Chrome builds) won't apply :active
+// styles during a touch hold unless a touchstart listener is present
+// on the page — without this, the press-scale only flashed after
+// release instead of while the button was actually held down.
+document.addEventListener('touchstart', function () {}, { passive: true });
