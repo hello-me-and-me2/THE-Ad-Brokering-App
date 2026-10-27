@@ -1762,8 +1762,8 @@ function tbaEnsurePageTransitionStyles() {
   var style = document.createElement('style');
   style.id = 'tba-page-transition-styles';
   style.textContent =
-    'body { transition: opacity 0.15s ease-out; }' +
-    'html.tba-leaving body { opacity: 0; }';
+    'body { transition: opacity 0.13s ease, transform 0.13s ease; }' +
+    'html.tba-leaving body { opacity: 0; transform: scale(0.99); }';
   document.head.appendChild(style);
 }
 
