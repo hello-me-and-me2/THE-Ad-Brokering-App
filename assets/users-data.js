@@ -1734,3 +1734,78 @@ function tbaRequestSignatureVerificationCode(email) {
   tbaShowToast('[Demo] Verification code for ' + email + ' (emailed for real once a backend exists): ' + code);
   return code;
 }
+
+// --- Page-to-page navigation ---
+// This is a plain multi-page site — every link is a real browser
+// navigation, not a client-side route swap, so there's a genuine gap
+// while the next page loads. Two things address it: prefetching the
+// pages you're actually likely to click next (a real reduction in
+// that gap, since the browser already has the file by the time you
+// click), and a short fade on the way out so whatever gap remains
+// reads as an intentional transition rather than the page going
+// unresponsive.
+
+function tbaPrefetchLikelyNextPages() {
+  var candidates = ['home.html', 'messaging.html', 'network.html', 'about.html', 'profile.html'];
+  var current = window.location.pathname.split('/').pop();
+  candidates.forEach(function (p) {
+    if (p === current) return;
+    var link = document.createElement('link');
+    link.rel = 'prefetch';
+    link.href = p;
+    document.head.appendChild(link);
+  });
+}
+
+function tbaEnsurePageTransitionStyles() {
+  if (document.getElementById('tba-page-transition-styles')) return;
+  var style = document.createElement('style');
+  style.id = 'tba-page-transition-styles';
+  style.textContent =
+    'body { transition: opacity 0.13s ease, transform 0.13s ease; }' +
+    'html.tba-leaving body { opacity: 0; transform: scale(0.99); }';
+  document.head.appendChild(style);
+}
+
+// Fades the current page out, then actually navigates — used both by
+// the link-click handler below and by the few places that redirect
+// from JS (login, signup, admin sign-in) instead of a plain <a href>.
+function tbaNavigateTo(href) {
+  tbaEnsurePageTransitionStyles();
+  document.documentElement.classList.add('tba-leaving');
+  setTimeout(function () { window.location.href = href; }, 130);
+}
+
+function tbaWirePageTransitions() {
+  tbaEnsurePageTransitionStyles();
+  tbaPrefetchLikelyNextPages();
+
+  document.addEventListener('click', function (e) {
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    var link = e.target.closest('a[href]');
+    if (!link) return;
+    if (link.target && link.target !== '_self') return;
+    if (link.hasAttribute('download')) return;
+
+    var href = link.getAttribute('href');
+    if (!href || href.charAt(0) === '#') return;
+    if (/^(mailto|tel|javascript):/i.test(href)) return;
+
+    var url;
+    try { url = new URL(href, window.location.href); } catch (err) { return; }
+    if (url.origin !== window.location.origin) return;
+    if (url.pathname === window.location.pathname && url.hash) return;
+
+    e.preventDefault();
+    tbaNavigateTo(href);
+  });
+
+  // Restores visibility if the page is ever reached via the
+  // back/forward cache mid-fade (e.g. the user clicked, then hit
+  // back before the next page finished loading).
+  window.addEventListener('pageshow', function () {
+    document.documentElement.classList.remove('tba-leaving');
+  });
+}
+
+tbaWirePageTransitions();
