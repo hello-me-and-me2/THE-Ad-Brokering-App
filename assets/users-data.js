@@ -1870,7 +1870,7 @@ function tbaEnsureButtonPressStyles() {
   ];
   var bigger = [
     '.btn-submit', '.notfound-btn', 'a.notfound-btn', 'a.btn-primary',
-    '.thread-item', '.contract-card', '.thread-select-card', 'a.admin-user-card'
+    '.thread-item', '.contract-card', '.thread-select-card', 'a.admin-user-card', 'a.activity-link'
   ];
   var all = tags.concat(bigger);
   function suffixed(list, suffix) {
