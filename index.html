@@ -275,6 +275,7 @@
     localStorage.setItem('tba_authed', '1');
     localStorage.setItem('tba_username', username);
     localStorage.setItem('tba_role', role);
+    localStorage.setItem('tba_joined_at', new Date().toISOString());
 
     document.activeElement.blur();
     window.scrollTo(0, 0);

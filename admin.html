@@ -44,28 +44,25 @@
   <div class="stat-grid">
     <div class="stat-card">
       <div class="label">Total Users</div>
-      <div class="value">4,812</div>
-      <div class="delta up">+128 this week</div>
+      <div class="value" id="total-users-stat">0</div>
+      <div class="delta up" id="total-users-delta">on this device</div>
     </div>
     <div class="stat-card">
       <div class="label">Active Businesses</div>
-      <div class="value">380</div>
-      <div class="delta up">+14 this week</div>
+      <div class="value" id="businesses-stat">0</div>
     </div>
     <div class="stat-card">
       <div class="label">Active Influencers</div>
-      <div class="value">1,240</div>
-      <div class="delta up">+41 this week</div>
+      <div class="value" id="influencers-stat">0</div>
     </div>
     <div class="stat-card">
-      <div class="label">Deals Closed (MTD)</div>
-      <div class="value">312</div>
-      <div class="delta up">+9.2%</div>
+      <div class="label">Deals Closed</div>
+      <div class="value" id="deals-closed-stat">0</div>
     </div>
     <div class="stat-card">
       <div class="label">Flagged Deals</div>
-      <div class="value">6</div>
-      <div class="delta down">Needs review</div>
+      <div class="value" id="flagged-stat">0</div>
+      <div class="delta up" id="flagged-delta">No flags yet</div>
     </div>
     <div class="stat-card">
       <div class="label">Pending Verifications</div>
@@ -78,41 +75,18 @@
       <div class="delta up" id="contracts-delta">0 signed</div>
     </div>
   </div>
+  <p class="admin-stats-note">The real accounts, deals, and contracts on this device — this demo has no shared backend, so these are the figures that actually exist here, not platform-wide marketing numbers. They update live as data changes.</p>
 
   <div class="admin-grid">
     <div class="panel">
       <h2>New Signups — Last 7 Days</h2>
-      <div class="bar-chart">
-        <div class="bar-col"><div class="bar" style="height: 42%;" data-tooltip="38 signups"></div><span class="bar-label">Mon</span></div>
-        <div class="bar-col"><div class="bar" style="height: 58%;" data-tooltip="52 signups"></div><span class="bar-label">Tue</span></div>
-        <div class="bar-col"><div class="bar" style="height: 51%;" data-tooltip="46 signups"></div><span class="bar-label">Wed</span></div>
-        <div class="bar-col"><div class="bar" style="height: 70%;" data-tooltip="63 signups"></div><span class="bar-label">Thu</span></div>
-        <div class="bar-col"><div class="bar" style="height: 64%;" data-tooltip="58 signups"></div><span class="bar-label">Fri</span></div>
-        <div class="bar-col"><div class="bar" style="height: 88%;" data-tooltip="79 signups"></div><span class="bar-label">Sat</span></div>
-        <div class="bar-col"><div class="bar" style="height: 100%;" data-tooltip="90 signups"></div><span class="bar-label">Sun</span></div>
-      </div>
+      <div class="bar-chart" id="signups-bar-chart"></div>
     </div>
 
     <div class="panel" id="reports">
       <h2>Flagged Reports</h2>
-      <ul class="report-list">
-        <li>
-          <div class="report-title">Rate dispute — Pear &amp; Co. Skincare</div>
-          <div class="report-meta">Reported by creator · 2 hours ago</div>
-        </li>
-        <li>
-          <div class="report-title">Suspicious signup pattern</div>
-          <div class="report-meta">Auto-flagged · 5 hours ago</div>
-        </li>
-        <li>
-          <div class="report-title">Missing deliverable — Riverside Outdoor Gear</div>
-          <div class="report-meta">Reported by brand · 1 day ago</div>
-        </li>
-        <li>
-          <div class="report-title">Duplicate account request</div>
-          <div class="report-meta">Support ticket · 1 day ago</div>
-        </li>
-      </ul>
+      <ul class="report-list" id="reports-list"></ul>
+      <p class="activity-empty" id="reports-empty" hidden>No reports have been filed — reporting isn't wired up to any real feature in this demo yet.</p>
     </div>
   </div>
 
@@ -130,42 +104,11 @@
         <tr>
           <th>Name</th>
           <th>Type</th>
-          <th>Email</th>
+          <th>Username</th>
           <th>Joined</th>
         </tr>
       </thead>
-      <tbody>
-        <tr>
-          <td>Skyline Coffee Co.</td>
-          <td><span class="role-pill business">Business</span></td>
-          <td>hello@skylinecoffee.com</td>
-          <td>Sep 26, 2026</td>
-        </tr>
-        <tr>
-          <td>Maren Cole</td>
-          <td><span class="role-pill influencer">Influencer</span></td>
-          <td>maren@marencole.co</td>
-          <td>Sep 26, 2026</td>
-        </tr>
-        <tr>
-          <td>Riverside Outdoor Gear</td>
-          <td><span class="role-pill business">Business</span></td>
-          <td>partnerships@riverside.com</td>
-          <td>Sep 25, 2026</td>
-        </tr>
-        <tr>
-          <td>Jordan Blake</td>
-          <td><span class="role-pill influencer">Influencer</span></td>
-          <td>jordan@jordanblake.io</td>
-          <td>Sep 24, 2026</td>
-        </tr>
-        <tr>
-          <td>Pear &amp; Co. Skincare</td>
-          <td><span class="role-pill business">Business</span></td>
-          <td>team@pearandco.com</td>
-          <td>Sep 23, 2026</td>
-        </tr>
-      </tbody>
+      <tbody id="recent-signups-body"></tbody>
     </table>
     </div>
   </div>
@@ -180,18 +123,67 @@
   tbaWireThemeToggle('theme-toggle-btn', 'dark');
   tbaWireAdminNotificationBell('notif-wrap', 'notif-bell-btn');
 
-  var pendingVerifyCount = tbaGetPendingVerificationRequests().length;
-  document.getElementById('pending-verify-stat').textContent = pendingVerifyCount;
-  document.getElementById('pending-verify-delta').textContent = pendingVerifyCount === 0 ? 'All caught up' : 'Needs review';
-  if (pendingVerifyCount === 0) {
-    document.getElementById('pending-verify-delta').classList.remove('down');
-    document.getElementById('pending-verify-delta').classList.add('up');
+  function escapeHtmlForAdmin(str) {
+    return String(str || '').replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
   }
 
-  var allContracts = tbaGetContracts();
-  var signedContracts = allContracts.filter(function (c) { return c.status === 'signed'; }).length;
-  document.getElementById('contracts-stat').textContent = allContracts.length;
-  document.getElementById('contracts-delta').textContent = signedContracts + ' signed';
+  function renderAdminOverview() {
+    var allUsers = tbaGetAllUsers();
+    var businesses = allUsers.filter(function (u) { return u.role === 'business'; });
+    var influencers = allUsers.filter(function (u) { return u.role === 'influencer'; });
+
+    document.getElementById('total-users-stat').textContent = allUsers.length;
+    document.getElementById('businesses-stat').textContent = businesses.length;
+    document.getElementById('influencers-stat').textContent = influencers.length;
+
+    var dealsClosed = tbaGetDealsClosedCount();
+    document.getElementById('deals-closed-stat').textContent = dealsClosed;
+
+    var flagged = tbaGetFlaggedReports();
+    document.getElementById('flagged-stat').textContent = flagged.length;
+
+    var pendingVerifyCount = tbaGetPendingVerificationRequests().length;
+    document.getElementById('pending-verify-stat').textContent = pendingVerifyCount;
+    var pendingDelta = document.getElementById('pending-verify-delta');
+    pendingDelta.textContent = pendingVerifyCount === 0 ? 'All caught up' : 'Needs review';
+    pendingDelta.classList.toggle('down', pendingVerifyCount > 0);
+    pendingDelta.classList.toggle('up', pendingVerifyCount === 0);
+
+    var allContracts = tbaGetContracts();
+    var signedContracts = allContracts.filter(function (c) { return c.status === 'signed'; }).length;
+    document.getElementById('contracts-stat').textContent = allContracts.length;
+    document.getElementById('contracts-delta').textContent = signedContracts + ' signed';
+
+    var chartDays = tbaGetSignupsLast7Days();
+    var maxCount = Math.max.apply(null, chartDays.map(function (d) { return d.count; }).concat([1]));
+    document.getElementById('signups-bar-chart').innerHTML = chartDays.map(function (d) {
+      var heightPct = Math.max(6, Math.round((d.count / maxCount) * 100));
+      return '<div class="bar-col"><div class="bar" style="height: ' + heightPct + '%;" data-tooltip="' + d.count + ' signup' + (d.count === 1 ? '' : 's') + '"></div><span class="bar-label">' + d.label + '</span></div>';
+    }).join('');
+
+    var reportsList = document.getElementById('reports-list');
+    reportsList.innerHTML = flagged.map(function (r) {
+      return '<li><div class="report-title">' + escapeHtmlForAdmin(r.title) + '</div><div class="report-meta">' + escapeHtmlForAdmin(r.meta) + '</div></li>';
+    }).join('');
+    document.getElementById('reports-empty').hidden = flagged.length > 0;
+
+    var recentSignups = allUsers.slice().sort(function (a, b) {
+      return new Date(b.joinedAt) - new Date(a.joinedAt);
+    }).slice(0, 5);
+    document.getElementById('recent-signups-body').innerHTML = recentSignups.map(function (u) {
+      return '<tr>' +
+        '<td><a class="admin-table-link" href="admin-user.html?u=' + encodeURIComponent(u.username) + '">' + escapeHtmlForAdmin(u.name) + '</a></td>' +
+        '<td><span class="role-pill ' + u.role + '">' + (u.role === 'business' ? 'Business' : 'Influencer') + '</span></td>' +
+        '<td>@' + escapeHtmlForAdmin(u.username) + '</td>' +
+        '<td>' + tbaFormatDateLong(u.joinedAt) + '</td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  renderAdminOverview();
+  window.addEventListener('storage', renderAdminOverview);
 </script>
 
 </body>

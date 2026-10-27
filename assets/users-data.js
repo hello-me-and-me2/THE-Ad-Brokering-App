@@ -4,7 +4,7 @@
 
 var TBA_SEED_USERS = [
   {
-    username: "skylinecoffee", name: "Skyline Coffee Co.", role: "business",
+    username: "skylinecoffee", name: "Skyline Coffee Co.", role: "business", daysAgoJoined: 20,
     tagline: "Small-batch coffee brand, Pacific Northwest.",
     bio: "Small-batch coffee roaster based in the Pacific Northwest, partnering with creators who love a good cup and an honest story.",
     links: [
@@ -13,7 +13,7 @@ var TBA_SEED_USERS = [
     ]
   },
   {
-    username: "riversidegear", name: "Riverside Outdoor Gear", role: "business",
+    username: "riversidegear", name: "Riverside Outdoor Gear", role: "business", daysAgoJoined: 15,
     tagline: "Outdoor apparel and camping gear.",
     bio: "Outdoor apparel and camping gear built for real trips, not just photos. We work with adventure creators who actually use our stuff.",
     links: [
@@ -22,7 +22,7 @@ var TBA_SEED_USERS = [
     ]
   },
   {
-    username: "pearandco", name: "Pear & Co. Skincare", role: "business",
+    username: "pearandco", name: "Pear & Co. Skincare", role: "business", daysAgoJoined: 9,
     tagline: "Clean skincare, cruelty-free.",
     bio: "Clean, cruelty-free skincare made in small batches. We love collaborating with creators who care about what goes on their skin.",
     links: [
@@ -31,7 +31,7 @@ var TBA_SEED_USERS = [
     ]
   },
   {
-    username: "thecraftedtable", name: "The Crafted Table", role: "business",
+    username: "thecraftedtable", name: "The Crafted Table", role: "business", daysAgoJoined: 5,
     tagline: "Artisan home goods & tableware.",
     bio: "Artisan home goods and tableware, handmade by independent makers. Looking for creators who love slow living and good design.",
     links: [
@@ -40,7 +40,7 @@ var TBA_SEED_USERS = [
     ]
   },
   {
-    username: "brightlinestudio", name: "Brightline Studio", role: "business",
+    username: "brightlinestudio", name: "Brightline Studio", role: "business", daysAgoJoined: 3,
     tagline: "Independent design & branding studio.",
     bio: "Independent design and branding studio helping small businesses look as good as they are. Open to creator collabs on case studies.",
     links: [
@@ -48,7 +48,7 @@ var TBA_SEED_USERS = [
     ]
   },
   {
-    username: "marencole", name: "Maren Cole", role: "influencer",
+    username: "marencole", name: "Maren Cole", role: "influencer", daysAgoJoined: 11,
     tagline: "Lifestyle & coffee content · 210K followers.",
     bio: "Lifestyle and coffee content creator sharing slow mornings and honest reviews with 210K people who feel the same way.",
     links: [
@@ -58,7 +58,7 @@ var TBA_SEED_USERS = [
     ]
   },
   {
-    username: "jordanblake", name: "Jordan Blake", role: "influencer",
+    username: "jordanblake", name: "Jordan Blake", role: "influencer", daysAgoJoined: 4,
     tagline: "Outdoor & adventure creator · 85K followers.",
     bio: "Outdoor and adventure creator documenting real trips, real gear tests, and the occasional disaster. 85K people come along for the ride.",
     links: [
@@ -67,7 +67,7 @@ var TBA_SEED_USERS = [
     ]
   },
   {
-    username: "ninareyes", name: "Nina Reyes", role: "influencer",
+    username: "ninareyes", name: "Nina Reyes", role: "influencer", daysAgoJoined: 6,
     tagline: "Beauty & skincare reviews · 340K followers.",
     bio: "Beauty and skincare reviews with zero filter — if it doesn't work, I'll say so. 340K followers trust me to tell them the truth.",
     links: [
@@ -76,7 +76,7 @@ var TBA_SEED_USERS = [
     ]
   },
   {
-    username: "leoortiz", name: "Leo Ortiz", role: "influencer",
+    username: "leoortiz", name: "Leo Ortiz", role: "influencer", daysAgoJoined: 2,
     tagline: "Fitness & wellness · 122K followers.",
     bio: "Fitness and wellness creator helping 122K people build habits that actually stick. Big on honest brand partnerships, not hype.",
     links: [
@@ -85,7 +85,7 @@ var TBA_SEED_USERS = [
     ]
   },
   {
-    username: "avaqian", name: "Ava Qian", role: "influencer",
+    username: "avaqian", name: "Ava Qian", role: "influencer", daysAgoJoined: 1,
     tagline: "Travel & food content · 96K followers.",
     bio: "Travel and food creator finding the best small-town spots and local makers worth knowing about. 96K people exploring along with me.",
     links: [
@@ -131,11 +131,23 @@ function tbaSaveMyProfilePic(dataUrl) {
   }
 }
 
+// A seed account's join date is expressed as "days ago" rather than a
+// fixed calendar date, so it stays a believable, populated recent
+// history (and keeps feeding the Last 7 Days chart below) no matter
+// how much later this demo is actually opened.
+function tbaSeedJoinedAt(daysAgo) {
+  var d = new Date();
+  d.setHours(9, 0, 0, 0);
+  d.setDate(d.getDate() - (daysAgo || 0));
+  return d.toISOString();
+}
+
 function tbaGetAllUsers() {
   var users = TBA_SEED_USERS.map(function (u) {
     var copy = {};
     for (var k in u) copy[k] = u[k];
     copy.verified = tbaIsVerified(u.username);
+    copy.joinedAt = tbaSeedJoinedAt(u.daysAgoJoined);
     return copy;
   });
   var myUsername = localStorage.getItem('tba_username');
@@ -149,10 +161,37 @@ function tbaGetAllUsers() {
       links: tbaGetMyLinks(),
       avatar: tbaGetMyProfilePic(),
       verified: tbaIsVerified(myUsername),
+      joinedAt: localStorage.getItem('tba_joined_at') || new Date().toISOString(),
       isYou: true
     });
   }
   return users;
+}
+
+// Mirrors tbaGetProfileViewsLast7Days' bucketing (same rolling 7-day
+// window, oldest first, labeled by weekday) but for new-account
+// signups platform-wide — i.e. every account that exists on this
+// device, seed and real alike.
+function tbaGetSignupsLast7Days() {
+  var joinDates = tbaGetAllUsers().map(function (u) { return new Date(u.joinedAt); });
+  var days = [];
+  for (var i = 6; i >= 0; i--) {
+    var day = new Date();
+    day.setHours(0, 0, 0, 0);
+    day.setDate(day.getDate() - i);
+    var next = new Date(day);
+    next.setDate(next.getDate() + 1);
+    var count = joinDates.filter(function (d) { return d >= day && d < next; }).length;
+    days.push({ label: day.toLocaleDateString(undefined, { weekday: 'short' }), count: count });
+  }
+  return days;
+}
+
+// No reporting/flagging feature exists anywhere in the app yet — this
+// returns the honest answer (nothing) rather than inventing activity
+// for a moderation queue that isn't actually wired to anything.
+function tbaGetFlaggedReports() {
+  return [];
 }
 
 // Looks up a single user by username — your own account (editable,
@@ -1866,7 +1905,7 @@ function tbaEnsureButtonPressStyles() {
   var tags = [
     'button', '.auth-tab', '.role-option', '.theme-toggle-standalone', '[role="button"]',
     'a.admin-btn', 'a.share-btn', 'a.nav-logout', 'a.signout', 'a.admin-back-link', 'a.contracts-back',
-    'nav.main-nav a', '.admin-header nav a', 'a.brand', 'a.diagram-node', 'a.admin-tab'
+    'nav.main-nav a', '.admin-header nav a', 'a.brand', 'a.diagram-node', 'a.admin-tab', 'a.admin-table-link'
   ];
   var bigger = [
     '.btn-submit', '.notfound-btn', 'a.notfound-btn', 'a.btn-primary',
