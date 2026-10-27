@@ -1865,7 +1865,8 @@ function tbaEnsureButtonPressStyles() {
   style.id = 'tba-button-press-styles';
   var tags = [
     'button', '.auth-tab', '.role-option', '.theme-toggle-standalone', '[role="button"]',
-    'a.admin-btn', 'a.share-btn', 'a.nav-logout', 'a.signout', 'a.admin-back-link', 'a.contracts-back'
+    'a.admin-btn', 'a.share-btn', 'a.nav-logout', 'a.signout', 'a.admin-back-link', 'a.contracts-back',
+    'nav.main-nav a', '.admin-header nav a'
   ];
   var bigger = [
     '.btn-submit', '.notfound-btn', 'a.notfound-btn', 'a.btn-primary',
