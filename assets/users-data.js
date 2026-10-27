@@ -1865,9 +1865,12 @@ function tbaEnsureButtonPressStyles() {
   style.id = 'tba-button-press-styles';
   var tags = [
     'button', '.auth-tab', '.role-option', '.theme-toggle-standalone', '[role="button"]',
-    'a.admin-btn', 'a.share-btn'
+    'a.admin-btn', 'a.share-btn', 'a.nav-logout', 'a.signout', 'a.admin-back-link', 'a.contracts-back'
   ];
-  var bigger = ['.btn-submit', '.notfound-btn', 'a.notfound-btn', 'a.btn-primary'];
+  var bigger = [
+    '.btn-submit', '.notfound-btn', 'a.notfound-btn', 'a.btn-primary',
+    '.thread-item', '.contract-card', '.thread-select-card', 'a.admin-user-card'
+  ];
   var all = tags.concat(bigger);
   function suffixed(list, suffix) {
     return list.map(function (s) { return s + suffix; }).join(', ');
