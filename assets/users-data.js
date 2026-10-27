@@ -1276,6 +1276,26 @@ function tbaEscapeHtmlForNotif(str) {
   });
 }
 
+// The notification panel is `position: fixed` (viewport-relative, not
+// page-relative) so that once it's open it stays put on screen as the
+// page scrolls underneath it, instead of scrolling away with the
+// header and ending up visually buried under the rest of the page.
+// This computes that fixed position from the bell button's current
+// on-screen location, clamped so the panel never runs off either
+// edge of the viewport.
+function tbaPositionNotifPanel(panel, anchorBtn) {
+  var rect = anchorBtn.getBoundingClientRect();
+  var margin = 12;
+  var width = panel.offsetWidth || 320;
+  var vw = document.documentElement.clientWidth;
+  var left = rect.right - width;
+  if (left < margin) left = margin;
+  if (left + width > vw - margin) left = Math.max(margin, vw - margin - width);
+  panel.style.left = left + 'px';
+  panel.style.right = 'auto';
+  panel.style.top = (rect.bottom + 10) + 'px';
+}
+
 // Wires up a notification bell: `wrapId` is a positioned wrapper
 // (position: relative) holding the bell button itself, `btnId`. The
 // dropdown panel and its contents are built and injected here, so
@@ -1295,7 +1315,13 @@ function tbaWireNotificationBell(wrapId, btnId) {
   var panel = document.createElement('div');
   panel.className = 'notif-panel';
   panel.hidden = true;
-  wrap.appendChild(panel);
+  // Appended to <body> rather than `wrap` so the panel's fixed
+  // positioning can never be hijacked by a transform/filter on some
+  // ancestor (the header's entrance animation, a blurred nav
+  // background, etc.) turning that ancestor into its containing
+  // block instead of the viewport.
+  document.body.appendChild(panel);
+  tbaPositionNotifPanel(panel, btn);
 
   function renderPanel() {
     var notifications = tbaGetNotifications();
@@ -1345,11 +1371,18 @@ function tbaWireNotificationBell(wrapId, btnId) {
   btn.addEventListener('click', function (e) {
     e.stopPropagation();
     panel.hidden = !panel.hidden;
-    if (!panel.hidden) renderPanel();
+    if (!panel.hidden) {
+      tbaPositionNotifPanel(panel, btn);
+      renderPanel();
+    }
   });
 
   document.addEventListener('click', function (e) {
-    if (!panel.hidden && !wrap.contains(e.target)) panel.hidden = true;
+    if (!panel.hidden && !wrap.contains(e.target) && !panel.contains(e.target)) panel.hidden = true;
+  });
+
+  window.addEventListener('resize', function () {
+    if (!panel.hidden) tbaPositionNotifPanel(panel, btn);
   });
 
   renderPanel();
@@ -1444,7 +1477,13 @@ function tbaWireAdminNotificationBell(wrapId, btnId) {
   var panel = document.createElement('div');
   panel.className = 'notif-panel';
   panel.hidden = true;
-  wrap.appendChild(panel);
+  // Appended to <body> rather than `wrap` so the panel's fixed
+  // positioning can never be hijacked by a transform/filter on some
+  // ancestor (the header's entrance animation, a blurred nav
+  // background, etc.) turning that ancestor into its containing
+  // block instead of the viewport.
+  document.body.appendChild(panel);
+  tbaPositionNotifPanel(panel, btn);
 
   function renderPanel() {
     var notifications = tbaGetAdminNotifications();
@@ -1494,11 +1533,18 @@ function tbaWireAdminNotificationBell(wrapId, btnId) {
   btn.addEventListener('click', function (e) {
     e.stopPropagation();
     panel.hidden = !panel.hidden;
-    if (!panel.hidden) renderPanel();
+    if (!panel.hidden) {
+      tbaPositionNotifPanel(panel, btn);
+      renderPanel();
+    }
   });
 
   document.addEventListener('click', function (e) {
-    if (!panel.hidden && !wrap.contains(e.target)) panel.hidden = true;
+    if (!panel.hidden && !wrap.contains(e.target) && !panel.contains(e.target)) panel.hidden = true;
+  });
+
+  window.addEventListener('resize', function () {
+    if (!panel.hidden) tbaPositionNotifPanel(panel, btn);
   });
 
   renderPanel();
@@ -1840,3 +1886,17 @@ tbaEnsureButtonPressStyles();
 // on the page — without this, the press-scale only flashed after
 // release instead of while the button was actually held down.
 document.addEventListener('touchstart', function () {}, { passive: true });
+
+// Once the page-load entrance animation (tbaRiseSnap) finishes, clear
+// it entirely instead of leaving it frozen on its last frame. A
+// completed CSS animation reports its held frame as a resolved
+// matrix, never the literal `none`, even when that frame is visually
+// a no-op (translateY(0) scale(1)) — and any non-`none` transform on
+// an ancestor (like the header) turns it into the containing block
+// for `position: fixed` descendants, breaking anything meant to stay
+// fixed to the viewport, like the notification panel.
+document.addEventListener('animationend', function (e) {
+  if (e.animationName === 'tbaRiseSnap') {
+    e.target.style.animation = 'none';
+  }
+}, true);

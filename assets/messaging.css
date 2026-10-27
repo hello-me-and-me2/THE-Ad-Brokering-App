@@ -37,7 +37,7 @@
 @keyframes tbaRiseSnap {
   0% { opacity: 0; transform: translateY(28px) scale(0.985); }
   60% { opacity: 1; transform: translateY(-4px) scale(1.003); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 1; transform: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-delay: 0ms !important; }
@@ -151,9 +151,9 @@ nav.main-nav button.theme-toggle-btn:hover { border-color: var(--accent); color:
 }
 
 .notif-panel {
-  position: absolute; top: calc(100% + 10px); right: 0; width: 320px; max-height: 420px;
+  position: fixed; width: 320px; max-height: min(420px, calc(100vh - 100px));
   overflow-y: auto; background: var(--panel); border: 1px solid var(--line);
-  border-radius: 14px; box-shadow: 0 14px 34px rgba(0,0,0,0.35); z-index: 50; text-align: left;
+  border-radius: 14px; box-shadow: 0 14px 34px rgba(0,0,0,0.35); z-index: 9999; text-align: left;
 }
 .notif-panel-head {
   display: flex; align-items: center; justify-content: space-between;
@@ -763,7 +763,7 @@ footer { padding: 28px 24px; text-align: center; color: var(--text-soft); font-s
   .brand-tagline { display: none; }
   nav.main-nav { width: 100%; justify-content: center; }
   nav.main-nav a { padding: 7px 11px; font-size: 12.5px; }
-  .notif-panel { right: auto; left: 50%; transform: translateX(-50%); width: min(320px, 90vw); }
+  .notif-panel { width: min(320px, 90vw); }
 
   main { padding: 18px 14px 44px; }
 

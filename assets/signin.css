@@ -36,7 +36,7 @@
 @keyframes tbaRiseSnap {
   0% { opacity: 0; transform: translateY(28px) scale(0.985); }
   60% { opacity: 1; transform: translateY(-4px) scale(1.003); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 1; transform: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-delay: 0ms !important; }
