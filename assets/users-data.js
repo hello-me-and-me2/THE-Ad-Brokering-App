@@ -1224,25 +1224,36 @@ function tbaWireThemeToggle(buttonId, naturalDefault) {
 // this session (simulated replies, contract activity, signatures),
 // not the pre-loaded seed conversation history.
 
-function tbaGetReadNotificationIds() {
+// Stored as { id: isoTimestampWhenMarkedRead }, not just a list of
+// ids — the timestamp is what lets a read notification disappear 24
+// hours after it was actually seen (an unread one never expires; it
+// stays until you read it).
+var TBA_NOTIFICATION_READ_TTL_MS = 24 * 60 * 60 * 1000;
+
+function tbaGetReadNotificationTimes() {
   try {
-    return JSON.parse(localStorage.getItem('tba_notifications_read') || '[]');
+    var raw = JSON.parse(localStorage.getItem('tba_notifications_read') || '{}');
+    return (raw && typeof raw === 'object' && !Array.isArray(raw)) ? raw : {};
   } catch (e) {
-    return [];
+    return {};
   }
 }
 
 function tbaMarkNotificationRead(id) {
-  var read = tbaGetReadNotificationIds();
-  if (read.indexOf(id) === -1) {
-    read.push(id);
+  var read = tbaGetReadNotificationTimes();
+  if (!read[id]) {
+    read[id] = new Date().toISOString();
     localStorage.setItem('tba_notifications_read', JSON.stringify(read));
   }
 }
 
 function tbaMarkAllNotificationsRead() {
-  var ids = tbaGetNotifications().map(function (n) { return n.id; });
-  localStorage.setItem('tba_notifications_read', JSON.stringify(ids));
+  var read = tbaGetReadNotificationTimes();
+  var now = new Date().toISOString();
+  tbaGetNotifications().forEach(function (n) {
+    if (!read[n.id]) read[n.id] = now;
+  });
+  localStorage.setItem('tba_notifications_read', JSON.stringify(read));
 }
 
 function tbaNotificationMessagePreview(m) {
@@ -1292,8 +1303,13 @@ function tbaGetNotifications() {
 
   notifications.sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
 
-  var readIds = tbaGetReadNotificationIds();
-  notifications.forEach(function (n) { n.read = readIds.indexOf(n.id) !== -1; });
+  var readTimes = tbaGetReadNotificationTimes();
+  var now = Date.now();
+  notifications = notifications.filter(function (n) {
+    var readAt = readTimes[n.id];
+    return !readAt || (now - new Date(readAt).getTime()) < TBA_NOTIFICATION_READ_TTL_MS;
+  });
+  notifications.forEach(function (n) { n.read = !!readTimes[n.id]; });
 
   return notifications;
 }
@@ -1441,25 +1457,30 @@ function tbaWireNotificationBell(wrapId, btnId) {
 // reached fully-signed. Tracked with its own read-state key so it
 // never interacts with the user-facing bell's read state.
 
-function tbaGetAdminReadNotificationIds() {
+function tbaGetAdminReadNotificationTimes() {
   try {
-    return JSON.parse(localStorage.getItem('tba_admin_notifications_read') || '[]');
+    var raw = JSON.parse(localStorage.getItem('tba_admin_notifications_read') || '{}');
+    return (raw && typeof raw === 'object' && !Array.isArray(raw)) ? raw : {};
   } catch (e) {
-    return [];
+    return {};
   }
 }
 
 function tbaMarkAdminNotificationRead(id) {
-  var read = tbaGetAdminReadNotificationIds();
-  if (read.indexOf(id) === -1) {
-    read.push(id);
+  var read = tbaGetAdminReadNotificationTimes();
+  if (!read[id]) {
+    read[id] = new Date().toISOString();
     localStorage.setItem('tba_admin_notifications_read', JSON.stringify(read));
   }
 }
 
 function tbaMarkAllAdminNotificationsRead() {
-  var ids = tbaGetAdminNotifications().map(function (n) { return n.id; });
-  localStorage.setItem('tba_admin_notifications_read', JSON.stringify(ids));
+  var read = tbaGetAdminReadNotificationTimes();
+  var now = new Date().toISOString();
+  tbaGetAdminNotifications().forEach(function (n) {
+    if (!read[n.id]) read[n.id] = now;
+  });
+  localStorage.setItem('tba_admin_notifications_read', JSON.stringify(read));
 }
 
 function tbaGetAdminNotifications() {
@@ -1495,8 +1516,13 @@ function tbaGetAdminNotifications() {
 
   notifications.sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
 
-  var readIds = tbaGetAdminReadNotificationIds();
-  notifications.forEach(function (n) { n.read = readIds.indexOf(n.id) !== -1; });
+  var readTimes = tbaGetAdminReadNotificationTimes();
+  var now = Date.now();
+  notifications = notifications.filter(function (n) {
+    var readAt = readTimes[n.id];
+    return !readAt || (now - new Date(readAt).getTime()) < TBA_NOTIFICATION_READ_TTL_MS;
+  });
+  notifications.forEach(function (n) { n.read = !!readTimes[n.id]; });
 
   return notifications;
 }
