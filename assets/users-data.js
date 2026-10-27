@@ -1877,7 +1877,15 @@ function tbaEnsureButtonPressStyles() {
     return list.map(function (s) { return s + suffix; }).join(', ');
   }
   style.textContent =
-    all.join(', ') + ' { -webkit-tap-highlight-color: transparent; }' +
+    // `touch-action: manipulation` is the actual fix for taps feeling
+    // unresponsive/needing several tries: without it, the browser
+    // waits ~300ms after every tap to see whether a second tap is
+    // coming (to decide between a click and a double-tap-to-zoom), and
+    // any tiny finger movement during that window can make it treat
+    // the touch as a scroll attempt and cancel the tap outright rather
+    // than firing a click at all — which is exactly what repeated,
+    // seemingly-ignored presses look like.
+    all.join(', ') + ' { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }' +
     suffixed(all, ':not(:disabled)') + ' { transition: transform 0.1s ease; }' +
     suffixed(tags, ':not(:disabled):active') + ' { transform: scale(1.06); }' +
     suffixed(bigger, ':not(:disabled):active') + ' { transform: scale(1.03); }';
