@@ -29,6 +29,18 @@
 * { box-sizing: border-box; }
 :focus-visible { outline: 2px solid var(--terracotta); outline-offset: 2px; border-radius: 4px; }
 
+/* Entrance: content rises into place and settles with a soft
+   overshoot — liquid rise, firm snap at rest — rather than a hard
+   cut or a flat fade. */
+@keyframes tbaRiseSnap {
+  0% { opacity: 0; transform: translateY(28px) scale(0.985); }
+  60% { opacity: 1; transform: translateY(-4px) scale(1.003); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-delay: 0ms !important; }
+}
+
 html, body { margin: 0; padding: 0; }
 
 body {
@@ -175,7 +187,11 @@ main { max-width: 760px; margin: 0 auto; padding: 40px 24px 90px; }
   padding: 44px 40px;
   box-shadow: 0 24px 50px rgba(46,36,23,0.08);
   text-align: center;
+  animation: tbaRiseSnap 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 0.1s;
 }
+
+.site-header { animation: tbaRiseSnap 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
 .profile-avatar-lg {
   width: 96px;
