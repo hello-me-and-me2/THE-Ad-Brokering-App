@@ -1809,3 +1809,25 @@ function tbaWirePageTransitions() {
 }
 
 tbaWirePageTransitions();
+
+// Kills the default blue tap/active flash on buttons and swaps it for
+// a small "pressed" enlargement, so every clickable control across the
+// site responds the same tactile way instead of looking browser-stock.
+function tbaEnsureButtonPressStyles() {
+  if (document.getElementById('tba-button-press-styles')) return;
+  var style = document.createElement('style');
+  style.id = 'tba-button-press-styles';
+  var tags = ['button', '.auth-tab', '.role-option', '.theme-toggle-standalone', '[role="button"]'];
+  var bigger = ['.btn-submit', '.notfound-btn', 'a.notfound-btn'];
+  var all = tags.concat(bigger);
+  function suffixed(list, suffix) {
+    return list.map(function (s) { return s + suffix; }).join(', ');
+  }
+  style.textContent =
+    all.join(', ') + ' { -webkit-tap-highlight-color: transparent; }' +
+    suffixed(all, ':not(:disabled)') + ' { transition: transform 0.1s ease; }' +
+    suffixed(tags, ':not(:disabled):active') + ' { transform: scale(1.06); }' +
+    suffixed(bigger, ':not(:disabled):active') + ' { transform: scale(1.03); }';
+  document.head.appendChild(style);
+}
+tbaEnsureButtonPressStyles();
