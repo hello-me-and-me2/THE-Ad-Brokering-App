@@ -295,6 +295,15 @@ function tbaSaveMyPasswordHash(hash) {
   localStorage.setItem(tbaAccountKey('tba_password_hash'), hash);
 }
 
+// Null for an account that's never had a password saved — the seed
+// demo accounts, which were never signed up through the form, so
+// login leaves those unchecked exactly as before. Every account
+// actually created through signup has one, since signup requires a
+// password to create the account at all.
+function tbaGetMyPasswordHash(forUsername) {
+  return localStorage.getItem(tbaAccountKey('tba_password_hash', forUsername));
+}
+
 // A seed account's join date is expressed as "days ago" rather than a
 // fixed calendar date, so it stays a believable, populated recent
 // history (and keeps feeding the Last 7 Days chart below) no matter

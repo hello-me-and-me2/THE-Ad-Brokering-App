@@ -193,13 +193,18 @@
   });
 
   // Log in — matches against the current browser's own signup, or
-  // against the seed directory (demo only: no real password check).
+  // against the seed directory. Any account actually created through
+  // signup has its own saved password hash, so logging back into one
+  // of those requires the matching password; the seed demo accounts
+  // were never signed up with a password, so they stay unchecked.
   document.getElementById('login-form').addEventListener('submit', function (e) {
     e.preventDefault();
 
     var usernameInput = document.getElementById('login-username');
+    var passwordInput = document.getElementById('login-password');
     var loginError = document.getElementById('login-error');
     var username = usernameInput.value.trim();
+    var password = passwordInput.value;
 
     var matchedUsername = null;
     var matchedRole = null;
@@ -225,18 +230,45 @@
       return;
     }
 
-    loginError.hidden = true;
-    localStorage.setItem('tba_authed', '1');
-    localStorage.setItem('tba_username', matchedUsername);
-    localStorage.setItem('tba_role', matchedRole);
-    tbaRegisterLocalAccount(matchedUsername, matchedRole);
+    function completeLogin() {
+      loginError.hidden = true;
+      localStorage.setItem('tba_authed', '1');
+      localStorage.setItem('tba_username', matchedUsername);
+      localStorage.setItem('tba_role', matchedRole);
+      tbaRegisterLocalAccount(matchedUsername, matchedRole);
 
-    // Blur the focused field first — on mobile, navigating away while
-    // an input is still focused can leave the next page scrolled down
-    // to wherever the on-screen keyboard had pushed the viewport.
-    document.activeElement.blur();
-    window.scrollTo(0, 0);
-    tbaNavigateTo('home.html');
+      // Blur the focused field first — on mobile, navigating away
+      // while an input is still focused can leave the next page
+      // scrolled down to wherever the on-screen keyboard had pushed
+      // the viewport.
+      document.activeElement.blur();
+      window.scrollTo(0, 0);
+      tbaNavigateTo('home.html');
+    }
+
+    var storedHash = tbaGetMyPasswordHash(matchedUsername);
+    if (!storedHash) {
+      completeLogin();
+      return;
+    }
+
+    var submitBtn = document.querySelector('#login-form button[type="submit"]');
+    submitBtn.disabled = true;
+
+    tbaSha256Hex(password).then(function (enteredHash) {
+      submitBtn.disabled = false;
+      if (enteredHash !== storedHash) {
+        loginError.textContent = 'Incorrect username or password.';
+        loginError.hidden = false;
+        passwordInput.focus();
+        return;
+      }
+      completeLogin();
+    }).catch(function () {
+      submitBtn.disabled = false;
+      loginError.textContent = 'Something went wrong logging in — try again.';
+      loginError.hidden = false;
+    });
   });
 
   // Sign up
