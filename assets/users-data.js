@@ -102,32 +102,88 @@ function tbaUsernameTaken(username) {
   return TBA_SEED_USERS.some(function (u) { return u.username.toLowerCase() === lower; });
 }
 
+// --- Per-account storage ---
+// Every account's own data (profile, verification, messages, network,
+// notifications, e-sign consent) is kept under a key suffixed with
+// that account's username, so logging out and into a *different*
+// account on the same device never shows — or silently overwrites —
+// the previous account's details. Logging back into an earlier
+// account later finds its own data exactly as it was left.
+function tbaAccountKey(base) {
+  var myUsername = localStorage.getItem('tba_username');
+  return myUsername ? base + '_' + myUsername.toLowerCase() : base;
+}
+
+// One-time upgrade for data saved before accounts had their own
+// scoped storage: if the signed-in account has no scoped value yet
+// but an old unscoped one exists, that's this account's pre-upgrade
+// data (the only account that could have written it), so it's moved
+// over rather than lost. Thread/progress keys are scanned separately
+// since there's one per conversation rather than one fixed name.
+function tbaMigrateLegacyAccountData() {
+  var myUsername = localStorage.getItem('tba_username');
+  if (!myUsername) return;
+  if (localStorage.getItem('tba_account_migrated_' + myUsername.toLowerCase())) return;
+
+  var legacyKeys = [
+    'tba_bio', 'tba_links', 'tba_profile_pic',
+    'tba_verification_status', 'tba_verification_reason', 'tba_verification_submitted_at',
+    'tba_message_requests',
+    'tba_network', 'tba_network_request_decisions', 'tba_sent_network_requests',
+    'tba_notifications_read',
+    'tba_esign_consent_accepted', 'tba_esign_consent_accepted_at'
+  ];
+  legacyKeys.forEach(function (base) {
+    var legacyValue = localStorage.getItem(base);
+    if (legacyValue === null) return;
+    var scopedKey = tbaAccountKey(base);
+    if (localStorage.getItem(scopedKey) === null) localStorage.setItem(scopedKey, legacyValue);
+    localStorage.removeItem(base);
+  });
+
+  // Matches tbaAccountKey's convention (the account's username always
+  // goes on the end): tba_thread_<counterpart>_<myUsername>. Safe to
+  // run unfiltered since this whole function only ever runs once per
+  // account, guarded by the migrated flag set at the end.
+  ['tba_thread_', 'tba_progress_'].forEach(function (prefix) {
+    Object.keys(localStorage).forEach(function (key) {
+      if (key.indexOf(prefix) !== 0) return;
+      var scoped = tbaAccountKey(key);
+      if (localStorage.getItem(scoped) === null) localStorage.setItem(scoped, localStorage.getItem(key));
+      localStorage.removeItem(key);
+    });
+  });
+
+  localStorage.setItem('tba_account_migrated_' + myUsername.toLowerCase(), '1');
+}
+tbaMigrateLegacyAccountData();
+
 function tbaGetMyBio() {
-  return localStorage.getItem('tba_bio') || '';
+  return localStorage.getItem(tbaAccountKey('tba_bio')) || '';
 }
 
 function tbaGetMyLinks() {
   try {
-    return JSON.parse(localStorage.getItem('tba_links') || '[]').slice(0, TBA_MAX_LINKS);
+    return JSON.parse(localStorage.getItem(tbaAccountKey('tba_links')) || '[]').slice(0, TBA_MAX_LINKS);
   } catch (e) {
     return [];
   }
 }
 
 function tbaSaveMyProfile(bio, links) {
-  localStorage.setItem('tba_bio', bio || '');
-  localStorage.setItem('tba_links', JSON.stringify((links || []).slice(0, TBA_MAX_LINKS)));
+  localStorage.setItem(tbaAccountKey('tba_bio'), bio || '');
+  localStorage.setItem(tbaAccountKey('tba_links'), JSON.stringify((links || []).slice(0, TBA_MAX_LINKS)));
 }
 
 function tbaGetMyProfilePic() {
-  return localStorage.getItem('tba_profile_pic') || '';
+  return localStorage.getItem(tbaAccountKey('tba_profile_pic')) || '';
 }
 
 function tbaSaveMyProfilePic(dataUrl) {
   if (dataUrl) {
-    localStorage.setItem('tba_profile_pic', dataUrl);
+    localStorage.setItem(tbaAccountKey('tba_profile_pic'), dataUrl);
   } else {
-    localStorage.removeItem('tba_profile_pic');
+    localStorage.removeItem(tbaAccountKey('tba_profile_pic'));
   }
 }
 
@@ -258,7 +314,7 @@ function tbaIsVerified(username) {
   var myUsername = localStorage.getItem('tba_username');
 
   if (myUsername && myUsername.toLowerCase() === lower) {
-    return localStorage.getItem('tba_verification_status') === 'approved';
+    return localStorage.getItem(tbaAccountKey('tba_verification_status')) === 'approved';
   }
 
   var overrides = tbaGetVerificationOverrides();
@@ -268,17 +324,17 @@ function tbaIsVerified(username) {
 }
 
 function tbaGetMyVerificationStatus() {
-  return localStorage.getItem('tba_verification_status') || 'none';
+  return localStorage.getItem(tbaAccountKey('tba_verification_status')) || 'none';
 }
 
 function tbaGetMyVerificationReason() {
-  return localStorage.getItem('tba_verification_reason') || '';
+  return localStorage.getItem(tbaAccountKey('tba_verification_reason')) || '';
 }
 
 function tbaSubmitVerificationApplication(reason) {
-  localStorage.setItem('tba_verification_status', 'pending');
-  localStorage.setItem('tba_verification_reason', reason || '');
-  localStorage.setItem('tba_verification_submitted_at', new Date().toISOString());
+  localStorage.setItem(tbaAccountKey('tba_verification_status'), 'pending');
+  localStorage.setItem(tbaAccountKey('tba_verification_reason'), reason || '');
+  localStorage.setItem(tbaAccountKey('tba_verification_submitted_at'), new Date().toISOString());
 }
 
 // Admin: every verification application currently awaiting a
@@ -310,7 +366,7 @@ function tbaGetPendingVerificationRequests() {
       role: localStorage.getItem('tba_role') || 'business',
       avatar: tbaGetMyProfilePic(),
       reason: tbaGetMyVerificationReason(),
-      submittedAt: localStorage.getItem('tba_verification_submitted_at') || new Date().toISOString(),
+      submittedAt: localStorage.getItem(tbaAccountKey('tba_verification_submitted_at')) || new Date().toISOString(),
       isYou: true
     });
   }
@@ -333,7 +389,7 @@ function tbaDecideVerification(username, decision) {
   var user = tbaGetUserByUsername(username);
 
   if (myUsername && myUsername.toLowerCase() === username.toLowerCase()) {
-    localStorage.setItem('tba_verification_status', decision);
+    localStorage.setItem(tbaAccountKey('tba_verification_status'), decision);
   } else {
     var overrides = tbaGetVerificationOverrides();
     overrides[username.toLowerCase()] = decision;
@@ -465,7 +521,7 @@ function tbaGetUserThreads(username) {
 
 function tbaGetSentRequests() {
   try {
-    return JSON.parse(localStorage.getItem('tba_message_requests') || '[]');
+    return JSON.parse(localStorage.getItem(tbaAccountKey('tba_message_requests')) || '[]');
   } catch (e) {
     return [];
   }
@@ -475,7 +531,7 @@ function tbaAddSentRequest(username) {
   var sent = tbaGetSentRequests();
   if (sent.indexOf(username) === -1) {
     sent.push(username);
-    localStorage.setItem('tba_message_requests', JSON.stringify(sent));
+    localStorage.setItem(tbaAccountKey('tba_message_requests'), JSON.stringify(sent));
   }
 }
 
@@ -557,7 +613,7 @@ function tbaGetMyThread(username) {
 }
 
 function tbaGetMyThreadMessages(username) {
-  var key = 'tba_thread_' + username.toLowerCase();
+  var key = tbaAccountKey('tba_thread_' + username.toLowerCase());
   try {
     var stored = JSON.parse(localStorage.getItem(key));
     if (stored) return stored;
@@ -567,7 +623,7 @@ function tbaGetMyThreadMessages(username) {
 }
 
 function tbaSaveMyThreadMessages(username, messages) {
-  localStorage.setItem('tba_thread_' + username.toLowerCase(), JSON.stringify(messages));
+  localStorage.setItem(tbaAccountKey('tba_thread_' + username.toLowerCase()), JSON.stringify(messages));
 }
 
 // The amount + video count currently on the table — whichever side's
@@ -585,14 +641,14 @@ function tbaGetCurrentOffer(username) {
 }
 
 function tbaGetMyThreadProgress(username) {
-  var stored = localStorage.getItem('tba_progress_' + username.toLowerCase());
+  var stored = localStorage.getItem(tbaAccountKey('tba_progress_' + username.toLowerCase()));
   if (stored !== null) return parseInt(stored, 10);
   var seed = tbaGetMyThread(username);
   return seed ? seed.deal.progress : 0;
 }
 
 function tbaSaveMyThreadProgress(username, progress) {
-  localStorage.setItem('tba_progress_' + username.toLowerCase(), String(progress));
+  localStorage.setItem(tbaAccountKey('tba_progress_' + username.toLowerCase()), String(progress));
 }
 
 function tbaAppendMyThreadMessage(username, message) {
@@ -1019,7 +1075,7 @@ var TBA_SEED_NETWORK_CONNECTIONS = {
 
 function tbaGetMyNetwork() {
   try {
-    return JSON.parse(localStorage.getItem('tba_network') || '[]');
+    return JSON.parse(localStorage.getItem(tbaAccountKey('tba_network')) || '[]');
   } catch (e) {
     return [];
   }
@@ -1035,19 +1091,19 @@ function tbaAddToMyNetwork(username) {
   var network = tbaGetMyNetwork();
   if (network.indexOf(username) === -1) {
     network.push(username);
-    localStorage.setItem('tba_network', JSON.stringify(network));
+    localStorage.setItem(tbaAccountKey('tba_network'), JSON.stringify(network));
   }
 }
 
 function tbaRemoveFromMyNetwork(username) {
   var lower = username.toLowerCase();
   var network = tbaGetMyNetwork().filter(function (u) { return u.toLowerCase() !== lower; });
-  localStorage.setItem('tba_network', JSON.stringify(network));
+  localStorage.setItem(tbaAccountKey('tba_network'), JSON.stringify(network));
 }
 
 function tbaGetNetworkRequestDecisions() {
   try {
-    return JSON.parse(localStorage.getItem('tba_network_request_decisions') || '{}');
+    return JSON.parse(localStorage.getItem(tbaAccountKey('tba_network_request_decisions')) || '{}');
   } catch (e) {
     return {};
   }
@@ -1076,7 +1132,7 @@ function tbaGetIncomingNetworkRequests() {
 function tbaDecideNetworkRequest(username, decision) {
   var decisions = tbaGetNetworkRequestDecisions();
   decisions[username.toLowerCase()] = decision;
-  localStorage.setItem('tba_network_request_decisions', JSON.stringify(decisions));
+  localStorage.setItem(tbaAccountKey('tba_network_request_decisions'), JSON.stringify(decisions));
   if (decision === 'accepted') tbaAddToMyNetwork(username);
 }
 
@@ -1087,7 +1143,7 @@ function tbaDecideNetworkRequest(username, decision) {
 // leaving it stuck pending forever.
 function tbaGetSentNetworkRequests() {
   try {
-    return JSON.parse(localStorage.getItem('tba_sent_network_requests') || '[]');
+    return JSON.parse(localStorage.getItem(tbaAccountKey('tba_sent_network_requests')) || '[]');
   } catch (e) {
     return [];
   }
@@ -1097,7 +1153,7 @@ function tbaSendNetworkRequest(username) {
   var sent = tbaGetSentNetworkRequests();
   if (sent.indexOf(username) === -1) {
     sent.push(username);
-    localStorage.setItem('tba_sent_network_requests', JSON.stringify(sent));
+    localStorage.setItem(tbaAccountKey('tba_sent_network_requests'), JSON.stringify(sent));
   }
   tbaAddToMyNetwork(username);
 }
@@ -1232,7 +1288,7 @@ var TBA_NOTIFICATION_READ_TTL_MS = 24 * 60 * 60 * 1000;
 
 function tbaGetReadNotificationTimes() {
   try {
-    var raw = JSON.parse(localStorage.getItem('tba_notifications_read') || '{}');
+    var raw = JSON.parse(localStorage.getItem(tbaAccountKey('tba_notifications_read')) || '{}');
     return (raw && typeof raw === 'object' && !Array.isArray(raw)) ? raw : {};
   } catch (e) {
     return {};
@@ -1243,7 +1299,7 @@ function tbaMarkNotificationRead(id) {
   var read = tbaGetReadNotificationTimes();
   if (!read[id]) {
     read[id] = new Date().toISOString();
-    localStorage.setItem('tba_notifications_read', JSON.stringify(read));
+    localStorage.setItem(tbaAccountKey('tba_notifications_read'), JSON.stringify(read));
   }
 }
 
@@ -1253,7 +1309,7 @@ function tbaMarkAllNotificationsRead() {
   tbaGetNotifications().forEach(function (n) {
     if (!read[n.id]) read[n.id] = now;
   });
-  localStorage.setItem('tba_notifications_read', JSON.stringify(read));
+  localStorage.setItem(tbaAccountKey('tba_notifications_read'), JSON.stringify(read));
 }
 
 // Immediately empties the list, instead of marking everything read
@@ -1264,7 +1320,7 @@ function tbaClearAllNotifications() {
   var read = tbaGetReadNotificationTimes();
   var expiredAt = new Date(Date.now() - TBA_NOTIFICATION_READ_TTL_MS - 1000).toISOString();
   tbaGetNotifications().forEach(function (n) { read[n.id] = expiredAt; });
-  localStorage.setItem('tba_notifications_read', JSON.stringify(read));
+  localStorage.setItem(tbaAccountKey('tba_notifications_read'), JSON.stringify(read));
 }
 
 function tbaNotificationMessagePreview(m) {
@@ -1805,12 +1861,21 @@ function tbaShowTermsGate() {
 // rather than faked.
 
 function tbaHasConsentedESign() {
-  return localStorage.getItem('tba_esign_consent_accepted') === '1';
+  return localStorage.getItem(tbaAccountKey('tba_esign_consent_accepted')) === '1';
+}
+
+function tbaGetESignConsentAcceptedAt() {
+  return localStorage.getItem(tbaAccountKey('tba_esign_consent_accepted_at'));
 }
 
 function tbaAcceptESignConsent() {
-  localStorage.setItem('tba_esign_consent_accepted', '1');
-  localStorage.setItem('tba_esign_consent_accepted_at', new Date().toISOString());
+  localStorage.setItem(tbaAccountKey('tba_esign_consent_accepted'), '1');
+  localStorage.setItem(tbaAccountKey('tba_esign_consent_accepted_at'), new Date().toISOString());
+}
+
+function tbaWithdrawESignConsent() {
+  localStorage.removeItem(tbaAccountKey('tba_esign_consent_accepted'));
+  localStorage.removeItem(tbaAccountKey('tba_esign_consent_accepted_at'));
 }
 
 // A real SHA-256 hash of the exact contract text being signed — this

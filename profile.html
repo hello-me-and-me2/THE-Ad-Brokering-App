@@ -135,7 +135,7 @@
       '<div>' +
       '<p class="esign-consent-label">Consent to sign documents electronically</p>' +
       '<p class="esign-consent-status">' + (consented
-        ? 'Given ' + tbaFormatDateLong(localStorage.getItem('tba_esign_consent_accepted_at'))
+        ? 'Given ' + tbaFormatDateLong(tbaGetESignConsentAcceptedAt())
         : 'Not given yet — you\'ll be asked next time you sign a contract.') + '</p>' +
       '</div>' +
       (consented
@@ -292,8 +292,7 @@
       var withdrawBtn = document.getElementById('withdraw-esign-btn');
       if (withdrawBtn) {
         withdrawBtn.addEventListener('click', function () {
-          localStorage.removeItem('tba_esign_consent_accepted');
-          localStorage.removeItem('tba_esign_consent_accepted_at');
+          tbaWithdrawESignConsent();
           render();
           tbaShowToast('E-sign consent withdrawn');
         });

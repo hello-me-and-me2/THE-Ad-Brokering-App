@@ -749,7 +749,7 @@
           signedAt: new Date().toISOString(),
           documentHash: hash,
           userAgent: navigator.userAgent,
-          consentTimestamp: localStorage.getItem('tba_esign_consent_accepted_at'),
+          consentTimestamp: tbaGetESignConsentAcceptedAt(),
           verification: { method: 'email_code_demo', verifiedAt: new Date().toISOString() },
           ipAddress: null
         };
