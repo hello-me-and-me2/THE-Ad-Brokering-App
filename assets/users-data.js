@@ -115,15 +115,20 @@ function tbaGetLocalAccounts() {
   }
 }
 
-function tbaRegisterLocalAccount(username, role) {
+// joinedAt is recorded once here, in the registry entry, rather than
+// in a flat tba_joined_at key — that flat key had the exact same
+// single-slot problem as tba_username once did, overwritten every
+// time a different account signed up or logged in.
+function tbaRegisterLocalAccount(username, role, joinedAt) {
   if (!username) return;
   var accounts = tbaGetLocalAccounts();
   var lower = username.toLowerCase();
   var existing = accounts.find(function (a) { return a.username.toLowerCase() === lower; });
   if (existing) {
     existing.role = role || existing.role;
+    if (joinedAt && !existing.joinedAt) existing.joinedAt = joinedAt;
   } else {
-    accounts.push({ username: username, role: role || 'business' });
+    accounts.push({ username: username, role: role || 'business', joinedAt: joinedAt || new Date().toISOString() });
   }
   localStorage.setItem('tba_local_accounts', JSON.stringify(accounts));
 }
@@ -137,11 +142,13 @@ function tbaFindLocalAccount(username) {
 // Backfills the registry from whichever account is currently signed
 // in, so an account created before this registry existed isn't
 // orphaned — the moment it next loads any page, it's added. Cheap and
-// idempotent, so it runs on every load rather than once.
+// idempotent, so it runs on every load rather than once. Passes along
+// the legacy flat tba_joined_at key (if this is that one pre-upgrade
+// account) so its real join date isn't lost either.
 function tbaEnsureLocalAccountRegistered() {
   var myUsername = localStorage.getItem('tba_username');
   if (!myUsername) return;
-  tbaRegisterLocalAccount(myUsername, localStorage.getItem('tba_role') || 'business');
+  tbaRegisterLocalAccount(myUsername, localStorage.getItem('tba_role') || 'business', localStorage.getItem('tba_joined_at'));
 }
 tbaEnsureLocalAccountRegistered();
 
@@ -158,9 +165,9 @@ function tbaUsernameTaken(username) {
 // account on the same device never shows — or silently overwrites —
 // the previous account's details. Logging back into an earlier
 // account later finds its own data exactly as it was left.
-function tbaAccountKey(base) {
-  var myUsername = localStorage.getItem('tba_username');
-  return myUsername ? base + '_' + myUsername.toLowerCase() : base;
+function tbaAccountKey(base, forUsername) {
+  var username = forUsername || localStorage.getItem('tba_username');
+  return username ? base + '_' + username.toLowerCase() : base;
 }
 
 // One-time upgrade for data saved before accounts had their own
@@ -234,13 +241,17 @@ function tbaMigrateLegacyAccountData() {
 }
 tbaMigrateLegacyAccountData();
 
-function tbaGetMyBio() {
-  return localStorage.getItem(tbaAccountKey('tba_bio')) || '';
+// The optional `forUsername` lets a profile page read *any* local
+// account's own saved bio/links/photo — not just the signed-in one —
+// so viewing another real account (not just seed accounts) works.
+// Every existing call site omits it and keeps meaning "me".
+function tbaGetMyBio(forUsername) {
+  return localStorage.getItem(tbaAccountKey('tba_bio', forUsername)) || '';
 }
 
-function tbaGetMyLinks() {
+function tbaGetMyLinks(forUsername) {
   try {
-    return JSON.parse(localStorage.getItem(tbaAccountKey('tba_links')) || '[]').slice(0, TBA_MAX_LINKS);
+    return JSON.parse(localStorage.getItem(tbaAccountKey('tba_links', forUsername)) || '[]').slice(0, TBA_MAX_LINKS);
   } catch (e) {
     return [];
   }
@@ -251,8 +262,8 @@ function tbaSaveMyProfile(bio, links) {
   localStorage.setItem(tbaAccountKey('tba_links'), JSON.stringify((links || []).slice(0, TBA_MAX_LINKS)));
 }
 
-function tbaGetMyProfilePic() {
-  return localStorage.getItem(tbaAccountKey('tba_profile_pic')) || '';
+function tbaGetMyProfilePic(forUsername) {
+  return localStorage.getItem(tbaAccountKey('tba_profile_pic', forUsername)) || '';
 }
 
 function tbaSaveMyProfilePic(dataUrl) {
@@ -274,6 +285,27 @@ function tbaSeedJoinedAt(daysAgo) {
   return d.toISOString();
 }
 
+// Builds a profile object for any real (non-seed) local account from
+// its own scoped storage — the signed-in one or a dormant one someone
+// else is looking up. Shared by tbaGetAllUsers and tbaGetUserByUsername
+// so "you" and "another real account" are read exactly the same way.
+function tbaBuildLocalAccountProfile(account) {
+  var myUsername = localStorage.getItem('tba_username');
+  var isYou = !!(myUsername && myUsername.toLowerCase() === account.username.toLowerCase());
+  return {
+    username: account.username,
+    name: '@' + account.username,
+    role: account.role,
+    tagline: isYou ? 'This is you.' : 'A member of THE INTROductory.',
+    bio: tbaGetMyBio(account.username),
+    links: tbaGetMyLinks(account.username),
+    avatar: tbaGetMyProfilePic(account.username),
+    verified: tbaIsVerified(account.username),
+    joinedAt: account.joinedAt || new Date().toISOString(),
+    isYou: isYou
+  };
+}
+
 function tbaGetAllUsers() {
   var users = TBA_SEED_USERS.map(function (u) {
     var copy = {};
@@ -283,21 +315,15 @@ function tbaGetAllUsers() {
     return copy;
   });
   var myUsername = localStorage.getItem('tba_username');
-  if (myUsername) {
-    users.unshift({
-      username: myUsername,
-      name: '@' + myUsername,
-      role: localStorage.getItem('tba_role') || 'business',
-      tagline: 'This is you.',
-      bio: tbaGetMyBio(),
-      links: tbaGetMyLinks(),
-      avatar: tbaGetMyProfilePic(),
-      verified: tbaIsVerified(myUsername),
-      joinedAt: localStorage.getItem('tba_joined_at') || new Date().toISOString(),
-      isYou: true
-    });
-  }
-  return users;
+  var localAccounts = tbaGetLocalAccounts().slice().sort(function (a, b) {
+    // "You" first, then everyone else most-recently-joined first.
+    if (myUsername) {
+      if (a.username.toLowerCase() === myUsername.toLowerCase()) return -1;
+      if (b.username.toLowerCase() === myUsername.toLowerCase()) return 1;
+    }
+    return new Date(b.joinedAt || 0) - new Date(a.joinedAt || 0);
+  });
+  return localAccounts.map(tbaBuildLocalAccountProfile).concat(users);
 }
 
 // Mirrors tbaGetProfileViewsLast7Days' bucketing (same rolling 7-day
@@ -326,26 +352,16 @@ function tbaGetFlaggedReports() {
   return [];
 }
 
-// Looks up a single user by username — your own account (editable,
-// backed by localStorage) or a seed account (read-only demo data).
+// Looks up a single user by username — your own account, any other
+// real account this browser has signed up (editable only by itself,
+// but readable like any profile), or a seed account (read-only demo
+// data).
 function tbaGetUserByUsername(username) {
   if (!username) return null;
   var lower = username.toLowerCase();
-  var myUsername = localStorage.getItem('tba_username');
 
-  if (myUsername && myUsername.toLowerCase() === lower) {
-    return {
-      username: myUsername,
-      name: '@' + myUsername,
-      role: localStorage.getItem('tba_role') || 'business',
-      tagline: 'This is you.',
-      bio: tbaGetMyBio(),
-      links: tbaGetMyLinks(),
-      avatar: tbaGetMyProfilePic(),
-      verified: tbaIsVerified(myUsername),
-      isYou: true
-    };
-  }
+  var localAccount = tbaFindLocalAccount(username);
+  if (localAccount) return tbaBuildLocalAccountProfile(localAccount);
 
   var seedMatch = TBA_SEED_USERS.find(function (u) { return u.username.toLowerCase() === lower; });
   if (!seedMatch) return null;
@@ -387,10 +403,13 @@ function tbaGetVerificationOverrides() {
 function tbaIsVerified(username) {
   if (!username) return false;
   var lower = username.toLowerCase();
-  var myUsername = localStorage.getItem('tba_username');
 
-  if (myUsername && myUsername.toLowerCase() === lower) {
-    return localStorage.getItem(tbaAccountKey('tba_verification_status')) === 'approved';
+  // Any real local account (signed in right now or not) keeps its own
+  // verification status under its own scoped key, same as its bio or
+  // links — checked directly rather than only for whichever account
+  // happens to be the active session.
+  if (tbaFindLocalAccount(username)) {
+    return localStorage.getItem(tbaAccountKey('tba_verification_status', username)) === 'approved';
   }
 
   var overrides = tbaGetVerificationOverrides();
@@ -415,8 +434,10 @@ function tbaSubmitVerificationApplication(reason) {
 
 // Admin: every verification application currently awaiting a
 // decision — the seed demo requests (unless this browser's admin
-// already decided them) plus "your" own request, if you've applied
-// and are still pending.
+// already decided them) plus any real local account's own request,
+// pending or not — including one that applied, then logged out, so
+// its application doesn't go invisible to admin the moment it's not
+// the active session.
 function tbaGetPendingVerificationRequests() {
   var overrides = tbaGetVerificationOverrides();
 
@@ -435,17 +456,19 @@ function tbaGetPendingVerificationRequests() {
     });
 
   var myUsername = localStorage.getItem('tba_username');
-  if (myUsername && tbaGetMyVerificationStatus() === 'pending') {
+  tbaGetLocalAccounts().forEach(function (account) {
+    var status = localStorage.getItem(tbaAccountKey('tba_verification_status', account.username)) || 'none';
+    if (status !== 'pending') return;
     requests.unshift({
-      username: myUsername,
-      name: '@' + myUsername,
-      role: localStorage.getItem('tba_role') || 'business',
-      avatar: tbaGetMyProfilePic(),
-      reason: tbaGetMyVerificationReason(),
-      submittedAt: localStorage.getItem(tbaAccountKey('tba_verification_submitted_at')) || new Date().toISOString(),
-      isYou: true
+      username: account.username,
+      name: '@' + account.username,
+      role: account.role,
+      avatar: tbaGetMyProfilePic(account.username),
+      reason: localStorage.getItem(tbaAccountKey('tba_verification_reason', account.username)) || '',
+      submittedAt: localStorage.getItem(tbaAccountKey('tba_verification_submitted_at', account.username)) || new Date().toISOString(),
+      isYou: !!(myUsername && myUsername.toLowerCase() === account.username.toLowerCase())
     });
-  }
+  });
 
   return requests;
 }
@@ -459,13 +482,14 @@ function tbaGetVerificationDecisionLog() {
 }
 
 // Admin: approve or deny a pending application (your own account or
-// a seed demo account).
+// a seed demo account) — routes to that account's own scoped status
+// whether or not it's the currently active session, matching how
+// tbaIsVerified/tbaGetPendingVerificationRequests read it.
 function tbaDecideVerification(username, decision) {
-  var myUsername = localStorage.getItem('tba_username');
   var user = tbaGetUserByUsername(username);
 
-  if (myUsername && myUsername.toLowerCase() === username.toLowerCase()) {
-    localStorage.setItem(tbaAccountKey('tba_verification_status'), decision);
+  if (tbaFindLocalAccount(username)) {
+    localStorage.setItem(tbaAccountKey('tba_verification_status', username), decision);
   } else {
     var overrides = tbaGetVerificationOverrides();
     overrides[username.toLowerCase()] = decision;
@@ -1157,9 +1181,9 @@ var TBA_SEED_NETWORK_CONNECTIONS = {
   riversidegear: ["jordanblake"]
 };
 
-function tbaGetMyNetwork() {
+function tbaGetMyNetwork(forUsername) {
   try {
-    return JSON.parse(localStorage.getItem(tbaAccountKey('tba_network')) || '[]');
+    return JSON.parse(localStorage.getItem(tbaAccountKey('tba_network', forUsername)) || '[]');
   } catch (e) {
     return [];
   }
@@ -1249,8 +1273,11 @@ function tbaGetNetworkFor(username) {
   var lower = username.toLowerCase();
   var myUsername = localStorage.getItem('tba_username');
 
-  if (myUsername && myUsername.toLowerCase() === lower) {
-    return tbaGetMyNetwork()
+  // Any real local account — the signed-in one or another one being
+  // looked up — has its own real network, read the same way either
+  // way.
+  if (tbaFindLocalAccount(username)) {
+    return tbaGetMyNetwork(username)
       .map(function (u) { return tbaGetUserByUsername(u); })
       .filter(Boolean);
   }
