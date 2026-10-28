@@ -152,7 +152,7 @@
     document.getElementById('response-rate-delta').classList.add('down');
   }
 
-  var dealsClosed = tbaGetDealsClosedCount();
+  var dealsClosed = tbaGetDealsClosedCount(true);
   document.getElementById('deals-closed-stat').textContent = dealsClosed;
   document.getElementById('deals-closed-delta').textContent = dealsClosed === 0 ? 'None yet' : 'All time';
 

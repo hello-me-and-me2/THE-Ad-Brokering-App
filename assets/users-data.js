@@ -190,18 +190,45 @@ function tbaMigrateLegacyAccountData() {
     localStorage.removeItem(base);
   });
 
-  // Matches tbaAccountKey's convention (the account's username always
-  // goes on the end): tba_thread_<counterpart>_<myUsername>. Safe to
-  // run unfiltered since this whole function only ever runs once per
-  // account, guarded by the migrated flag set at the end.
-  ['tba_thread_', 'tba_progress_'].forEach(function (prefix) {
-    Object.keys(localStorage).forEach(function (key) {
-      if (key.indexOf(prefix) !== 0) return;
-      var scoped = tbaAccountKey(key);
-      if (localStorage.getItem(scoped) === null) localStorage.setItem(scoped, localStorage.getItem(key));
-      localStorage.removeItem(key);
+  // Thread/progress keys can't be told apart from "legacy" vs.
+  // "already scoped to some other account" just by prefix (both start
+  // with tba_thread_/tba_progress_), unlike the fixed-name keys above
+  // where the legacy key is simply gone once moved. So this only ever
+  // runs once, globally (not per account) — there is only ever one
+  // batch of true legacy data, from whichever single account was
+  // active the moment this upgrade first loads; every account created
+  // after that writes scoped keys from the start and has nothing to
+  // migrate. Running it per-account would re-scan and steal another
+  // account's already-scoped keys the next time a *different* account
+  // signs up or logs in for the first time post-upgrade.
+  if (!localStorage.getItem('tba_threads_migrated_global')) {
+    ['tba_thread_', 'tba_progress_'].forEach(function (prefix) {
+      Object.keys(localStorage).forEach(function (key) {
+        if (key.indexOf(prefix) !== 0) return;
+        var scoped = tbaAccountKey(key);
+        if (localStorage.getItem(scoped) === null) localStorage.setItem(scoped, localStorage.getItem(key));
+        localStorage.removeItem(key);
+      });
     });
-  });
+    localStorage.setItem('tba_threads_migrated_global', '1');
+  }
+
+  // Contracts predate having an `owner` field at all — same one-time,
+  // whole-device reasoning as above: any contract already missing one
+  // can only have been created by whichever single account was active
+  // before this existed, so that's the best-effort owner to backfill.
+  // Also global/once-only, for the same reason: re-running this for a
+  // second account later would wrongly claim the first account's
+  // contracts as its own.
+  if (!localStorage.getItem('tba_contracts_owner_migrated_global')) {
+    var contracts = tbaGetContracts();
+    var changed = false;
+    contracts.forEach(function (c) {
+      if (!c.owner) { c.owner = myUsername; changed = true; }
+    });
+    if (changed) tbaSaveContracts(contracts);
+    localStorage.setItem('tba_contracts_owner_migrated_global', '1');
+  }
 
   localStorage.setItem('tba_account_migrated_' + myUsername.toLowerCase(), '1');
 }
@@ -766,7 +793,8 @@ function tbaUpdateContract(id, patch) {
 }
 
 function tbaGetContractsForThread(username) {
-  return tbaGetContracts().filter(function (c) { return c.participants.indexOf(username) !== -1; });
+  var myUsername = localStorage.getItem('tba_username');
+  return tbaGetContracts().filter(function (c) { return c.owner === myUsername && c.participants.indexOf(username) !== -1; });
 }
 
 function tbaNewContractId() {
@@ -929,8 +957,9 @@ function tbaGetContractDueDate(contract) {
 }
 
 function tbaGetUpcomingDeadlines() {
+  var myUsername = localStorage.getItem('tba_username');
   return tbaGetContracts()
-    .filter(function (c) { return c.status === 'signed'; })
+    .filter(function (c) { return c.status === 'signed' && c.owner === myUsername; })
     .map(function (c) {
       var due = tbaGetContractDueDate(c);
       if (!due) return null;
@@ -1019,14 +1048,18 @@ function tbaGetResponseRate() {
 }
 
 // Deals you've actually closed — a thread marked closed, or any
-// contract that's reached fully signed.
-function tbaGetDealsClosedCount() {
+// contract that's reached fully signed. Pass true to count only the
+// signed-in account's own contracts (the home dashboard's personal
+// stat); omit it for the whole device's total (the sign-in page's and
+// admin's platform-wide figures, which are intentionally everyone's).
+function tbaGetDealsClosedCount(onlyMine) {
   var closedUsernames = TBA_MY_THREADS_SEED
     .filter(function (t) { return t.status === 'closed'; })
     .map(function (t) { return t.username.toLowerCase(); });
 
+  var myUsername = localStorage.getItem('tba_username');
   tbaGetContracts()
-    .filter(function (c) { return c.status === 'signed'; })
+    .filter(function (c) { return c.status === 'signed' && (!onlyMine || c.owner === myUsername); })
     .forEach(function (c) {
       c.participants.forEach(function (p) {
         if (closedUsernames.indexOf(p.toLowerCase()) === -1) closedUsernames.push(p.toLowerCase());
@@ -1086,7 +1119,9 @@ function tbaGetActivityFor(username) {
 
   tbaGetContracts().forEach(function (c) {
     if (c.status !== 'signed') return;
-    var involved = isYou || c.participants.some(function (p) { return p.toLowerCase() === username.toLowerCase(); });
+    var involved = isYou
+      ? c.owner === myUsername
+      : c.participants.some(function (p) { return p.toLowerCase() === username.toLowerCase(); });
     if (!involved) return;
     var sig = isYou ? c.signatures.me : c.signatures[username];
     var otherNames = isYou

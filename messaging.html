@@ -399,7 +399,8 @@
 
   function renderContractsList() {
     contractState.view = 'list';
-    var contracts = tbaGetContracts();
+    var myUsername = localStorage.getItem('tba_username');
+    var contracts = tbaGetContracts().filter(function (c) { return c.owner === myUsername; });
 
     var html =
       '<div class="contracts-head">' +
@@ -553,6 +554,7 @@
         var contract = {
           id: tbaNewContractId(),
           name: name,
+          owner: localStorage.getItem('tba_username'),
           participants: participants,
           createdAt: new Date().toISOString(),
           status: 'draft',
