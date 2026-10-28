@@ -199,13 +199,13 @@
     var loginError = document.getElementById('login-error');
     var username = usernameInput.value.trim();
 
-    var myUsername = localStorage.getItem('tba_username');
     var matchedUsername = null;
     var matchedRole = null;
 
-    if (myUsername && myUsername.toLowerCase() === username.toLowerCase()) {
-      matchedUsername = myUsername;
-      matchedRole = localStorage.getItem('tba_role') || 'business';
+    var localMatch = tbaFindLocalAccount(username);
+    if (localMatch) {
+      matchedUsername = localMatch.username;
+      matchedRole = localMatch.role;
     } else {
       var seedMatch = TBA_SEED_USERS.find(function (u) {
         return u.username.toLowerCase() === username.toLowerCase();
@@ -227,6 +227,7 @@
     localStorage.setItem('tba_authed', '1');
     localStorage.setItem('tba_username', matchedUsername);
     localStorage.setItem('tba_role', matchedRole);
+    tbaRegisterLocalAccount(matchedUsername, matchedRole);
 
     // Blur the focused field first — on mobile, navigating away while
     // an input is still focused can leave the next page scrolled down
@@ -276,6 +277,7 @@
     localStorage.setItem('tba_username', username);
     localStorage.setItem('tba_role', role);
     localStorage.setItem('tba_joined_at', new Date().toISOString());
+    tbaRegisterLocalAccount(username, role);
 
     document.activeElement.blur();
     window.scrollTo(0, 0);

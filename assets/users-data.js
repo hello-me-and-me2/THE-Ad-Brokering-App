@@ -97,9 +97,58 @@ var TBA_SEED_USERS = [
 
 var TBA_MAX_LINKS = 7;
 
+// --- Local account registry ---
+// Signing up (or logging in) only ever remembered the *most recent*
+// account in a single tba_username slot — so after creating a second
+// account, that slot pointed at the new one, and logging back into
+// the first by username failed ("we couldn't find an account with
+// that username") even though all its data was still sitting in
+// storage under its own scoped keys. This keeps every account this
+// browser has ever signed up in, so login can find any of them again,
+// not just whichever one happened to be last.
+function tbaGetLocalAccounts() {
+  try {
+    var list = JSON.parse(localStorage.getItem('tba_local_accounts') || '[]');
+    return Array.isArray(list) ? list : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function tbaRegisterLocalAccount(username, role) {
+  if (!username) return;
+  var accounts = tbaGetLocalAccounts();
+  var lower = username.toLowerCase();
+  var existing = accounts.find(function (a) { return a.username.toLowerCase() === lower; });
+  if (existing) {
+    existing.role = role || existing.role;
+  } else {
+    accounts.push({ username: username, role: role || 'business' });
+  }
+  localStorage.setItem('tba_local_accounts', JSON.stringify(accounts));
+}
+
+function tbaFindLocalAccount(username) {
+  if (!username) return null;
+  var lower = username.toLowerCase();
+  return tbaGetLocalAccounts().find(function (a) { return a.username.toLowerCase() === lower; }) || null;
+}
+
+// Backfills the registry from whichever account is currently signed
+// in, so an account created before this registry existed isn't
+// orphaned — the moment it next loads any page, it's added. Cheap and
+// idempotent, so it runs on every load rather than once.
+function tbaEnsureLocalAccountRegistered() {
+  var myUsername = localStorage.getItem('tba_username');
+  if (!myUsername) return;
+  tbaRegisterLocalAccount(myUsername, localStorage.getItem('tba_role') || 'business');
+}
+tbaEnsureLocalAccountRegistered();
+
 function tbaUsernameTaken(username) {
   var lower = username.toLowerCase();
-  return TBA_SEED_USERS.some(function (u) { return u.username.toLowerCase() === lower; });
+  if (TBA_SEED_USERS.some(function (u) { return u.username.toLowerCase() === lower; })) return true;
+  return tbaGetLocalAccounts().some(function (a) { return a.username.toLowerCase() === lower; });
 }
 
 // --- Per-account storage ---
