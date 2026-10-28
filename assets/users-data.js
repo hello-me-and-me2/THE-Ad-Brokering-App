@@ -1256,6 +1256,17 @@ function tbaMarkAllNotificationsRead() {
   localStorage.setItem('tba_notifications_read', JSON.stringify(read));
 }
 
+// Immediately empties the list, instead of marking everything read
+// and waiting out the normal 24-hour grace period — backdates every
+// current notification's read time past the TTL so the very next
+// read of the list filters them all out right away.
+function tbaClearAllNotifications() {
+  var read = tbaGetReadNotificationTimes();
+  var expiredAt = new Date(Date.now() - TBA_NOTIFICATION_READ_TTL_MS - 1000).toISOString();
+  tbaGetNotifications().forEach(function (n) { read[n.id] = expiredAt; });
+  localStorage.setItem('tba_notifications_read', JSON.stringify(read));
+}
+
 function tbaNotificationMessagePreview(m) {
   if (m.type === 'offer') {
     return 'Countered with $' + m.amount.toLocaleString() + ' for ' + m.videos + ' video' + (m.videos === 1 ? '' : 's');
@@ -1403,7 +1414,10 @@ function tbaWireNotificationBell(wrapId, btnId) {
     panel.innerHTML =
       '<div class="notif-panel-head">' +
       '<span>Notifications</span>' +
+      '<span style="display:flex;align-items:center;gap:10px;">' +
       (unread > 0 ? '<button type="button" class="notif-mark-all" id="notif-mark-all">Mark all read</button>' : '') +
+      (notifications.length > 0 ? '<button type="button" class="notif-mark-all" id="notif-clear-all">Clear all</button>' : '') +
+      '</span>' +
       '</div>' +
       '<div class="notif-panel-list">' + listHtml + '</div>';
 
@@ -1412,6 +1426,15 @@ function tbaWireNotificationBell(wrapId, btnId) {
       markAllBtn.addEventListener('click', function (e) {
         e.stopPropagation();
         tbaMarkAllNotificationsRead();
+        renderPanel();
+      });
+    }
+
+    var clearAllBtn = document.getElementById('notif-clear-all');
+    if (clearAllBtn) {
+      clearAllBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        tbaClearAllNotifications();
         renderPanel();
       });
     }
@@ -1480,6 +1503,13 @@ function tbaMarkAllAdminNotificationsRead() {
   tbaGetAdminNotifications().forEach(function (n) {
     if (!read[n.id]) read[n.id] = now;
   });
+  localStorage.setItem('tba_admin_notifications_read', JSON.stringify(read));
+}
+
+function tbaClearAllAdminNotifications() {
+  var read = tbaGetAdminReadNotificationTimes();
+  var expiredAt = new Date(Date.now() - TBA_NOTIFICATION_READ_TTL_MS - 1000).toISOString();
+  tbaGetAdminNotifications().forEach(function (n) { read[n.id] = expiredAt; });
   localStorage.setItem('tba_admin_notifications_read', JSON.stringify(read));
 }
 
@@ -1575,7 +1605,10 @@ function tbaWireAdminNotificationBell(wrapId, btnId) {
     panel.innerHTML =
       '<div class="notif-panel-head">' +
       '<span>Notifications</span>' +
+      '<span style="display:flex;align-items:center;gap:10px;">' +
       (unread > 0 ? '<button type="button" class="notif-mark-all" id="admin-notif-mark-all">Mark all read</button>' : '') +
+      (notifications.length > 0 ? '<button type="button" class="notif-mark-all" id="admin-notif-clear-all">Clear all</button>' : '') +
+      '</span>' +
       '</div>' +
       '<div class="notif-panel-list">' + listHtml + '</div>';
 
@@ -1584,6 +1617,15 @@ function tbaWireAdminNotificationBell(wrapId, btnId) {
       markAllBtn.addEventListener('click', function (e) {
         e.stopPropagation();
         tbaMarkAllAdminNotificationsRead();
+        renderPanel();
+      });
+    }
+
+    var clearAllBtn = document.getElementById('admin-notif-clear-all');
+    if (clearAllBtn) {
+      clearAllBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        tbaClearAllAdminNotifications();
         renderPanel();
       });
     }
