@@ -274,6 +274,27 @@ function tbaSaveMyProfilePic(dataUrl) {
   }
 }
 
+// Collected at signup alongside the username — not shown anywhere in
+// the UI yet, just stored the same honest way everything else
+// account-specific is (its own scoped key, never the other account's).
+function tbaSaveMyEmail(email) {
+  localStorage.setItem(tbaAccountKey('tba_email'), email || '');
+}
+
+function tbaGetMyEmail(forUsername) {
+  return localStorage.getItem(tbaAccountKey('tba_email', forUsername)) || '';
+}
+
+// Only the SHA-256 hash is ever stored, never the password itself —
+// genuine hashing (the same Web Crypto call used for contract
+// documents), even though, same as everywhere else in this demo, it
+// protects against nothing once someone has the browser's own
+// localStorage open. Login does not check this (see the signup/login
+// script's own comment on that) — only signup, which this exists for.
+function tbaSaveMyPasswordHash(hash) {
+  localStorage.setItem(tbaAccountKey('tba_password_hash'), hash);
+}
+
 // A seed account's join date is expressed as "days ago" rather than a
 // fixed calendar date, so it stays a believable, populated recent
 // history (and keeps feeding the Last 7 Days chart below) no matter

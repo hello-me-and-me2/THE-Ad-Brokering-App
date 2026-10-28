@@ -97,8 +97,9 @@
           <form id="signin-form" novalidate>
             <label class="field">
               Email
-              <input type="email" name="email" required placeholder="you@example.com" autocomplete="email">
+              <input type="email" name="email" id="signup-email" required placeholder="you@example.com" autocomplete="email">
             </label>
+            <p class="field-error" id="signup-email-error" hidden></p>
 
             <label class="field">
               Username
@@ -108,8 +109,9 @@
 
             <label class="field">
               Password
-              <input type="password" name="password" required placeholder="Create a password" minlength="8" autocomplete="new-password">
+              <input type="password" name="password" id="signup-password" required placeholder="Create a password" minlength="8" autocomplete="new-password">
             </label>
+            <p class="field-error" id="signup-password-error" hidden></p>
 
             <div class="role-select">
               <span class="role-label">I am a...</span>
@@ -241,9 +243,29 @@
   document.getElementById('signin-form').addEventListener('submit', function (e) {
     e.preventDefault();
 
+    var emailInput = document.getElementById('signup-email');
+    var emailError = document.getElementById('signup-email-error');
+    var email = emailInput.value.trim();
+
     var usernameInput = document.getElementById('username-input');
     var usernameError = document.getElementById('username-error');
     var username = usernameInput.value.trim();
+
+    var passwordInput = document.getElementById('signup-password');
+    var passwordError = document.getElementById('signup-password-error');
+    var password = passwordInput.value;
+
+    // Email, username, and password are all required to create an
+    // account — checked here (rather than relying on the inputs'
+    // own `required`/`pattern` attributes) because the form has
+    // novalidate set, so the browser's native validation never runs.
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      emailError.textContent = 'Enter a valid email address.';
+      emailError.hidden = false;
+      emailInput.focus();
+      return;
+    }
+    emailError.hidden = true;
 
     if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
       usernameError.textContent = 'Usernames are 3–20 characters: letters, numbers, and underscores only.';
@@ -261,6 +283,14 @@
 
     usernameError.hidden = true;
 
+    if (!password || password.length < 8) {
+      passwordError.textContent = 'Choose a password that\'s at least 8 characters.';
+      passwordError.hidden = false;
+      passwordInput.focus();
+      return;
+    }
+    passwordError.hidden = true;
+
     var termsCheckbox = document.getElementById('signup-terms-checkbox');
     var termsError = document.getElementById('signup-terms-error');
     if (!termsCheckbox.checked) {
@@ -272,15 +302,25 @@
     tbaAcceptTerms();
 
     var role = document.querySelector('input[name="role"]:checked').value;
+    var submitBtn = document.querySelector('#signin-form button[type="submit"]');
+    submitBtn.disabled = true;
 
-    localStorage.setItem('tba_authed', '1');
-    localStorage.setItem('tba_username', username);
-    localStorage.setItem('tba_role', role);
-    tbaRegisterLocalAccount(username, role, new Date().toISOString());
+    tbaSha256Hex(password).then(function (passwordHash) {
+      localStorage.setItem('tba_authed', '1');
+      localStorage.setItem('tba_username', username);
+      localStorage.setItem('tba_role', role);
+      tbaRegisterLocalAccount(username, role, new Date().toISOString());
+      tbaSaveMyEmail(email);
+      tbaSaveMyPasswordHash(passwordHash);
 
-    document.activeElement.blur();
-    window.scrollTo(0, 0);
-    tbaNavigateTo('home.html');
+      document.activeElement.blur();
+      window.scrollTo(0, 0);
+      tbaNavigateTo('home.html');
+    }).catch(function () {
+      submitBtn.disabled = false;
+      passwordError.textContent = 'Something went wrong creating your account — try again.';
+      passwordError.hidden = false;
+    });
   });
 </script>
 
