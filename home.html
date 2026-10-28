@@ -233,10 +233,10 @@
       : initials(u.username);
 
     card.innerHTML =
-      '<a class="user-avatar" href="profile.html?u=' + encodeURIComponent(u.username) + '" style="text-decoration:none;">' + avatarInner + '</a>' +
+      '<a class="user-avatar' + tbaChampionAvatarClass(u.username) + '" href="profile.html?u=' + encodeURIComponent(u.username) + '" style="text-decoration:none;">' + avatarInner + '</a>' +
       '<div class="user-info">' +
       '<div class="user-name-row"><a class="user-name" href="profile.html?u=' + encodeURIComponent(u.username) + '" style="text-decoration:none;color:inherit;">' + u.name + '</a>' +
-      (u.verified ? tbaVerifiedBadgeHtml() : '') + '</div>' +
+      (u.verified ? tbaVerifiedBadgeHtml(u.username) : '') + '</div>' +
       '<a class="user-username" href="profile.html?u=' + encodeURIComponent(u.username) + '" style="text-decoration:none;color:inherit;">@' + u.username + '</a>' +
       '<span class="role-tag ' + u.role + '">' + (u.role === 'business' ? 'Business' : 'Influencer') + '</span>' +
       '<p class="user-tagline">' + u.tagline + '</p>' +

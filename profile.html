@@ -99,15 +99,16 @@
   }
 
   function avatarMarkup(user, cls) {
+    var ring = tbaChampionAvatarClass(user.username);
     return user.avatar
-      ? '<img class="' + cls + '" src="' + user.avatar + '" alt="">'
-      : '<div class="' + cls + '">' + initials(user.username) + '</div>';
+      ? '<img class="' + cls + ring + '" src="' + user.avatar + '" alt="">'
+      : '<div class="' + cls + ring + '">' + initials(user.username) + '</div>';
   }
 
   function renderVerifySection(user, status) {
     if (user.verified) {
       return '<p class="verify-status" style="color:var(--olive);background:#eef1e6;">' +
-        tbaVerifiedBadgeHtml() + ' Your account is verified.</p>';
+        tbaVerifiedBadgeHtml(user.username) + ' Your account is verified.</p>';
     }
     if (status === 'pending') {
       return '<p class="verify-status pending">&#9203; Verification application pending review.</p>';
@@ -161,7 +162,7 @@
           return '<a class="network-chip" href="' + href + '">' +
             '<span class="network-chip-avatar">' + avatarHtml + '</span>' +
             '<span>' + escapeHtml(m.name) + (m.isYou ? ' (You)' : '') + '</span>' +
-            (m.verified ? tbaVerifiedBadgeHtml() : '') +
+            (m.verified ? tbaVerifiedBadgeHtml(m.username) : '') +
             '</a>';
         }).join('') + '</div>';
 
@@ -266,7 +267,7 @@
       '<div class="profile-card">' +
       avatarMarkup(user, 'profile-avatar-lg') +
       '<h1 class="profile-name">' + escapeHtml(user.name) +
-      (user.verified ? tbaVerifiedBadgeHtml() : '') +
+      (user.verified ? tbaVerifiedBadgeHtml(user.username) : '') +
       (isYou ? '<span class="you-badge">You</span>' : '') + '</h1>' +
       '<div class="profile-username">@' + escapeHtml(user.username) + '</div>' +
       '<span class="role-tag ' + user.role + '">' + (user.role === 'business' ? 'Business' : 'Influencer') + '</span>' +
@@ -613,6 +614,17 @@
         quipEl.style.margin = '2px 0 0';
         quipEl.textContent = quipFor(score);
         msgEl.insertAdjacentElement('afterend', quipEl);
+
+        // 100 saves unlocks Champion status for good — a real,
+        // permanent account flag, not a one-off toast. Checked once
+        // per run; already-unlocked accounts just keep playing.
+        if (score >= 100 && tbaUnlockChampion()) {
+          tbaFireConfetti();
+          var championEl = document.createElement('p');
+          championEl.style.cssText = 'margin:12px 0 0;font-weight:700;font-size:14px;color:#a9720f;';
+          championEl.textContent = '👑 CHAMPION UNLOCKED — your verified badge, avatar, chat messages, and theme toggle just got a gold upgrade. Refresh any page to see it.';
+          quipEl.insertAdjacentElement('afterend', championEl);
+        }
       }
 
       overlay.querySelector('#egg-close').addEventListener('click', function () {

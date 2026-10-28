@@ -229,7 +229,10 @@
         '</div>'
       );
     }
-    return '<div class="bubble ' + (m.from === 'me' ? 'me' : 'them') + '">' + escapeHtml(m.text) + '</div>';
+    var championFlair = (m.from === 'me' && tbaIsChampion())
+      ? '<span class="tba-champion-flair" title="Champion">\u{1F3C6}</span>'
+      : '';
+    return '<div class="bubble ' + (m.from === 'me' ? 'me' : 'them') + '">' + escapeHtml(m.text) + championFlair + '</div>';
   }
 
   function renderDealPanel(thread) {
@@ -803,6 +806,7 @@
 
           var allSigned = Object.keys(newSigs).every(function (k) { return newSigs[k]; });
           tbaUpdateContract(id, { signatures: newSigs, status: allSigned ? 'signed' : current.status });
+          if (allSigned && tbaIsChampion()) tbaFireConfetti();
 
           tbaAppendMyThreadMessage(p, {
             from: 'them',
@@ -1035,11 +1039,11 @@
         : initials(u.username);
 
       card.innerHTML =
-        '<a class="user-avatar" href="' + profileHref + '" style="text-decoration:none;">' + avatarInner + '</a>' +
+        '<a class="user-avatar' + tbaChampionAvatarClass(u.username) + '" href="' + profileHref + '" style="text-decoration:none;">' + avatarInner + '</a>' +
         '<div class="user-info">' +
         '<div class="user-name-row">' +
         '<a class="user-name" href="' + profileHref + '" style="text-decoration:none;color:inherit;">' + u.name + '</a>' +
-        (u.verified ? tbaVerifiedBadgeHtml() : '') +
+        (u.verified ? tbaVerifiedBadgeHtml(u.username) : '') +
         (u.isYou ? '<span class="you-badge">You</span>' : '') +
         '</div>' +
         '<a class="user-username" href="' + profileHref + '" style="text-decoration:none;color:inherit;">@' + u.username + '</a>' +

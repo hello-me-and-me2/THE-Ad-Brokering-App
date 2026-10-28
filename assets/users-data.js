@@ -528,8 +528,26 @@ function tbaDecideVerification(username, decision) {
 }
 
 // Small seal-style checkmark badge, colored by the calling page's own
-// CSS (`.verified-badge { color: ...; }`) so it matches each theme.
-function tbaVerifiedBadgeHtml() {
+// CSS (`.verified-badge { color: ...; }`) so it matches each theme —
+// unless this account is also a Champion (100 saves in the hidden
+// game), in which case the same badge gets a gold-gradient "royal"
+// finish instead of a second icon bolted on next to it. Both facts
+// (verified, champion) are still both true and both visible — they
+// just share the one mark rather than cluttering the name with two.
+var tbaVerifiedBadgeGradientCounter = 0;
+function tbaVerifiedBadgeHtml(forUsername) {
+  if (forUsername && tbaIsChampion(forUsername)) {
+    tbaVerifiedBadgeGradientCounter++;
+    var gid = 'tba-royal-grad-' + tbaVerifiedBadgeGradientCounter;
+    return '<span class="verified-badge verified-badge-royal" title="Verified &amp; Champion account" aria-label="Verified and Champion account">' +
+      '<svg viewBox="0 0 20 20" width="15" height="15" aria-hidden="true">' +
+      '<defs><linearGradient id="' + gid + '" x1="0" y1="0" x2="1" y2="1">' +
+      '<stop offset="0%" stop-color="#fff3c4"/><stop offset="45%" stop-color="#f3c348"/><stop offset="100%" stop-color="#a9720f"/>' +
+      '</linearGradient></defs>' +
+      '<path fill="url(#' + gid + ')" stroke="#8a5d0b" stroke-width="0.4" d="M10 0l2.27 1.64 2.78-.52 1.1 2.6 2.6 1.1-.52 2.78L20 10l-1.77 2.4.52 2.78-2.6 1.1-1.1 2.6-2.78-.52L10 20l-2.27-1.64-2.78.52-1.1-2.6-2.6-1.1.52-2.78L0 10l1.77-2.4-.52-2.78 2.6-1.1 1.1-2.6 2.78.52L10 0z"/>' +
+      '<path fill="#fff" d="M8.4 13.1L5.7 10.4l1.15-1.15L8.4 10.8l4.3-4.3 1.15 1.15z"/>' +
+      '</svg></span>';
+  }
   return '<span class="verified-badge" title="Verified account" aria-label="Verified account">' +
     '<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true">' +
     '<path fill="currentColor" d="M10 0l2.27 1.64 2.78-.52 1.1 2.6 2.6 1.1-.52 2.78L20 10l-1.77 2.4.52 2.78-2.6 1.1-1.1 2.6-2.78-.52L10 20l-2.27-1.64-2.78.52-1.1-2.6-2.6-1.1.52-2.78L0 10l1.77-2.4-.52-2.78 2.6-1.1 1.1-2.6 2.78.52L10 0z"/>' +
@@ -1315,19 +1333,23 @@ function tbaGetNetworkFor(username) {
     .filter(Boolean);
 }
 
-// --- Light / dark mode ---
+// --- Light / dark / Champion mode ---
 // One preference, shared across every page via localStorage. Unset
 // means "use this page's own default look" (the designed light or
 // dark theme) — picking a mode in the toggle overrides that default
-// everywhere until changed again.
+// everywhere until changed again. "champion" is a third option, only
+// ever reachable by a Champion account (100 saves in the hidden
+// game) — picking it (or even setting it directly) on any other
+// account is harmless, but the toggle itself only ever offers it once
+// earned.
 
 function tbaGetTheme() {
   var t = localStorage.getItem('tba_theme');
-  return (t === 'light' || t === 'dark') ? t : null;
+  return (t === 'light' || t === 'dark' || t === 'champion') ? t : null;
 }
 
 function tbaSetTheme(theme) {
-  if (theme === 'light' || theme === 'dark') {
+  if (theme === 'light' || theme === 'dark' || theme === 'champion') {
     localStorage.setItem('tba_theme', theme);
   } else {
     localStorage.removeItem('tba_theme');
@@ -1368,6 +1390,14 @@ function tbaIconMoon() {
     '</svg>';
 }
 
+// Champion theme's icon — only ever shown to an account that's
+// actually unlocked it.
+function tbaIconCrown() {
+  return '<svg viewBox="0 0 20 20" width="15" height="15" fill="#f3c348" stroke="#a9720f" stroke-width="0.6" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M2.5 15.5h15l.9-8.2-4.4 3.3L10 4l-4 6.6-4.4-3.3.9 8.2z"/>' +
+    '</svg>';
+}
+
 // A bell with a small signature notch at the base — a deliberate
 // deviation from a plain bell outline so it reads as this app's icon
 // rather than a stock glyph, while staying recognizable at 16px.
@@ -1389,13 +1419,26 @@ function tbaWireThemeToggle(buttonId, naturalDefault) {
 
   function render() {
     var current = effectiveTheme();
-    btn.innerHTML = current === 'dark' ? tbaIconSun() : tbaIconMoon();
-    btn.setAttribute('aria-label', current === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
-    btn.title = current === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+    if (current === 'champion') {
+      btn.innerHTML = tbaIconCrown();
+    } else {
+      btn.innerHTML = current === 'dark' ? tbaIconSun() : tbaIconMoon();
+    }
+    var label = current === 'champion' ? 'Switch to light mode'
+      : current === 'dark' ? 'Switch to light mode'
+      : (tbaIsChampion() ? 'Switch to Champion theme' : 'Switch to dark mode');
+    btn.setAttribute('aria-label', label);
+    btn.title = label;
   }
 
+  // Light -> dark -> (Champion theme, only if unlocked) -> back to
+  // light. Everyone else just cycles light/dark same as always.
   btn.addEventListener('click', function () {
-    var next = effectiveTheme() === 'dark' ? 'light' : 'dark';
+    var current = effectiveTheme();
+    var next;
+    if (current === 'light') next = 'dark';
+    else if (current === 'dark') next = tbaIsChampion() ? 'champion' : 'light';
+    else next = 'light';
     tbaSetTheme(next);
     tbaApplyTheme();
     render();
@@ -2010,6 +2053,30 @@ function tbaWithdrawESignConsent() {
   localStorage.removeItem(tbaAccountKey('tba_esign_consent_accepted_at'));
 }
 
+// --- Champion status ---
+// Unlocked by hitting 100 saves in the hidden Penalty Saves game on
+// the profile page. A real, permanent account flag (scoped the same
+// as everything else), not a one-time toast — it's checked wherever
+// the verified badge, avatars, and chat messages render, and gates
+// the Champion theme option.
+function tbaIsChampion(forUsername) {
+  return localStorage.getItem(tbaAccountKey('tba_champion', forUsername)) === '1';
+}
+
+function tbaUnlockChampion() {
+  if (tbaIsChampion()) return false;
+  localStorage.setItem(tbaAccountKey('tba_champion'), '1');
+  return true;
+}
+
+// A class to add onto an avatar element (img or initials div, any
+// page) that gives champions a glowing gold ring — returns '' for
+// everyone else, so callers can always safely append it to a class
+// attribute: class="profile-avatar-lg' + tbaChampionAvatarClass(u.username) + '"
+function tbaChampionAvatarClass(forUsername) {
+  return tbaIsChampion(forUsername) ? ' tba-champion-avatar' : '';
+}
+
 // A real SHA-256 hash of the exact contract text being signed — this
 // is genuine cryptography, computed in-browser, not a placeholder.
 // Once a backend exists, the same hash lets anyone verify a signed
@@ -2196,6 +2263,55 @@ function tbaEnsureButtonPressStyles() {
   document.head.appendChild(style);
 }
 tbaEnsureButtonPressStyles();
+
+// --- Champion cosmetics (shared CSS) ---
+// One global stylesheet for every Champion-only visual touch — the
+// royal verified-badge glow, the gold avatar ring, the VIP chat
+// flair, the Champion theme's accent overrides, and the confetti
+// burst — injected once, the same pattern as the toast/button-press
+// styles above.
+function tbaEnsureChampionStyles() {
+  if (document.getElementById('tba-champion-styles')) return;
+  var style = document.createElement('style');
+  style.id = 'tba-champion-styles';
+  style.textContent =
+    '.verified-badge-royal { filter: drop-shadow(0 0 3px rgba(243,195,72,0.85)); }' +
+    '.tba-champion-avatar { box-shadow: 0 0 0 3px #f3c348, 0 0 16px 2px rgba(243,195,72,0.6) !important; border-radius: 50% !important; }' +
+    '.tba-champion-flair { display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; margin-left: 4px; vertical-align: -2px; filter: drop-shadow(0 0 2px rgba(243,195,72,0.8)); }' +
+    '.tba-confetti-piece { position: fixed; top: -12px; z-index: 10050; pointer-events: none; border-radius: 2px; will-change: transform, opacity; animation: tbaConfettiFall linear forwards; }' +
+    '@keyframes tbaConfettiFall { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(105vh) rotate(540deg); opacity: 0.2; } }' +
+    'html[data-theme="champion"] body::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 9998; box-shadow: inset 0 0 130px rgba(243,195,72,0.22); border: 2px solid rgba(243,195,72,0.4); }' +
+    'html[data-theme="champion"] a { color: #c9960f; }' +
+    'html[data-theme="champion"] .site-header, html[data-theme="champion"] .admin-header { background: linear-gradient(135deg, rgba(243,195,72,0.16), rgba(243,195,72,0.02)) !important; }' +
+    'html[data-theme="champion"] nav.main-nav a.active, html[data-theme="champion"] .admin-header nav a.active { color: #a9720f !important; }' +
+    'html[data-theme="champion"] .btn-submit, html[data-theme="champion"] .btn-primary, html[data-theme="champion"] .admin-btn, html[data-theme="champion"] .btn-new-contract, html[data-theme="champion"] .btn-sign:not(:disabled) { background: linear-gradient(135deg, #f6d365 0%, #caa23e 60%, #8a6a1c 100%) !important; color: #2a1d02 !important; border-color: #caa23e !important; }';
+  document.head.appendChild(style);
+}
+tbaEnsureChampionStyles();
+
+// A brief, lightweight confetti burst — plain DOM pieces, no canvas
+// or library — used to celebrate a Champion account's real wins
+// (closing a deal, getting a contract fully signed) a little harder
+// than the plain toast everyone else gets.
+function tbaFireConfetti() {
+  tbaEnsureChampionStyles();
+  var colors = ['#f3c348', '#ffe08a', '#caa23e', '#fff3c4', '#e8b84b'];
+  for (var i = 0; i < 60; i++) {
+    (function (i) {
+      var piece = document.createElement('div');
+      piece.className = 'tba-confetti-piece';
+      var size = 6 + Math.random() * 6;
+      piece.style.left = Math.random() * 100 + 'vw';
+      piece.style.width = size + 'px';
+      piece.style.height = (size * 0.4) + 'px';
+      piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+      piece.style.animationDuration = (2.2 + Math.random() * 1.4) + 's';
+      piece.style.animationDelay = (Math.random() * 0.4) + 's';
+      document.body.appendChild(piece);
+      setTimeout(function () { piece.remove(); }, 4200);
+    })(i);
+  }
+}
 
 // Mobile Safari (and some mobile Chrome builds) won't apply :active
 // styles during a touch hold unless a touchstart listener is present

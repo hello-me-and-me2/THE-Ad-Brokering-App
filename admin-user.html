@@ -155,7 +155,7 @@
       avatarInner +
       '<div>' +
       '<h1 class="admin-profile-name">' + escapeHtml(user.name) +
-      (user.verified ? tbaVerifiedBadgeHtml() : '') +
+      (user.verified ? tbaVerifiedBadgeHtml(user.username) : '') +
       (user.isYou ? '<span class="t-tag new">You</span>' : '') + '</h1>' +
       '<div class="admin-profile-username">@' + escapeHtml(user.username) + '</div>' +
       '<span class="role-pill ' + user.role + '">' + (user.role === 'business' ? 'Business' : 'Influencer') + '</span>' +

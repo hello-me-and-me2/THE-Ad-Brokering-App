@@ -149,7 +149,7 @@
       '<div class="net-info">' +
       '<div class="net-name-row">' +
       '<a class="net-name" href="' + href + '">' + u.name + '</a>' +
-      (u.verified ? tbaVerifiedBadgeHtml() : '') +
+      (u.verified ? tbaVerifiedBadgeHtml(u.username) : '') +
       '</div>' +
       '<a class="net-username" href="' + href + '">@' + u.username + '</a>' +
       '<span class="net-role-tag ' + u.role + '">' + (u.role === 'business' ? 'Business' : 'Influencer') + '</span>' +
@@ -204,9 +204,9 @@
     return (
       '<div class="diagram-node-wrap" style="left:' + x + '%;top:' + y + '%;">' +
       '<a class="' + cls + '" href="' + href + '">' +
-      '<span class="diagram-avatar">' + avatarInner(u) + '</span>' +
+      '<span class="diagram-avatar' + tbaChampionAvatarClass(u.username) + '">' + avatarInner(u) + '</span>' +
       '<span class="diagram-label">' + (isCenter ? 'You' : escapeNetHtml(u.name)) +
-      (u.verified ? tbaVerifiedBadgeHtml() : '') +
+      (u.verified ? tbaVerifiedBadgeHtml(u.username) : '') +
       '</span>' +
       '</a>' +
       (isCenter ? '' : '<button type="button" class="diagram-remove" data-username="' + u.username + '" title="Remove from network" aria-label="Remove ' + escapeNetHtml(u.name) + ' from network">&times;</button>') +

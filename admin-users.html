@@ -101,11 +101,11 @@
       var threadCount = tbaGetUserThreads(u.username).length;
 
       card.innerHTML =
-        '<div class="admin-user-avatar">' + avatarInner + '</div>' +
+        '<div class="admin-user-avatar' + tbaChampionAvatarClass(u.username) + '">' + avatarInner + '</div>' +
         '<div>' +
         '<div class="admin-user-name-row">' +
         '<span class="admin-user-name">' + u.name + '</span>' +
-        (u.verified ? tbaVerifiedBadgeHtml() : '') +
+        (u.verified ? tbaVerifiedBadgeHtml(u.username) : '') +
         (u.isYou ? '<span class="t-tag new">You</span>' : '') +
         '</div>' +
         '<div class="admin-user-username">@' + u.username + '</div>' +
