@@ -45,7 +45,7 @@
 </main>
 
 <footer>
-  &copy; 2026 THE INTROductory. Built with care by Andre Anderson &amp; team.
+  &copy; 2026 THE INTROductory. Built with care by Andre Anderson &amp; team.<span id="egg-dot" aria-hidden="true">.</span>
   <span style="margin-left:10px;"><a href="terms.html" style="color:inherit;">Terms</a> &middot; <a href="privacy.html" style="color:inherit;">Privacy</a></span>
 </footer>
 
@@ -426,6 +426,153 @@
   }
 
   render();
+
+  // --- Easter egg: a stray "." in the footer nobody will notice is
+  // actually a button. Catch-the-coffee-beans, scored, with a best
+  // score remembered per account (same storage pattern as everything
+  // else account-specific on this page) — a little reward for anyone
+  // who actually reads the fine print this closely.
+  (function () {
+    var dot = document.getElementById('egg-dot');
+    if (!dot) return;
+
+    var style = document.createElement('style');
+    style.textContent =
+      '#egg-dot { opacity: 0.4; font-size: 11px; cursor: default; user-select: none; }' +
+      '.egg-overlay { position: fixed; inset: 0; z-index: 10001; background: rgba(20,14,6,0.72); display: flex; align-items: center; justify-content: center; padding: 20px; font-family: "DM Sans", "Helvetica Neue", Arial, sans-serif; }' +
+      '.egg-card { background: #fffbf3; border-radius: 22px; padding: 22px 24px 26px; width: 100%; max-width: 340px; text-align: center; box-shadow: 0 30px 70px rgba(0,0,0,0.45); }' +
+      '.egg-card h3 { margin: 0 0 4px; font-family: "Fraunces", serif; font-size: 19px; color: #2e2417; }' +
+      '.egg-sub { margin: 0 0 14px; font-size: 12.5px; color: #7a6d5a; }' +
+      '.egg-stage { position: relative; width: 100%; height: 320px; border-radius: 14px; overflow: hidden; background: linear-gradient(180deg, #f3e6cf, #e9d6b3); border: 1px solid #ecdfc9; cursor: none; touch-action: none; }' +
+      '.egg-bean { position: absolute; font-size: 22px; transform: translate(-50%, -50%); pointer-events: none; }' +
+      '.egg-basket { position: absolute; bottom: 10px; font-size: 30px; transform: translate(-50%, 0); pointer-events: none; }' +
+      '.egg-hud { display: flex; justify-content: space-between; margin: 12px 2px 0; font-size: 12.5px; font-weight: 700; color: #2e2417; }' +
+      '.egg-msg { margin: 14px 0 4px; font-size: 13.5px; color: #2e2417; min-height: 18px; }' +
+      '.egg-close { margin-top: 10px; border: none; background: none; color: #7a6d5a; font-size: 12px; font-weight: 700; cursor: pointer; padding: 6px; }';
+    document.head.appendChild(style);
+
+    function highScoreKey() {
+      return tbaAccountKey('tba_egg_bean_best');
+    }
+
+    dot.addEventListener('click', function () {
+      openGame();
+    });
+
+    function openGame() {
+      var overlay = document.createElement('div');
+      overlay.className = 'egg-overlay';
+      overlay.innerHTML =
+        '<div class="egg-card">' +
+        '<h3>&#9749; Catch the Coffee Beans</h3>' +
+        '<p class="egg-sub">Move your mouse (or finger) to catch what falls. 20 seconds.</p>' +
+        '<div class="egg-stage" id="egg-stage"><div class="egg-basket" id="egg-basket" style="left:50%;">&#9749;</div></div>' +
+        '<div class="egg-hud"><span id="egg-score">Score: 0</span><span id="egg-time">0:20</span></div>' +
+        '<p class="egg-msg" id="egg-msg"></p>' +
+        '<button type="button" class="egg-close" id="egg-close">Close</button>' +
+        '</div>';
+      document.body.appendChild(overlay);
+
+      var stage = overlay.querySelector('#egg-stage');
+      var basket = overlay.querySelector('#egg-basket');
+      var scoreEl = overlay.querySelector('#egg-score');
+      var timeEl = overlay.querySelector('#egg-time');
+      var msgEl = overlay.querySelector('#egg-msg');
+      var score = 0;
+      var basketX = 50;
+      var running = true;
+      var beans = [];
+
+      function setBasketX(pct) {
+        basketX = Math.max(6, Math.min(94, pct));
+        basket.style.left = basketX + '%';
+      }
+
+      stage.addEventListener('mousemove', function (e) {
+        var rect = stage.getBoundingClientRect();
+        setBasketX(((e.clientX - rect.left) / rect.width) * 100);
+      });
+      stage.addEventListener('touchmove', function (e) {
+        var rect = stage.getBoundingClientRect();
+        var touch = e.touches[0];
+        setBasketX(((touch.clientX - rect.left) / rect.width) * 100);
+        e.preventDefault();
+      }, { passive: false });
+
+      function spawnBean() {
+        if (!running) return;
+        var bean = document.createElement('div');
+        bean.className = 'egg-bean';
+        bean.textContent = Math.random() < 0.15 ? '✨' : '☕';
+        var x = 8 + Math.random() * 84;
+        bean.style.left = x + '%';
+        bean.style.top = '-6%';
+        stage.appendChild(bean);
+        beans.push({ el: bean, x: x, y: -6, speed: 1.1 + Math.random() * 1.1, bonus: bean.textContent === '✨' });
+      }
+
+      var spawnTimer = setInterval(spawnBean, 650);
+
+      function tick() {
+        if (!running) return;
+        var stageHeight = stage.clientHeight;
+        for (var i = beans.length - 1; i >= 0; i--) {
+          var b = beans[i];
+          b.y += b.speed;
+          b.el.style.top = b.y + '%';
+          var pixelY = (b.y / 100) * stageHeight;
+          if (pixelY > stageHeight - 38 && pixelY < stageHeight && Math.abs(b.x - basketX) < 9) {
+            score += b.bonus ? 5 : 1;
+            scoreEl.textContent = 'Score: ' + score;
+            b.el.remove();
+            beans.splice(i, 1);
+          } else if (b.y > 104) {
+            b.el.remove();
+            beans.splice(i, 1);
+          }
+        }
+        requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+
+      var secondsLeft = 20;
+      var countdown = setInterval(function () {
+        secondsLeft -= 1;
+        timeEl.textContent = '0:' + (secondsLeft < 10 ? '0' : '') + Math.max(0, secondsLeft);
+        if (secondsLeft <= 0) endGame();
+      }, 1000);
+
+      function endGame() {
+        running = false;
+        clearInterval(spawnTimer);
+        clearInterval(countdown);
+        beans.forEach(function (b) { b.el.remove(); });
+        beans = [];
+
+        var best = parseInt(localStorage.getItem(highScoreKey()) || '0', 10);
+        var isNewBest = score > best;
+        if (isNewBest) localStorage.setItem(highScoreKey(), String(score));
+        msgEl.textContent = isNewBest
+          ? 'New best: ' + score + '! ☕'
+          : 'Final score: ' + score + ' (best: ' + Math.max(best, score) + ')';
+      }
+
+      overlay.querySelector('#egg-close').addEventListener('click', function () {
+        running = false;
+        clearInterval(spawnTimer);
+        clearInterval(countdown);
+        overlay.remove();
+      });
+      overlay.addEventListener('click', function (e) {
+        if (e.target === overlay) {
+          running = false;
+          clearInterval(spawnTimer);
+          clearInterval(countdown);
+          overlay.remove();
+        }
+      });
+    }
+  })();
 </script>
 </body>
 </html>
