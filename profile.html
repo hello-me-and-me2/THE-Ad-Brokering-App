@@ -46,7 +46,7 @@
 
 <footer>
   &copy; 2026 THE INTROductory. Built with care by Andre Anderson &amp; team.
-  <span style="margin-left:10px;"><a href="terms.html" style="color:inherit;">Terms</a> &middot; <a href="privacy.html" style="color:inherit;">Privacy</a></span><span id="egg-dot" aria-hidden="true">.</span>
+  <span style="margin-left:10px;"><a href="terms.html" style="color:inherit;">Terms</a> &middot; <a href="privacy.html" style="color:inherit;">Privacy</a></span><span id="egg-dot" aria-hidden="true" title="nothing to see here&#8230; 👀">&#9917;</span>
 </footer>
 
 
@@ -439,7 +439,7 @@
 
     var style = document.createElement('style');
     style.textContent =
-      '#egg-dot { opacity: 0.6; font-size: 13px; cursor: default; user-select: none; }' +
+      '#egg-dot { opacity: 0.75; font-size: 13px; cursor: default; user-select: none; margin-left: 2px; }' +
       '.egg-overlay { position: fixed; inset: 0; z-index: 10001; background: rgba(8,16,10,0.72); display: flex; align-items: center; justify-content: center; padding: 20px; font-family: "DM Sans", "Helvetica Neue", Arial, sans-serif; }' +
       '.egg-card { background: #fffbf3; border-radius: 22px; padding: 22px 24px 26px; width: 100%; max-width: 340px; text-align: center; box-shadow: 0 30px 70px rgba(0,0,0,0.45); }' +
       '.egg-card h3 { margin: 0 0 4px; font-family: "Fraunces", serif; font-size: 19px; color: #2e2417; }' +
@@ -469,7 +469,7 @@
       overlay.innerHTML =
         '<div class="egg-card">' +
         '<h3>&#9917; Penalty Saves</h3>' +
-        '<p class="egg-sub">Move your mouse (or finger) to dive and save the shots. 20 seconds.</p>' +
+        '<p class="egg-sub">You found the secret ball. Nobody else reads the footer. Move your mouse (or finger) to dive. 20 seconds.</p>' +
         '<div class="egg-stage" id="egg-stage"><div class="egg-basket" id="egg-basket" style="left:50%;">&#129508;</div></div>' +
         '<div class="egg-hud"><span id="egg-score">Saves: 0</span><span id="egg-time">0:20</span></div>' +
         '<p class="egg-msg" id="egg-msg"></p>' +
@@ -543,13 +543,15 @@
         bean.style.left = x + '%';
         bean.style.top = '-6%';
         stage.appendChild(bean);
-        var speedMultiplier = 1 + Math.min(1.6, score * 0.045);
-        beans.push({ el: bean, x: x, y: -6, speed: (1.1 + Math.random() * 1.1) * speedMultiplier, bonus: bean.textContent === '🏆' });
+        // Starts noticeably slow (low multiplier, low base speed) and
+        // ramps up with the live score, same cap as before.
+        var speedMultiplier = 0.55 + Math.min(1.8, score * 0.05);
+        beans.push({ el: bean, x: x, y: -6, speed: (0.85 + Math.random() * 0.85) * speedMultiplier, bonus: bean.textContent === '🏆' });
 
-        var nextDelay = Math.max(260, 650 - score * 16);
+        var nextDelay = Math.max(260, 900 - score * 18);
         spawnTimeoutId = setTimeout(spawnBean, nextDelay);
       }
-      var spawnTimeoutId = setTimeout(spawnBean, 650);
+      var spawnTimeoutId = setTimeout(spawnBean, 900);
 
       function tick() {
         if (!running) return;
@@ -584,6 +586,15 @@
         if (secondsLeft <= 0) endGame();
       }, 1000);
 
+      function quipFor(finalScore) {
+        if (finalScore === 0) return "Zero saves. The ball went in every single time — impressive, honestly.";
+        if (finalScore < 5) return "A few saves. Your coach is cautiously optimistic.";
+        if (finalScore < 15) return "Solid! The team no longer wants to replace you.";
+        if (finalScore < 30) return "Golden Gloves energy. Scouts are (not actually) watching.";
+        if (finalScore < 50) return "Diamond-tier reflexes. Are you even human?";
+        return "Mythic. Someone alert FIFA. Or at least HR.";
+      }
+
       function endGame() {
         running = false;
         clearTimeout(spawnTimeoutId);
@@ -595,9 +606,13 @@
         var best = parseInt(localStorage.getItem(highScoreKey()) || '0', 10);
         var isNewBest = score > best;
         if (isNewBest) localStorage.setItem(highScoreKey(), String(score));
-        msgEl.textContent = isNewBest
-          ? 'New best: ' + score + ' saves! 🏆'
-          : 'Final: ' + score + ' saves (best: ' + Math.max(best, score) + ')';
+        var headline = isNewBest ? 'New best: ' + score + ' saves! 🏆' : 'Final: ' + score + ' saves (best: ' + Math.max(best, score) + ')';
+        msgEl.textContent = headline;
+        var quipEl = document.createElement('p');
+        quipEl.className = 'egg-sub';
+        quipEl.style.margin = '2px 0 0';
+        quipEl.textContent = quipFor(score);
+        msgEl.insertAdjacentElement('afterend', quipEl);
       }
 
       overlay.querySelector('#egg-close').addEventListener('click', function () {
