@@ -428,10 +428,10 @@
   render();
 
   // --- Easter egg: a stray "." in the footer nobody will notice is
-  // actually a button. Catch-the-coffee-beans, scored, with a best
-  // score remembered per account (same storage pattern as everything
-  // else account-specific on this page) — a little reward for anyone
-  // who actually reads the fine print this closely.
+  // actually a button. A little soccer goalkeeper game, scored, with
+  // a best score remembered per account (same storage pattern as
+  // everything else account-specific on this page) — a reward for
+  // anyone who actually reads the fine print this closely.
   (function () {
     var dot = document.getElementById('egg-dot');
     if (!dot) return;
@@ -439,20 +439,21 @@
     var style = document.createElement('style');
     style.textContent =
       '#egg-dot { opacity: 0.4; font-size: 11px; cursor: default; user-select: none; }' +
-      '.egg-overlay { position: fixed; inset: 0; z-index: 10001; background: rgba(20,14,6,0.72); display: flex; align-items: center; justify-content: center; padding: 20px; font-family: "DM Sans", "Helvetica Neue", Arial, sans-serif; }' +
+      '.egg-overlay { position: fixed; inset: 0; z-index: 10001; background: rgba(8,16,10,0.72); display: flex; align-items: center; justify-content: center; padding: 20px; font-family: "DM Sans", "Helvetica Neue", Arial, sans-serif; }' +
       '.egg-card { background: #fffbf3; border-radius: 22px; padding: 22px 24px 26px; width: 100%; max-width: 340px; text-align: center; box-shadow: 0 30px 70px rgba(0,0,0,0.45); }' +
       '.egg-card h3 { margin: 0 0 4px; font-family: "Fraunces", serif; font-size: 19px; color: #2e2417; }' +
       '.egg-sub { margin: 0 0 14px; font-size: 12.5px; color: #7a6d5a; }' +
-      '.egg-stage { position: relative; width: 100%; height: 320px; border-radius: 14px; overflow: hidden; background: linear-gradient(180deg, #f3e6cf, #e9d6b3); border: 1px solid #ecdfc9; cursor: none; touch-action: none; }' +
-      '.egg-bean { position: absolute; font-size: 22px; transform: translate(-50%, -50%); pointer-events: none; }' +
-      '.egg-basket { position: absolute; bottom: 10px; font-size: 30px; transform: translate(-50%, 0); pointer-events: none; }' +
+      '.egg-stage { position: relative; width: 100%; height: 320px; border-radius: 14px; overflow: hidden; background: repeating-linear-gradient(180deg, #4fa84a 0px, #4fa84a 32px, #49a044 32px, #49a044 64px); border: 3px solid #fff; cursor: none; touch-action: none; }' +
+      '.egg-stage::before { content: ""; position: absolute; top: 0; left: 50%; width: 120px; height: 46px; margin-left: -60px; border: 3px solid rgba(255,255,255,0.85); border-top: none; border-radius: 0 0 6px 6px; }' +
+      '.egg-bean { position: absolute; font-size: 22px; transform: translate(-50%, -50%); pointer-events: none; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.25)); }' +
+      '.egg-basket { position: absolute; bottom: 10px; font-size: 30px; transform: translate(-50%, 0); pointer-events: none; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3)); }' +
       '.egg-hud { display: flex; justify-content: space-between; margin: 12px 2px 0; font-size: 12.5px; font-weight: 700; color: #2e2417; }' +
       '.egg-msg { margin: 14px 0 4px; font-size: 13.5px; color: #2e2417; min-height: 18px; }' +
       '.egg-close { margin-top: 10px; border: none; background: none; color: #7a6d5a; font-size: 12px; font-weight: 700; cursor: pointer; padding: 6px; }';
     document.head.appendChild(style);
 
     function highScoreKey() {
-      return tbaAccountKey('tba_egg_bean_best');
+      return tbaAccountKey('tba_egg_keeper_best');
     }
 
     dot.addEventListener('click', function () {
@@ -464,10 +465,10 @@
       overlay.className = 'egg-overlay';
       overlay.innerHTML =
         '<div class="egg-card">' +
-        '<h3>&#9749; Catch the Coffee Beans</h3>' +
-        '<p class="egg-sub">Move your mouse (or finger) to catch what falls. 20 seconds.</p>' +
-        '<div class="egg-stage" id="egg-stage"><div class="egg-basket" id="egg-basket" style="left:50%;">&#9749;</div></div>' +
-        '<div class="egg-hud"><span id="egg-score">Score: 0</span><span id="egg-time">0:20</span></div>' +
+        '<h3>&#9917; Penalty Saves</h3>' +
+        '<p class="egg-sub">Move your mouse (or finger) to dive and save the shots. 20 seconds.</p>' +
+        '<div class="egg-stage" id="egg-stage"><div class="egg-basket" id="egg-basket" style="left:50%;">&#129508;</div></div>' +
+        '<div class="egg-hud"><span id="egg-score">Saves: 0</span><span id="egg-time">0:20</span></div>' +
         '<p class="egg-msg" id="egg-msg"></p>' +
         '<button type="button" class="egg-close" id="egg-close">Close</button>' +
         '</div>';
@@ -503,12 +504,12 @@
         if (!running) return;
         var bean = document.createElement('div');
         bean.className = 'egg-bean';
-        bean.textContent = Math.random() < 0.15 ? '✨' : '☕';
+        bean.textContent = Math.random() < 0.15 ? '🏆' : '⚽';
         var x = 8 + Math.random() * 84;
         bean.style.left = x + '%';
         bean.style.top = '-6%';
         stage.appendChild(bean);
-        beans.push({ el: bean, x: x, y: -6, speed: 1.1 + Math.random() * 1.1, bonus: bean.textContent === '✨' });
+        beans.push({ el: bean, x: x, y: -6, speed: 1.1 + Math.random() * 1.1, bonus: bean.textContent === '🏆' });
       }
 
       var spawnTimer = setInterval(spawnBean, 650);
@@ -523,7 +524,7 @@
           var pixelY = (b.y / 100) * stageHeight;
           if (pixelY > stageHeight - 38 && pixelY < stageHeight && Math.abs(b.x - basketX) < 9) {
             score += b.bonus ? 5 : 1;
-            scoreEl.textContent = 'Score: ' + score;
+            scoreEl.textContent = 'Saves: ' + score;
             b.el.remove();
             beans.splice(i, 1);
           } else if (b.y > 104) {
@@ -553,8 +554,8 @@
         var isNewBest = score > best;
         if (isNewBest) localStorage.setItem(highScoreKey(), String(score));
         msgEl.textContent = isNewBest
-          ? 'New best: ' + score + '! ☕'
-          : 'Final score: ' + score + ' (best: ' + Math.max(best, score) + ')';
+          ? 'New best: ' + score + ' saves! 🏆'
+          : 'Final: ' + score + ' saves (best: ' + Math.max(best, score) + ')';
       }
 
       overlay.querySelector('#egg-close').addEventListener('click', function () {
