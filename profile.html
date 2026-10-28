@@ -22,7 +22,7 @@
         <span class="brand-logo">
           <img src="assets/profile-picture.png" alt="THE INTROductory" class="brand-mark-img" width="256" height="256">
         </span>
-        <span class="brand-tagline">your account</span>
+        <span class="brand-tagline">your account<span id="egg-dot" aria-hidden="true">&middot;</span></span>
       </span>
     </a>
     <nav class="main-nav">
@@ -45,7 +45,7 @@
 </main>
 
 <footer>
-  &copy; 2026 THE INTROductory. Built with care by Andre Anderson &amp; team.<span id="egg-dot" aria-hidden="true">.</span>
+  &copy; 2026 THE INTROductory. Built with care by Andre Anderson &amp; team.
   <span style="margin-left:10px;"><a href="terms.html" style="color:inherit;">Terms</a> &middot; <a href="privacy.html" style="color:inherit;">Privacy</a></span>
 </footer>
 
@@ -427,18 +427,19 @@
 
   render();
 
-  // --- Easter egg: a stray "." in the footer nobody will notice is
-  // actually a button. A little soccer goalkeeper game, scored, with
-  // a best score remembered per account (same storage pattern as
-  // everything else account-specific on this page) — a reward for
-  // anyone who actually reads the fine print this closely.
+  // --- Easter egg: a stray middle-dot after "your account" in the
+  // header nobody will notice is actually a button. A little soccer
+  // goalkeeper game, scored, with a best score remembered per account
+  // (same storage pattern as everything else account-specific on this
+  // page) — a reward for anyone who actually reads the page this
+  // closely.
   (function () {
     var dot = document.getElementById('egg-dot');
     if (!dot) return;
 
     var style = document.createElement('style');
     style.textContent =
-      '#egg-dot { opacity: 0.4; font-size: 11px; cursor: default; user-select: none; }' +
+      '#egg-dot { opacity: 0.6; font-size: 13px; cursor: default; user-select: none; }' +
       '.egg-overlay { position: fixed; inset: 0; z-index: 10001; background: rgba(8,16,10,0.72); display: flex; align-items: center; justify-content: center; padding: 20px; font-family: "DM Sans", "Helvetica Neue", Arial, sans-serif; }' +
       '.egg-card { background: #fffbf3; border-radius: 22px; padding: 22px 24px 26px; width: 100%; max-width: 340px; text-align: center; box-shadow: 0 30px 70px rgba(0,0,0,0.45); }' +
       '.egg-card h3 { margin: 0 0 4px; font-family: "Fraunces", serif; font-size: 19px; color: #2e2417; }' +
@@ -456,7 +457,9 @@
       return tbaAccountKey('tba_egg_keeper_best');
     }
 
-    dot.addEventListener('click', function () {
+    dot.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
       openGame();
     });
 
@@ -483,6 +486,33 @@
       var basketX = 50;
       var running = true;
       var beans = [];
+      var tierIndex = 0;
+      var msgClearTimer = null;
+
+      // Each glove is a real upgrade, not just a different picture —
+      // a wider save radius and a bigger bonus payout, unlocked the
+      // moment your live save count crosses its threshold.
+      var GLOVE_TIERS = [
+        { at: 0, emoji: '\u{1F9E4}', name: 'Training Gloves', radius: 9, bonus: 5 },
+        { at: 5, emoji: '\u{1F9E4}⚡', name: 'Pro Gloves', radius: 11, bonus: 6 },
+        { at: 10, emoji: '\u{1F9E4}✨', name: 'Golden Gloves', radius: 13, bonus: 7 },
+        { at: 15, emoji: '\u{1F9E4}\u{1F48E}', name: 'Diamond Gloves', radius: 15, bonus: 8 },
+        { at: 25, emoji: '\u{1F9E4}\u{1F3C6}', name: 'Legendary Gloves', radius: 18, bonus: 10 }
+      ];
+
+      function applyTier(index) {
+        tierIndex = index;
+        var tier = GLOVE_TIERS[index];
+        basket.textContent = tier.emoji;
+        if (index > 0) {
+          msgEl.textContent = 'Unlocked: ' + tier.name + '! \u{1F9E4}';
+          if (msgClearTimer) clearTimeout(msgClearTimer);
+          msgClearTimer = setTimeout(function () {
+            if (running) msgEl.textContent = '';
+          }, 1400);
+        }
+      }
+      applyTier(0);
 
       function setBasketX(pct) {
         basketX = Math.max(6, Math.min(94, pct));
@@ -500,6 +530,9 @@
         e.preventDefault();
       }, { passive: false });
 
+      // Falling starts slow and ramps up the more you save — both how
+      // often a new ball spawns and how fast each one falls scale
+      // with the live score, capped so it stays just barely playable.
       function spawnBean() {
         if (!running) return;
         var bean = document.createElement('div');
@@ -509,24 +542,31 @@
         bean.style.left = x + '%';
         bean.style.top = '-6%';
         stage.appendChild(bean);
-        beans.push({ el: bean, x: x, y: -6, speed: 1.1 + Math.random() * 1.1, bonus: bean.textContent === '🏆' });
-      }
+        var speedMultiplier = 1 + Math.min(1.6, score * 0.045);
+        beans.push({ el: bean, x: x, y: -6, speed: (1.1 + Math.random() * 1.1) * speedMultiplier, bonus: bean.textContent === '🏆' });
 
-      var spawnTimer = setInterval(spawnBean, 650);
+        var nextDelay = Math.max(260, 650 - score * 16);
+        spawnTimeoutId = setTimeout(spawnBean, nextDelay);
+      }
+      var spawnTimeoutId = setTimeout(spawnBean, 650);
 
       function tick() {
         if (!running) return;
         var stageHeight = stage.clientHeight;
+        var catchRadius = GLOVE_TIERS[tierIndex].radius;
         for (var i = beans.length - 1; i >= 0; i--) {
           var b = beans[i];
           b.y += b.speed;
           b.el.style.top = b.y + '%';
           var pixelY = (b.y / 100) * stageHeight;
-          if (pixelY > stageHeight - 38 && pixelY < stageHeight && Math.abs(b.x - basketX) < 9) {
-            score += b.bonus ? 5 : 1;
+          if (pixelY > stageHeight - 38 && pixelY < stageHeight && Math.abs(b.x - basketX) < catchRadius) {
+            score += b.bonus ? GLOVE_TIERS[tierIndex].bonus : 1;
             scoreEl.textContent = 'Saves: ' + score;
             b.el.remove();
             beans.splice(i, 1);
+            var nextTier = tierIndex;
+            while (nextTier < GLOVE_TIERS.length - 1 && score >= GLOVE_TIERS[nextTier + 1].at) nextTier++;
+            if (nextTier !== tierIndex) applyTier(nextTier);
           } else if (b.y > 104) {
             b.el.remove();
             beans.splice(i, 1);
@@ -545,8 +585,9 @@
 
       function endGame() {
         running = false;
-        clearInterval(spawnTimer);
+        clearTimeout(spawnTimeoutId);
         clearInterval(countdown);
+        if (msgClearTimer) clearTimeout(msgClearTimer);
         beans.forEach(function (b) { b.el.remove(); });
         beans = [];
 
@@ -560,14 +601,14 @@
 
       overlay.querySelector('#egg-close').addEventListener('click', function () {
         running = false;
-        clearInterval(spawnTimer);
+        clearTimeout(spawnTimeoutId);
         clearInterval(countdown);
         overlay.remove();
       });
       overlay.addEventListener('click', function (e) {
         if (e.target === overlay) {
           running = false;
-          clearInterval(spawnTimer);
+          clearTimeout(spawnTimeoutId);
           clearInterval(countdown);
           overlay.remove();
         }
