@@ -2280,11 +2280,24 @@ function tbaEnsureChampionStyles() {
     '.tba-champion-flair { display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; margin-left: 4px; vertical-align: -2px; filter: drop-shadow(0 0 2px rgba(243,195,72,0.8)); }' +
     '.tba-confetti-piece { position: fixed; top: -12px; z-index: 10050; pointer-events: none; border-radius: 2px; will-change: transform, opacity; animation: tbaConfettiFall linear forwards; }' +
     '@keyframes tbaConfettiFall { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(105vh) rotate(540deg); opacity: 0.2; } }' +
-    'html[data-theme="champion"] body::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 9998; box-shadow: inset 0 0 130px rgba(243,195,72,0.22); border: 2px solid rgba(243,195,72,0.4); }' +
-    'html[data-theme="champion"] a { color: #c9960f; }' +
-    'html[data-theme="champion"] .site-header, html[data-theme="champion"] .admin-header { background: linear-gradient(135deg, rgba(243,195,72,0.16), rgba(243,195,72,0.02)) !important; }' +
-    'html[data-theme="champion"] nav.main-nav a.active, html[data-theme="champion"] .admin-header nav a.active { color: #a9720f !important; }' +
-    'html[data-theme="champion"] .btn-submit, html[data-theme="champion"] .btn-primary, html[data-theme="champion"] .admin-btn, html[data-theme="champion"] .btn-new-contract, html[data-theme="champion"] .btn-sign:not(:disabled) { background: linear-gradient(135deg, #f6d365 0%, #caa23e 60%, #8a6a1c 100%) !important; color: #2a1d02 !important; border-color: #caa23e !important; }';
+    // Royal red + gold, deliberately not just a faint accent wash —
+    // a real third background, not a tint on top of light/dark. Only
+    // ever-safe, always-present chrome gets touched directly (body,
+    // header/nav, headings, links, primary buttons); content card
+    // backgrounds are untouched (they keep whatever paper/panel color
+    // light or dark already gave them), which is what keeps this
+    // legible everywhere instead of just looking broken.
+    'html[data-theme="champion"] body { background-color: #5c0a14 !important; background-image: radial-gradient(circle at 14% 8%, rgba(255,215,120,0.2), transparent 42%), radial-gradient(circle at 88% 86%, rgba(255,215,120,0.16), transparent 46%), repeating-linear-gradient(135deg, rgba(255,215,120,0.05) 0px, rgba(255,215,120,0.05) 2px, transparent 2px, transparent 26px), linear-gradient(160deg, #7a0f1d 0%, #8f1626 42%, #4a0810 100%) !important; background-attachment: fixed !important; }' +
+    'html[data-theme="champion"] body::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 9998; border: 4px solid #f3c348; outline: 1px solid rgba(243,195,72,0.55); outline-offset: -9px; box-shadow: inset 0 0 160px rgba(243,195,72,0.18); }' +
+    'html[data-theme="champion"] a { color: #ffd76a; }' +
+    'html[data-theme="champion"] h1, html[data-theme="champion"] h2, html[data-theme="champion"] h3 { color: #a9720f !important; }' +
+    'html[data-theme="champion"] .site-header, html[data-theme="champion"] .admin-header { background: linear-gradient(135deg, rgba(243,195,72,0.32), rgba(90,10,18,0.35)) !important; border-bottom: 1px solid rgba(243,195,72,0.55) !important; box-shadow: 0 2px 18px rgba(0,0,0,0.25); }' +
+    'html[data-theme="champion"] nav.main-nav a, html[data-theme="champion"] .admin-header nav a { color: #f3e0ad; }' +
+    'html[data-theme="champion"] nav.main-nav a.active, html[data-theme="champion"] .admin-header nav a.active { color: #fff3c4 !important; text-shadow: 0 0 10px rgba(243,195,72,0.7); }' +
+    'html[data-theme="champion"] .brand-tagline { color: #f3e0ad; }' +
+    'html[data-theme="champion"] .btn-submit, html[data-theme="champion"] .btn-primary, html[data-theme="champion"] .admin-btn, html[data-theme="champion"] .btn-new-contract, html[data-theme="champion"] .btn-sign:not(:disabled) { background: linear-gradient(135deg, #f6d365 0%, #caa23e 60%, #8a6a1c 100%) !important; color: #2a1d02 !important; border-color: #caa23e !important; box-shadow: 0 4px 14px rgba(0,0,0,0.3); }' +
+    'html[data-theme="champion"] footer { color: #f3e0ad !important; }' +
+    'html[data-theme="champion"] footer a { color: #ffd76a !important; }';
   document.head.appendChild(style);
 }
 tbaEnsureChampionStyles();
