@@ -1343,24 +1343,53 @@ function tbaGetNetworkFor(username) {
 // account is harmless, but the toggle itself only ever offers it once
 // earned.
 
+// The sign-in and admin sign-in screens aren't "inside" any specific
+// account yet (and tba_username can still be pointing at whoever was
+// last logged in, even after logging out) — so the Champion look
+// never renders there regardless of what's stored, no matter whose.
+function tbaIsPreAuthPage() {
+  var path = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
+  return path === '' || path === 'index.html' || path === 'admin-signin.html';
+}
+
+// Scoped per account (tbaAccountKey), except on the pre-auth screens,
+// which always use one fixed shared key — never tbaAccountKey's own
+// fallback to tba_username, since that can still be pointing at
+// whoever was last signed in (logging out doesn't clear it), and
+// toggling light/dark there before signing in must never clobber that
+// account's own saved preference.
+function tbaThemeStorageKey() {
+  return tbaIsPreAuthPage() ? 'tba_theme' : tbaAccountKey('tba_theme');
+}
+
 function tbaGetTheme() {
-  var t = localStorage.getItem('tba_theme');
+  var t = localStorage.getItem(tbaThemeStorageKey());
   return (t === 'light' || t === 'dark' || t === 'champion') ? t : null;
 }
 
 function tbaSetTheme(theme) {
   if (theme === 'light' || theme === 'dark' || theme === 'champion') {
-    localStorage.setItem('tba_theme', theme);
+    localStorage.setItem(tbaThemeStorageKey(), theme);
   } else {
-    localStorage.removeItem('tba_theme');
+    localStorage.removeItem(tbaThemeStorageKey());
   }
 }
 
 // Applied immediately as this script loads (it's a blocking <script>
 // in every page's <head>), so the right theme is in place before the
-// page paints — no flash of the wrong colors.
+// page paints — no flash of the wrong colors. Champion is re-verified
+// here too, not just trusted from storage — it only ever renders for
+// the account that actually earned it, on a page where that account
+// is actually signed in.
+// The one gate both the toggle and tbaApplyTheme check before ever
+// treating 'champion' as real, so they can't disagree with each other.
+function tbaCanUseChampionTheme() {
+  return tbaIsChampion() && !tbaIsPreAuthPage();
+}
+
 function tbaApplyTheme() {
   var t = tbaGetTheme();
+  if (t === 'champion' && !tbaCanUseChampionTheme()) t = null;
   if (t) {
     document.documentElement.setAttribute('data-theme', t);
   } else {
@@ -1426,18 +1455,18 @@ function tbaWireThemeToggle(buttonId, naturalDefault) {
     }
     var label = current === 'champion' ? 'Switch to light mode'
       : current === 'dark' ? 'Switch to light mode'
-      : (tbaIsChampion() ? 'Switch to Champion theme' : 'Switch to dark mode');
+      : (tbaCanUseChampionTheme() ? 'Switch to Champion theme' : 'Switch to dark mode');
     btn.setAttribute('aria-label', label);
     btn.title = label;
   }
 
-  // Light -> dark -> (Champion theme, only if unlocked) -> back to
-  // light. Everyone else just cycles light/dark same as always.
+  // Light -> dark -> (Champion theme, only if unlocked and signed in)
+  // -> back to light. Everyone else just cycles light/dark same as always.
   btn.addEventListener('click', function () {
     var current = effectiveTheme();
     var next;
     if (current === 'light') next = 'dark';
-    else if (current === 'dark') next = tbaIsChampion() ? 'champion' : 'light';
+    else if (current === 'dark') next = tbaCanUseChampionTheme() ? 'champion' : 'light';
     else next = 'light';
     tbaSetTheme(next);
     tbaApplyTheme();
