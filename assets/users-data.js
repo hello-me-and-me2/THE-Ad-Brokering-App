@@ -5,6 +5,7 @@
 var TBA_SEED_USERS = [
   {
     username: "skylinecoffee", name: "Skyline Coffee Co.", role: "business", daysAgoJoined: 20,
+    niche: "Coffee & Food", followers: 0,
     tagline: "Small-batch coffee brand, Pacific Northwest.",
     bio: "Small-batch coffee roaster based in the Pacific Northwest, partnering with creators who love a good cup and an honest story.",
     links: [
@@ -14,6 +15,7 @@ var TBA_SEED_USERS = [
   },
   {
     username: "riversidegear", name: "Riverside Outdoor Gear", role: "business", daysAgoJoined: 15,
+    niche: "Outdoor & Adventure", followers: 0,
     tagline: "Outdoor apparel and camping gear.",
     bio: "Outdoor apparel and camping gear built for real trips, not just photos. We work with adventure creators who actually use our stuff.",
     links: [
@@ -23,6 +25,7 @@ var TBA_SEED_USERS = [
   },
   {
     username: "pearandco", name: "Pear & Co. Skincare", role: "business", daysAgoJoined: 9,
+    niche: "Beauty & Skincare", followers: 0,
     tagline: "Clean skincare, cruelty-free.",
     bio: "Clean, cruelty-free skincare made in small batches. We love collaborating with creators who care about what goes on their skin.",
     links: [
@@ -32,6 +35,7 @@ var TBA_SEED_USERS = [
   },
   {
     username: "thecraftedtable", name: "The Crafted Table", role: "business", daysAgoJoined: 5,
+    niche: "Home & Design", followers: 0,
     tagline: "Artisan home goods & tableware.",
     bio: "Artisan home goods and tableware, handmade by independent makers. Looking for creators who love slow living and good design.",
     links: [
@@ -41,6 +45,7 @@ var TBA_SEED_USERS = [
   },
   {
     username: "brightlinestudio", name: "Brightline Studio", role: "business", daysAgoJoined: 3,
+    niche: "Home & Design", followers: 0,
     tagline: "Independent design & branding studio.",
     bio: "Independent design and branding studio helping small businesses look as good as they are. Open to creator collabs on case studies.",
     links: [
@@ -49,6 +54,7 @@ var TBA_SEED_USERS = [
   },
   {
     username: "marencole", name: "Maren Cole", role: "influencer", daysAgoJoined: 11,
+    niche: "Coffee & Food", followers: 210000,
     tagline: "Lifestyle & coffee content · 210K followers.",
     bio: "Lifestyle and coffee content creator sharing slow mornings and honest reviews with 210K people who feel the same way.",
     links: [
@@ -59,6 +65,7 @@ var TBA_SEED_USERS = [
   },
   {
     username: "jordanblake", name: "Jordan Blake", role: "influencer", daysAgoJoined: 4,
+    niche: "Outdoor & Adventure", followers: 85000,
     tagline: "Outdoor & adventure creator · 85K followers.",
     bio: "Outdoor and adventure creator documenting real trips, real gear tests, and the occasional disaster. 85K people come along for the ride.",
     links: [
@@ -68,6 +75,7 @@ var TBA_SEED_USERS = [
   },
   {
     username: "ninareyes", name: "Nina Reyes", role: "influencer", daysAgoJoined: 6,
+    niche: "Beauty & Skincare", followers: 340000,
     tagline: "Beauty & skincare reviews · 340K followers.",
     bio: "Beauty and skincare reviews with zero filter — if it doesn't work, I'll say so. 340K followers trust me to tell them the truth.",
     links: [
@@ -77,6 +85,7 @@ var TBA_SEED_USERS = [
   },
   {
     username: "leoortiz", name: "Leo Ortiz", role: "influencer", daysAgoJoined: 2,
+    niche: "Fitness & Wellness", followers: 122000,
     tagline: "Fitness & wellness · 122K followers.",
     bio: "Fitness and wellness creator helping 122K people build habits that actually stick. Big on honest brand partnerships, not hype.",
     links: [
@@ -86,6 +95,7 @@ var TBA_SEED_USERS = [
   },
   {
     username: "avaqian", name: "Ava Qian", role: "influencer", daysAgoJoined: 1,
+    niche: "Travel & Food", followers: 96000,
     tagline: "Travel & food content · 96K followers.",
     bio: "Travel and food creator finding the best small-town spots and local makers worth knowing about. 96K people exploring along with me.",
     links: [
@@ -262,6 +272,24 @@ function tbaSaveMyProfile(bio, links) {
   localStorage.setItem(tbaAccountKey('tba_links'), JSON.stringify((links || []).slice(0, TBA_MAX_LINKS)));
 }
 
+// Niche/followers aren't collected at signup — they default to empty
+// until the account fills them in on its own profile, same as bio and
+// links. Used by the Network directory's niche and follower filters.
+function tbaGetMyNiche(forUsername) {
+  return localStorage.getItem(tbaAccountKey('tba_niche', forUsername)) || '';
+}
+
+function tbaGetMyFollowers(forUsername) {
+  var n = parseInt(localStorage.getItem(tbaAccountKey('tba_followers', forUsername)), 10);
+  return isNaN(n) || n < 0 ? 0 : n;
+}
+
+function tbaSaveMyNicheAndFollowers(niche, followers) {
+  localStorage.setItem(tbaAccountKey('tba_niche'), niche || '');
+  var n = parseInt(followers, 10);
+  localStorage.setItem(tbaAccountKey('tba_followers'), String(isNaN(n) || n < 0 ? 0 : n));
+}
+
 function tbaGetMyProfilePic(forUsername) {
   return localStorage.getItem(tbaAccountKey('tba_profile_pic', forUsername)) || '';
 }
@@ -330,6 +358,8 @@ function tbaBuildLocalAccountProfile(account) {
     bio: tbaGetMyBio(account.username),
     links: tbaGetMyLinks(account.username),
     avatar: tbaGetMyProfilePic(account.username),
+    niche: tbaGetMyNiche(account.username),
+    followers: tbaGetMyFollowers(account.username),
     verified: tbaIsVerified(account.username),
     joinedAt: account.joinedAt || new Date().toISOString(),
     isYou: isYou
@@ -1139,6 +1169,128 @@ function tbaGetDealsClosedCount(onlyMine) {
     });
 
   return closedUsernames.length;
+}
+
+// How many signed contracts a given account — any account, not just
+// the signed-in one — has been party to, as either the owner or a
+// participant. Used by the Network directory's "deal history" sort,
+// so an account's track record is visible before you connect with
+// them, the same real signal a review count gives.
+function tbaGetDealsClosedCountFor(username) {
+  if (!username) return 0;
+  var lower = username.toLowerCase();
+  return tbaGetContracts().filter(function (c) {
+    if (c.status !== 'signed') return false;
+    if (c.owner && c.owner.toLowerCase() === lower) return true;
+    return c.participants.some(function (p) { return p.toLowerCase() === lower; });
+  }).length;
+}
+
+// --- Reviews & ratings ---
+// Left by whoever owns a contract (every contract is created from its
+// owner's own browser session, so "owner" is always "me" at the point
+// a review gets written) about a counterpart, once that contract is
+// fully signed — the one moment a deal is actually confirmed to have
+// happened. One review per contract per counterpart, so revising and
+// re-signing the same deal can't be used to stack ratings. Stored
+// globally (not account-scoped) since a review needs to be visible on
+// the *other* account's profile, not just the reviewer's own.
+function tbaGetReviews() {
+  try {
+    var list = JSON.parse(localStorage.getItem('tba_reviews') || '[]');
+    return Array.isArray(list) ? list : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function tbaSaveReviews(list) {
+  localStorage.setItem('tba_reviews', JSON.stringify(list));
+}
+
+function tbaGetReviewsFor(username) {
+  if (!username) return [];
+  var lower = username.toLowerCase();
+  return tbaGetReviews()
+    .filter(function (r) { return r.toUsername.toLowerCase() === lower; })
+    .sort(function (a, b) { return new Date(b.createdAt) - new Date(a.createdAt); });
+}
+
+function tbaGetMyReviewForContract(contractId, toUsername) {
+  var myUsername = localStorage.getItem('tba_username');
+  var lower = (toUsername || '').toLowerCase();
+  return tbaGetReviews().find(function (r) {
+    return r.contractId === contractId && r.fromUsername === myUsername && r.toUsername.toLowerCase() === lower;
+  }) || null;
+}
+
+// Average rounds to one decimal for display; count is exact. Null
+// average (rather than 0) when nobody's reviewed yet, so callers can
+// tell "no reviews" apart from "reviewed and rated zero" (which can't
+// happen — ratings are 1–5 — but 0 as a sentinel would be ambiguous).
+function tbaGetRatingSummary(username) {
+  var reviews = tbaGetReviewsFor(username);
+  if (reviews.length === 0) return { avg: null, count: 0 };
+  var sum = reviews.reduce(function (total, r) { return total + r.rating; }, 0);
+  return { avg: Math.round((sum / reviews.length) * 10) / 10, count: reviews.length };
+}
+
+// Only the contract's own owner can review (see the module comment
+// above for why that's always "me"), only once it's signed, only
+// about one of that contract's actual participants, and only once per
+// contract/counterpart pair — each enforced here rather than trusted
+// from the caller, since this is the one write that shows up on
+// someone else's profile.
+function tbaSubmitReview(contractId, toUsername, rating, text) {
+  var myUsername = localStorage.getItem('tba_username');
+  var contract = tbaGetContract(contractId);
+  if (!contract || contract.status !== 'signed') return null;
+  if (!myUsername || contract.owner !== myUsername) return null;
+  if (contract.participants.indexOf(toUsername) === -1) return null;
+  if (tbaGetMyReviewForContract(contractId, toUsername)) return null;
+
+  var stars = Math.max(1, Math.min(5, Math.round(Number(rating) || 0)));
+  var review = {
+    id: 'rv_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+    contractId: contractId,
+    fromUsername: myUsername,
+    toUsername: toUsername,
+    rating: stars,
+    text: (text || '').trim().slice(0, 500),
+    createdAt: new Date().toISOString()
+  };
+
+  var list = tbaGetReviews();
+  list.unshift(review);
+  tbaSaveReviews(list);
+  return review;
+}
+
+// Renders filled/empty star glyphs for a rating — rounds to the
+// nearest whole star since there's no half-star glyph in this set,
+// consistent with how tbaGetRatingSummary's average is just a number
+// shown alongside, not something this tries to render fractionally.
+function tbaStarsHtml(rating) {
+  tbaEnsureReviewStyles();
+  var filled = Math.round(rating || 0);
+  var html = '';
+  for (var i = 1; i <= 5; i++) {
+    html += '<span class="tba-star' + (i <= filled ? ' filled' : '') + '">★</span>';
+  }
+  return html;
+}
+
+function tbaEnsureReviewStyles() {
+  if (document.getElementById('tba-review-styles')) return;
+  var style = document.createElement('style');
+  style.id = 'tba-review-styles';
+  style.textContent =
+    '.tba-star { color: #d8dbe3; font-size: 14px; letter-spacing: 1px; }' +
+    '.tba-star.filled { color: #f3b860; }' +
+    '.tba-rating-picker { display: flex; gap: 4px; }' +
+    '.tba-rating-picker .tba-star { font-size: 24px; cursor: pointer; transition: transform 0.1s ease; }' +
+    '.tba-rating-picker .tba-star:hover { transform: scale(1.15); }';
+  document.head.appendChild(style);
 }
 
 // --- Activity feed ---

@@ -936,7 +936,8 @@
       versionsHtml +
       '<pre class="contract-text-block" id="contract-text-block">' + escapeHtml(latest.text) + '</pre>' +
       '<div class="contract-actions-row">' + actionsHtml + '</div>' +
-      renderSignatureSection(contract);
+      renderSignatureSection(contract) +
+      renderReviewSection(contract);
 
     contractsViewEl.innerHTML = html;
 
@@ -968,6 +969,81 @@
     }
 
     wireSignatureForm(contract);
+    wireReviewForms(contract);
+  }
+
+  // One block per participant, only once a contract is fully signed —
+  // the one moment a deal is confirmed to have actually happened. The
+  // contract's own owner is always "me" (every contract here is
+  // created from its owner's own browser session), so this is always
+  // "me" reviewing the counterpart, never the other way around.
+  function renderReviewSection(contract) {
+    if (contract.status !== 'signed') return '';
+
+    return '<div class="review-section">' + contract.participants.map(function (username) {
+      var existing = tbaGetMyReviewForContract(contract.id, username);
+      var counterpart = tbaGetUserByUsername(username);
+      var label = counterpart ? counterpart.name : ('@' + username);
+
+      if (existing) {
+        return (
+          '<div class="review-block review-block-done">' +
+          '<p class="review-block-label">Your review of ' + escapeHtml(label) + '</p>' +
+          '<p class="review-block-stars">' + tbaStarsHtml(existing.rating) + '</p>' +
+          (existing.text ? '<p class="review-block-text">' + escapeHtml(existing.text) + '</p>' : '') +
+          '</div>'
+        );
+      }
+
+      return (
+        '<div class="review-block" data-review-for="' + escapeHtml(username) + '">' +
+        '<p class="review-block-label">Leave a review for ' + escapeHtml(label) + '</p>' +
+        '<div class="tba-rating-picker" data-rating="0">' +
+        [1, 2, 3, 4, 5].map(function (n) {
+          return '<span class="tba-star" data-value="' + n + '">★</span>';
+        }).join('') +
+        '</div>' +
+        '<textarea class="review-text-input" maxlength="500" placeholder="How did this deal go? (optional)"></textarea>' +
+        '<button type="button" class="btn-contract-action review-submit-btn" disabled>Submit Review</button>' +
+        '</div>'
+      );
+    }).join('') + '</div>';
+  }
+
+  function wireReviewForms(contract) {
+    contractsViewEl.querySelectorAll('.review-block[data-review-for]').forEach(function (block) {
+      var username = block.getAttribute('data-review-for');
+      var picker = block.querySelector('.tba-rating-picker');
+      var submitBtn = block.querySelector('.review-submit-btn');
+      var textInput = block.querySelector('.review-text-input');
+      var stars = picker.querySelectorAll('.tba-star');
+
+      function setRating(value) {
+        picker.setAttribute('data-rating', value);
+        stars.forEach(function (star) {
+          star.classList.toggle('filled', parseInt(star.getAttribute('data-value'), 10) <= value);
+        });
+        submitBtn.disabled = value < 1;
+      }
+
+      stars.forEach(function (star) {
+        star.addEventListener('click', function () {
+          setRating(parseInt(star.getAttribute('data-value'), 10));
+        });
+      });
+
+      submitBtn.addEventListener('click', function () {
+        var rating = parseInt(picker.getAttribute('data-rating'), 10);
+        if (rating < 1) return;
+        var review = tbaSubmitReview(contract.id, username, rating, textInput.value.trim());
+        if (review) {
+          tbaShowToast('Review submitted', 'success');
+          renderContractViewer(contract.id);
+        } else {
+          tbaShowToast('Couldn\'t submit that review', 'error');
+        }
+      });
+    });
   }
 
   // Deep link from Home's Upcoming Deadlines panel: ?contract=<id>

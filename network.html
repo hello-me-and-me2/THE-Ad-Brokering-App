@@ -112,6 +112,29 @@
       </div>
     </div>
 
+    <div class="net-toolbar net-toolbar-2">
+      <label class="net-select-label">Niche
+        <select id="net-niche-filter" class="net-select"><option value="all">All niches</option></select>
+      </label>
+      <label class="net-select-label">Followers
+        <select id="net-followers-filter" class="net-select">
+          <option value="all">Any followers</option>
+          <option value="0-50000">Under 50K</option>
+          <option value="50000-150000">50K – 150K</option>
+          <option value="150000-300000">150K – 300K</option>
+          <option value="300000-999999999">300K+</option>
+        </select>
+      </label>
+      <label class="net-select-label">Sort by
+        <select id="net-sort" class="net-select">
+          <option value="default">Newest</option>
+          <option value="deals">Most deals closed</option>
+          <option value="rating">Highest rated</option>
+          <option value="followers">Most followers</option>
+        </select>
+      </label>
+    </div>
+
     <div class="net-grid" id="directory-grid"></div>
     <p class="network-empty" id="directory-empty" hidden>No users found for that search.</p>
   </div>
@@ -141,6 +164,25 @@
       : initials(u.username);
   }
 
+  function formatFollowers(n) {
+    if (!n) return '';
+    if (n >= 1000) return (Math.round(n / 100) / 10) + 'K followers';
+    return n + ' followers';
+  }
+
+  function netCardStatsHtml(u) {
+    var rating = tbaGetRatingSummary(u.username);
+    var deals = tbaGetDealsClosedCountFor(u.username);
+    var bits = [];
+    if (u.niche) bits.push('<span class="net-stat-tag">' + escapeNetHtml(u.niche) + '</span>');
+    if (u.followers) bits.push('<span class="net-stat-tag">' + formatFollowers(u.followers) + '</span>');
+    if (deals > 0) bits.push('<span class="net-stat-tag">' + deals + ' deal' + (deals === 1 ? '' : 's') + ' closed</span>');
+    if (rating.count > 0) {
+      bits.push('<span class="net-stat-tag net-stat-rating">' + tbaStarsHtml(rating.avg) + ' ' + rating.avg + ' (' + rating.count + ')</span>');
+    }
+    return bits.length ? '<div class="net-stats-row">' + bits.join('') + '</div>' : '';
+  }
+
   function netCardShell(u, bodyHtml) {
     var href = 'profile.html?u=' + encodeURIComponent(u.username);
     return (
@@ -153,6 +195,7 @@
       '</div>' +
       '<a class="net-username" href="' + href + '">@' + u.username + '</a>' +
       '<span class="net-role-tag ' + u.role + '">' + (u.role === 'business' ? 'Business' : 'Influencer') + '</span>' +
+      netCardStatsHtml(u) +
       '</div>' +
       bodyHtml +
       '</div>'
@@ -260,14 +303,50 @@
   var allUsers = tbaGetAllUsers().filter(function (u) { return !u.isYou; });
   var directoryFilter = 'all';
   var directorySearch = '';
+  var directoryNiche = 'all';
+  var directoryFollowers = 'all';
+  var directorySort = 'default';
+
+  (function populateNicheFilter() {
+    var select = document.getElementById('net-niche-filter');
+    var niches = [];
+    allUsers.forEach(function (u) {
+      if (u.niche && niches.indexOf(u.niche) === -1) niches.push(u.niche);
+    });
+    niches.sort();
+    niches.forEach(function (n) {
+      var opt = document.createElement('option');
+      opt.value = n;
+      opt.textContent = n;
+      select.appendChild(opt);
+    });
+  })();
 
   function renderDirectory() {
     var term = directorySearch.trim().toLowerCase();
+    var followerRange = directoryFollowers === 'all' ? null : directoryFollowers.split('-').map(Number);
+
     var visible = allUsers.filter(function (u) {
       var matchesFilter = directoryFilter === 'all' || u.role === directoryFilter;
       var matchesSearch = term === '' || u.username.toLowerCase().indexOf(term) !== -1;
-      return matchesFilter && matchesSearch;
+      var matchesNiche = directoryNiche === 'all' || u.niche === directoryNiche;
+      var matchesFollowers = !followerRange || (u.followers >= followerRange[0] && u.followers <= followerRange[1]);
+      return matchesFilter && matchesSearch && matchesNiche && matchesFollowers;
     });
+
+    if (directorySort === 'deals') {
+      visible = visible.slice().sort(function (a, b) {
+        return tbaGetDealsClosedCountFor(b.username) - tbaGetDealsClosedCountFor(a.username);
+      });
+    } else if (directorySort === 'rating') {
+      visible = visible.slice().sort(function (a, b) {
+        var bSummary = tbaGetRatingSummary(b.username);
+        var aSummary = tbaGetRatingSummary(a.username);
+        return (bSummary.avg || 0) - (aSummary.avg || 0) || bSummary.count - aSummary.count;
+      });
+    } else if (directorySort === 'followers') {
+      visible = visible.slice().sort(function (a, b) { return (b.followers || 0) - (a.followers || 0); });
+    }
 
     var grid = document.getElementById('directory-grid');
     var empty = document.getElementById('directory-empty');
@@ -309,6 +388,21 @@
       directoryFilter = pill.getAttribute('data-filter');
       renderDirectory();
     });
+  });
+
+  document.getElementById('net-niche-filter').addEventListener('change', function (e) {
+    directoryNiche = e.target.value;
+    renderDirectory();
+  });
+
+  document.getElementById('net-followers-filter').addEventListener('change', function (e) {
+    directoryFollowers = e.target.value;
+    renderDirectory();
+  });
+
+  document.getElementById('net-sort').addEventListener('change', function (e) {
+    directorySort = e.target.value;
+    renderDirectory();
   });
 
   function renderAll() {
