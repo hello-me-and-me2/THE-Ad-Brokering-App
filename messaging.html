@@ -74,7 +74,8 @@
 
       <div class="chat-offer-row" id="chat-offer-row" hidden>
         <input type="number" id="offer-amount-input" placeholder="Amount ($)" min="1" step="1">
-        <input type="number" id="offer-videos-input" placeholder="# of videos" min="1" step="1">
+        <input type="text" id="offer-deliverables-input" placeholder="Deliverables (e.g. 2 IG Posts + 1 TikTok)">
+        <input type="text" id="offer-timeline-input" placeholder="Timeline (e.g. 3 weeks)">
         <button type="button" id="offer-submit-btn">Send Offer</button>
         <button type="button" id="offer-cancel-btn" class="offer-cancel-btn">Cancel</button>
       </div>
@@ -173,7 +174,12 @@
     if (!last) return '';
     if (last.type === 'offer') {
       return (last.from === 'me' ? 'Your offer: ' : 'Their offer: ') +
-        '$' + last.amount.toLocaleString() + ' for ' + last.videos + ' video' + (last.videos === 1 ? '' : 's');
+        '$' + last.amount.toLocaleString() + ' for ' + tbaOfferDeliverablesLabel(last);
+    }
+    if (last.type === 'offer-decision') {
+      return last.decision === 'accepted'
+        ? (last.from === 'me' ? 'You accepted the offer' : 'They accepted the offer')
+        : (last.from === 'me' ? 'You declined the offer' : 'They declined the offer');
     }
     if (last.type === 'contract') {
       return (last.from === 'me' ? 'You sent a contract: ' : 'They sent a contract: ') + last.contractName;
@@ -185,11 +191,12 @@
     threadListEl.innerHTML = '<div class="thread-list-header">Conversations</div>' +
       TBA_MY_THREADS_SEED.map(function (t) {
         var active = t.username === activeThreadUsername ? ' active' : '';
+        var statusNow = tbaGetMyThreadStatus(t.username);
         return (
           '<div class="thread-item' + active + '" data-username="' + t.username + '">' +
           '<div class="t-name"><a href="profile.html?u=' + encodeURIComponent(t.username) + '" style="text-decoration:none;color:inherit;">' + escapeHtml(t.displayName) + '</a></div>' +
           '<div class="t-preview">' + escapeHtml(lastMessagePreview(t.username)) + '</div>' +
-          '<span class="t-tag ' + t.status + '">' + escapeHtml(t.statusLabel) + '</span>' +
+          '<span class="t-tag ' + statusNow.status + '">' + escapeHtml(statusNow.statusLabel) + '</span>' +
           '</div>'
         );
       }).join('');
@@ -211,8 +218,18 @@
       return (
         '<div class="bubble offer offer-' + m.from + '">' +
         '<div class="offer-title">' + who + '</div>' +
-        '<span class="amount">$' + m.amount.toLocaleString() + '</span> for ' +
-        m.videos + ' video' + (m.videos === 1 ? '' : 's') +
+        '<span class="amount">$' + m.amount.toLocaleString() + '</span> for ' + escapeHtml(tbaOfferDeliverablesLabel(m)) +
+        (m.timeline ? '<div class="offer-timeline">Delivered within ' + escapeHtml(m.timeline) + '</div>' : '') +
+        '</div>'
+      );
+    }
+    if (m.type === 'offer-decision') {
+      var accepted = m.decision === 'accepted';
+      var decisionWho = m.from === 'me' ? 'You' : 'They';
+      return (
+        '<div class="bubble offer-decision ' + (accepted ? 'decision-accepted' : 'decision-declined') + '">' +
+        (accepted ? '✅ ' : '❌ ') + decisionWho + ' ' + (accepted ? 'accepted' : 'declined') + ' the offer' +
+        (accepted ? ' — $' + m.amount.toLocaleString() + ' for ' + escapeHtml(tbaOfferDeliverablesLabel(m)) : '') +
         '</div>'
       );
     }
@@ -238,19 +255,34 @@
   function renderDealPanel(thread) {
     var offer = tbaGetCurrentOffer(thread.username);
     var progress = tbaGetMyThreadProgress(thread.username);
+    var statusNow = tbaGetMyThreadStatus(thread.username);
+    var timeline = offer.timeline || thread.deal.timeline;
 
     dealPanelEl.innerHTML =
       '<h4>Deal Summary</h4>' +
       '<div class="deal-field"><label>Brand</label><div class="val">' + escapeHtml(thread.deal.brand) + '</div></div>' +
+      '<div class="deal-field"><label>Status</label><span class="t-tag ' + statusNow.status + '">' + escapeHtml(statusNow.statusLabel) + '</span></div>' +
       '<div class="deal-field">' +
       '<label>Current Offer <span class="offer-by">' + (offer.from === 'me' ? 'Proposed by You' : 'Proposed by Them') + '</span></label>' +
       '<div class="val money">$' + offer.amount.toLocaleString() + '</div>' +
-      '<div class="val offer-video-count">' + offer.videos + ' video' + (offer.videos === 1 ? '' : 's') + '</div>' +
+      '<div class="val offer-video-count">' + escapeHtml(tbaOfferDeliverablesLabel(offer)) + '</div>' +
       '</div>' +
-      '<div class="deal-field"><label>Timeline</label><div class="val">' + escapeHtml(thread.deal.timeline) + '</div></div>' +
+      '<div class="deal-field"><label>Timeline</label><div class="val">' + escapeHtml(timeline) + '</div></div>' +
       '<div class="deal-field"><label>Negotiation Progress</label>' +
       '<div class="progress-track"><div class="progress-fill" id="deal-progress-fill" style="width:' + progress + '%;"></div></div>' +
-      '</div>';
+      '</div>' +
+      (statusNow.status === 'accepted'
+        ? '<button type="button" class="btn-start-contract" id="start-contract-btn">Start Contract &rarr;</button>'
+        : '');
+
+    var startContractBtn = document.getElementById('start-contract-btn');
+    if (startContractBtn) {
+      startContractBtn.addEventListener('click', function () {
+        document.querySelector('.msg-tab[data-tab="contracts"]').click();
+        contractState.selectedThreads = [thread.username];
+        renderContractAiOrManual();
+      });
+    }
   }
 
   function scrollChatToBottom() {
@@ -265,7 +297,7 @@
     chatSubtitleEl.textContent = thread.subtitle;
 
     var messages = tbaGetMyThreadMessages(activeThreadUsername);
-    chatBodyEl.innerHTML = messages.map(renderBubble).join('');
+    chatBodyEl.innerHTML = messages.map(renderBubble).join('') + renderPendingDecision(thread, messages);
     scrollChatToBottom();
 
     chatBodyEl.querySelectorAll('.contract-bubble-view-btn').forEach(function (btn) {
@@ -275,12 +307,64 @@
       });
     });
 
+    wirePendingDecisionButtons(thread);
+    var statusNow = tbaGetMyThreadStatus(thread.username);
+    var dealLocked = statusNow.status === 'accepted' || statusNow.status === 'closed';
+    document.getElementById('chat-offer-toggle-btn').hidden = dealLocked;
+    if (dealLocked) document.getElementById('chat-offer-row').hidden = true;
     renderDealPanel(thread);
   }
 
+  // A pending offer from them, still undecided, gets Accept/Decline
+  // buttons right under it — your own outgoing offer has none, since
+  // deciding is the other side's move (simulated via simulateReply).
+  function renderPendingDecision(thread, messages) {
+    var statusNow = tbaGetMyThreadStatus(thread.username);
+    if (statusNow.status === 'accepted' || statusNow.status === 'closed') return '';
+    var last = messages[messages.length - 1];
+    if (!last || last.type !== 'offer' || last.from !== 'them') return '';
+    return (
+      '<div class="offer-decision-row" id="offer-decision-row">' +
+      '<button type="button" class="btn-accept-offer" id="accept-offer-btn">Accept Offer</button>' +
+      '<button type="button" class="btn-decline-offer" id="decline-offer-btn">Decline</button>' +
+      '</div>'
+    );
+  }
+
+  function wirePendingDecisionButtons(thread) {
+    var acceptBtn = document.getElementById('accept-offer-btn');
+    var declineBtn = document.getElementById('decline-offer-btn');
+    if (!acceptBtn || !declineBtn) return;
+
+    acceptBtn.addEventListener('click', function () {
+      var offer = tbaGetCurrentOffer(thread.username);
+      tbaAppendMyThreadMessage(thread.username, {
+        from: 'me', type: 'offer-decision', decision: 'accepted',
+        amount: offer.amount, deliverables: offer.deliverables, videos: offer.videos, timeline: offer.timeline
+      });
+      tbaSaveMyThreadStatus(thread.username, 'accepted', 'Accepted');
+      tbaSaveMyThreadProgress(thread.username, 100);
+      renderChat();
+      renderThreadList();
+      tbaShowToast('Offer accepted — ready to start a contract', 'success');
+    });
+
+    declineBtn.addEventListener('click', function () {
+      var offer = tbaGetCurrentOffer(thread.username);
+      tbaAppendMyThreadMessage(thread.username, {
+        from: 'me', type: 'offer-decision', decision: 'declined',
+        amount: offer.amount, deliverables: offer.deliverables, videos: offer.videos, timeline: offer.timeline
+      });
+      renderChat();
+      renderThreadList();
+      tbaShowToast('Offer declined');
+    });
+  }
+
   function bumpDealProgress(username) {
-    var thread = tbaGetMyThread(username);
-    if (!thread || thread.status === 'closed') return;
+    var statusNow = tbaGetMyThreadStatus(username);
+    if (statusNow.status === 'closed' || statusNow.status === 'accepted') return;
+    if (statusNow.status === 'new') tbaSaveMyThreadStatus(username, 'negotiating', 'Negotiating');
     var progress = Math.min(95, tbaGetMyThreadProgress(username) + 5);
     tbaSaveMyThreadProgress(username, progress);
     if (username === activeThreadUsername) {
@@ -307,12 +391,32 @@
     setTimeout(function () {
       typingBubble.remove();
 
-      if (thread.status !== 'closed' && Math.random() < 0.4) {
+      var statusNow = tbaGetMyThreadStatus(username);
+      var messages = tbaGetMyThreadMessages(username);
+      var last = messages[messages.length - 1];
+      var pendingFromMe = last && last.type === 'offer' && last.from === 'me' &&
+        statusNow.status !== 'accepted' && statusNow.status !== 'closed';
+
+      if (pendingFromMe && Math.random() < 0.3) {
+        // Accept it as-is — no change to terms, just a decision.
+        tbaAppendMyThreadMessage(username, {
+          from: 'them', type: 'offer-decision', decision: 'accepted',
+          amount: last.amount, deliverables: last.deliverables, videos: last.videos, timeline: last.timeline
+        });
+        tbaSaveMyThreadStatus(username, 'accepted', 'Accepted');
+        tbaSaveMyThreadProgress(username, 100);
+      } else if (pendingFromMe && Math.random() < 0.12) {
+        tbaAppendMyThreadMessage(username, {
+          from: 'them', type: 'offer-decision', decision: 'declined',
+          amount: last.amount, deliverables: last.deliverables, videos: last.videos, timeline: last.timeline
+        });
+      } else if (statusNow.status !== 'closed' && Math.random() < 0.4) {
         var current = tbaGetCurrentOffer(username);
         var newAmount = Math.max(100, Math.round((current.amount * (0.92 + Math.random() * 0.16)) / 25) * 25);
-        var videoShift = Math.random() < 0.6 ? 0 : (Math.random() < 0.5 ? 1 : -1);
-        var newVideos = Math.max(1, current.videos + videoShift);
-        tbaAppendMyThreadMessage(username, { from: 'them', type: 'offer', amount: newAmount, videos: newVideos });
+        tbaAppendMyThreadMessage(username, {
+          from: 'them', type: 'offer', amount: newAmount,
+          deliverables: tbaOfferDeliverablesLabel(current), timeline: current.timeline
+        });
       } else {
         tbaAppendMyThreadMessage(username, { from: 'them', text: tbaPickAutoReply() });
       }
@@ -349,11 +453,18 @@
 
   var offerRow = document.getElementById('chat-offer-row');
   var offerAmountInput = document.getElementById('offer-amount-input');
-  var offerVideosInput = document.getElementById('offer-videos-input');
+  var offerDeliverablesInput = document.getElementById('offer-deliverables-input');
+  var offerTimelineInput = document.getElementById('offer-timeline-input');
 
   document.getElementById('chat-offer-toggle-btn').addEventListener('click', function () {
     offerRow.hidden = !offerRow.hidden;
-    if (!offerRow.hidden) offerAmountInput.focus();
+    if (!offerRow.hidden) {
+      offerAmountInput.focus();
+      if (!offerTimelineInput.value) {
+        var thread = tbaGetMyThread(activeThreadUsername);
+        offerTimelineInput.value = thread ? thread.deal.timeline : '';
+      }
+    }
   });
 
   document.getElementById('offer-cancel-btn').addEventListener('click', function () {
@@ -362,13 +473,15 @@
 
   document.getElementById('offer-submit-btn').addEventListener('click', function () {
     var amount = parseInt(offerAmountInput.value, 10);
-    var videos = parseInt(offerVideosInput.value, 10);
-    if (!amount || amount <= 0 || !videos || videos <= 0) return;
+    var deliverables = offerDeliverablesInput.value.trim();
+    var timeline = offerTimelineInput.value.trim();
+    if (!amount || amount <= 0 || !deliverables) return;
 
     offerAmountInput.value = '';
-    offerVideosInput.value = '';
+    offerDeliverablesInput.value = '';
+    offerTimelineInput.value = '';
     offerRow.hidden = true;
-    sendMyMessage({ from: 'me', type: 'offer', amount: amount, videos: videos });
+    sendMyMessage({ from: 'me', type: 'offer', amount: amount, deliverables: deliverables, timeline: timeline || undefined });
   });
 
   renderThreadList();

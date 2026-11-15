@@ -726,11 +726,11 @@ var TBA_MY_THREADS_SEED = [
     subtitle: "Sponsored post campaign · Instagram & TikTok",
     status: "negotiating",
     statusLabel: "Negotiating",
-    deal: { brand: "Skyline Coffee Co.", amount: 2100, videos: 3, offerBy: "me", timeline: "3 weeks", progress: 70 },
+    deal: { brand: "Skyline Coffee Co.", amount: 2100, videos: 3, deliverables: "3 IG Posts + 1 TikTok", offerBy: "me", timeline: "3 weeks", progress: 70 },
     messages: [
       { from: "them", text: "Hi! We love your content and would love to talk about a sponsored post series with Skyline Coffee." },
       { from: "me", text: "Thanks for reaching out! I'd love to hear more about what you have in mind." },
-      { from: "me", type: "offer", amount: 1800, videos: 3 },
+      { from: "me", type: "offer", amount: 1800, videos: 3, deliverables: "2 IG Posts + 1 TikTok", timeline: "3 weeks" },
       { from: "them", text: "That works for us, but could we add a 3rd Instagram post to the package?" },
       { from: "me", text: "Happy to! Let's adjust the rate to cover the extra deliverable." },
       { from: "them", text: "Sounds good — can we lock in 3 posts?" }
@@ -742,7 +742,7 @@ var TBA_MY_THREADS_SEED = [
     subtitle: "Gear review collaboration",
     status: "new",
     statusLabel: "New",
-    deal: { brand: "Riverside Outdoor Gear", amount: 1200, videos: 1, offerBy: "them", timeline: "4 weeks", progress: 20 },
+    deal: { brand: "Riverside Outdoor Gear", amount: 1200, videos: 1, deliverables: "1 YouTube Review", offerBy: "them", timeline: "4 weeks", progress: 20 },
     messages: [
       { from: "them", text: "Hey! Sent over our media kit and a few product options for the next gear review." },
       { from: "me", text: "Thanks for sending the media kit! Taking a look now." }
@@ -754,11 +754,11 @@ var TBA_MY_THREADS_SEED = [
     subtitle: "YouTube gear review — signed",
     status: "closed",
     statusLabel: "Closed",
-    deal: { brand: "Riverside Outdoor Gear", amount: 1200, videos: 1, offerBy: "me", timeline: "4 weeks", progress: 100 },
+    deal: { brand: "Riverside Outdoor Gear", amount: 1200, videos: 1, deliverables: "1 YouTube Review", offerBy: "me", timeline: "4 weeks", progress: 100 },
     messages: [
       { from: "them", text: "Everything looks great on our end — ready to sign when you are." },
       { from: "me", text: "Signed! Excited to get started on this one." },
-      { from: "me", type: "offer", amount: 1200, videos: 1 }
+      { from: "me", type: "offer", amount: 1200, videos: 1, deliverables: "1 YouTube Review", timeline: "4 weeks" }
     ]
   },
   {
@@ -767,7 +767,7 @@ var TBA_MY_THREADS_SEED = [
     subtitle: "Skincare collab · rate under discussion",
     status: "negotiating",
     statusLabel: "Paused",
-    deal: { brand: "Pear & Co. Skincare", amount: 950, videos: 2, offerBy: "them", timeline: "2 weeks", progress: 45 },
+    deal: { brand: "Pear & Co. Skincare", amount: 950, videos: 2, deliverables: "2 IG Posts + 3 Stories", offerBy: "them", timeline: "2 weeks", progress: 45 },
     messages: [
       { from: "me", text: "Thanks for the samples — loved the new serum!" },
       { from: "them", text: "So glad to hear it! Let's revisit the rate next week once you've tried the full routine." }
@@ -811,11 +811,27 @@ function tbaGetCurrentOffer(username) {
   var messages = tbaGetMyThreadMessages(username);
   for (var i = messages.length - 1; i >= 0; i--) {
     if (messages[i].type === 'offer') {
-      return { amount: messages[i].amount, videos: messages[i].videos, from: messages[i].from };
+      return {
+        amount: messages[i].amount,
+        videos: messages[i].videos,
+        deliverables: messages[i].deliverables || null,
+        timeline: messages[i].timeline || null,
+        from: messages[i].from
+      };
     }
   }
   var seed = tbaGetMyThread(username);
-  return seed ? { amount: seed.deal.amount, videos: seed.deal.videos, from: seed.deal.offerBy } : null;
+  return seed
+    ? { amount: seed.deal.amount, videos: seed.deal.videos, deliverables: seed.deal.deliverables || null, timeline: seed.deal.timeline || null, from: seed.deal.offerBy }
+    : null;
+}
+
+// Falls back to "N video(s)" for any offer saved before deliverables
+// was a free-text field (older localStorage data, or a message that
+// genuinely only ever set videos) — never shown blank.
+function tbaOfferDeliverablesLabel(offer) {
+  if (offer.deliverables) return offer.deliverables;
+  return (offer.videos || 0) + ' video' + (offer.videos === 1 ? '' : 's');
 }
 
 function tbaGetMyThreadProgress(username) {
@@ -827,6 +843,23 @@ function tbaGetMyThreadProgress(username) {
 
 function tbaSaveMyThreadProgress(username, progress) {
   localStorage.setItem(tbaAccountKey('tba_progress_' + username.toLowerCase()), String(progress));
+}
+
+// A thread's status (new/negotiating/accepted/closed) starts out
+// whatever the seed says, same as progress — but unlike progress,
+// nothing used to let it actually change once an offer got decided.
+// Stored the same account-scoped way as everything else per-thread.
+function tbaGetMyThreadStatus(username) {
+  try {
+    var stored = JSON.parse(localStorage.getItem(tbaAccountKey('tba_thread_status_' + username.toLowerCase())) || 'null');
+    if (stored && stored.status) return stored;
+  } catch (e) { /* fall through to seed */ }
+  var seed = tbaGetMyThread(username);
+  return seed ? { status: seed.status, statusLabel: seed.statusLabel } : { status: 'new', statusLabel: 'New' };
+}
+
+function tbaSaveMyThreadStatus(username, status, statusLabel) {
+  localStorage.setItem(tbaAccountKey('tba_thread_status_' + username.toLowerCase()), JSON.stringify({ status: status, statusLabel: statusLabel }));
 }
 
 function tbaAppendMyThreadMessage(username, message) {
@@ -925,22 +958,21 @@ function tbaGenerateContractDraft(myUsername, participantUsernames) {
     return {
       username: u,
       brand: thread ? thread.deal.brand : (counterpart ? counterpart.name : u),
-      timeline: thread ? thread.deal.timeline : '4 weeks',
+      timeline: (offer.timeline) || (thread ? thread.deal.timeline : '4 weeks'),
       amount: offer.amount,
-      videos: offer.videos
+      deliverables: tbaOfferDeliverablesLabel(offer)
     };
   });
 
   if (!isMulti) {
     var p = parties[0];
-    var videosLabel = p.videos + ' video' + (p.videos === 1 ? '' : 's');
     return (
       'SPONSORSHIP AGREEMENT\n\n' +
       'This Sponsorship Agreement ("Agreement") is entered into on ' + today + ' by and between:\n\n' +
       'Creator: @' + myUsername + '\n' +
       'Brand: ' + p.brand + ' (@' + p.username + ')\n\n' +
       '1. SCOPE OF WORK\n' +
-      'The Creator agrees to produce and deliver ' + videosLabel + ' promoting the Brand, in line with the ' +
+      'The Creator agrees to produce and deliver ' + p.deliverables + ' promoting the Brand, in line with the ' +
       'creative direction discussed between the parties.\n\n' +
       '2. COMPENSATION\n' +
       'The Brand agrees to pay the Creator a total of $' + p.amount.toLocaleString() + ' USD for the deliverables ' +
@@ -964,7 +996,7 @@ function tbaGenerateContractDraft(myUsername, participantUsernames) {
 
   var partiesBlock = parties.map(function (party) {
     return 'Party: ' + party.brand + ' (@' + party.username + ')\n' +
-      '  - Deliverables: ' + party.videos + ' video' + (party.videos === 1 ? '' : 's') + '\n' +
+      '  - Deliverables: ' + party.deliverables + '\n' +
       '  - Compensation: $' + party.amount.toLocaleString() + ' USD\n' +
       '  - Timeline: ' + party.timeline;
   }).join('\n\n');

@@ -439,14 +439,16 @@ img.user-avatar { object-fit: cover; }
 .thread-item .t-name { font-weight: 700; font-size: 13.5px; color: var(--text); }
 .thread-item .t-preview { font-size: 12.5px; color: var(--text-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
 
-.thread-item .t-tag {
-  display: inline-block; margin-top: 8px; font-size: 10px; font-weight: 700;
+.t-tag {
+  display: inline-block; font-size: 10px; font-weight: 700;
   text-transform: uppercase; letter-spacing: 0.5px; padding: 3px 9px; border-radius: 999px;
   background: var(--panel); border: 1px solid var(--line); color: var(--text-soft);
 }
-.thread-item .t-tag.negotiating { color: var(--warn); border-color: rgba(224,169,65,0.4); }
-.thread-item .t-tag.new { color: var(--accent); border-color: rgba(62,166,255,0.4); }
-.thread-item .t-tag.closed { color: var(--money); border-color: rgba(52,201,138,0.4); }
+.thread-item .t-tag { margin-top: 8px; }
+.t-tag.negotiating { color: var(--warn); border-color: rgba(224,169,65,0.4); }
+.t-tag.new { color: var(--accent); border-color: rgba(62,166,255,0.4); }
+.t-tag.closed { color: var(--money); border-color: rgba(52,201,138,0.4); }
+.t-tag.accepted { color: var(--money); border-color: rgba(52,201,138,0.4); background: rgba(52,201,138,0.1); }
 
 .chat-panel { display: flex; flex-direction: column; background: var(--bg); }
 
@@ -474,6 +476,23 @@ img.user-avatar { object-fit: cover; }
 .bubble.offer .amount { font-variant-numeric: tabular-nums; font-family: "JetBrains Mono", ui-monospace, monospace; color: var(--money); font-weight: 700; }
 .bubble.offer.offer-them { border-color: rgba(224,169,65,0.35); }
 .bubble.offer.offer-them .offer-title { color: var(--warn); }
+.bubble.offer .offer-timeline { font-size: 12px; color: var(--text-soft); margin-top: 6px; }
+
+.bubble.offer-decision {
+  align-self: center; max-width: 88%; padding: 10px 16px; border-radius: 10px;
+  text-align: center; font-size: 13px; font-weight: 600;
+}
+.bubble.offer-decision.decision-accepted { background: rgba(52,201,138,0.12); color: var(--money); border: 1px solid rgba(52,201,138,0.35); }
+.bubble.offer-decision.decision-declined { background: rgba(224,90,90,0.1); color: #e05a5a; border: 1px solid rgba(224,90,90,0.35); }
+
+.offer-decision-row { display: flex; gap: 10px; justify-content: center; align-self: center; margin-top: -4px; }
+.btn-accept-offer, .btn-decline-offer {
+  font-family: inherit; font-weight: 700; font-size: 13px; border-radius: 999px; padding: 9px 18px; cursor: pointer;
+}
+.btn-accept-offer { border: none; background: var(--money); color: #06131c; }
+.btn-accept-offer:hover { background: #4ddba0; }
+.btn-decline-offer { border: 1.5px solid var(--line); background: transparent; color: var(--text-soft); }
+.btn-decline-offer:hover { border-color: #e05a5a; color: #e05a5a; }
 
 .chat-offer-row { display: flex; gap: 8px; padding: 12px 16px 0; background: var(--panel); flex-wrap: wrap; }
 .chat-offer-row input {
@@ -487,6 +506,8 @@ img.user-avatar { object-fit: cover; }
   width: 130px;
 }
 .chat-offer-row input:focus { outline: none; border-color: var(--money); }
+.chat-offer-row #offer-deliverables-input { width: 220px; flex: 1; }
+.chat-offer-row #offer-timeline-input { width: 150px; }
 .chat-offer-row #offer-submit-btn {
   border: none; background: var(--money); color: #06131c; padding: 0 16px;
   border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer;
@@ -530,6 +551,12 @@ img.user-avatar { object-fit: cover; }
 .deal-field .val { font-size: 16px; font-weight: 700; }
 .deal-field .val.money { font-family: "JetBrains Mono", ui-monospace, monospace; color: var(--money); }
 .deal-field .val.offer-video-count { font-size: 13.5px; color: var(--text-soft); font-weight: 600; margin-top: 2px; }
+
+.btn-start-contract {
+  display: block; width: 100%; margin-top: 4px; border: none; background: var(--money); color: #06131c;
+  font-family: inherit; font-weight: 700; font-size: 13.5px; padding: 12px 16px; border-radius: 10px; cursor: pointer;
+}
+.btn-start-contract:hover { background: #4ddba0; }
 
 .offer-by {
   display: inline-block;
