@@ -312,6 +312,24 @@ h1 {
 
 .panel h2 { font-size: 16px; margin: 0 0 18px; font-weight: 700; }
 
+.pipeline-panel { margin-bottom: 40px; }
+
+.pipeline-row { display: flex; align-items: flex-end; gap: 16px; height: 140px; padding-top: 10px; }
+
+.pipeline-col { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; gap: 8px; }
+
+.pipeline-count { font-family: "Fraunces", serif; font-weight: 700; font-size: 15px; color: var(--ink); }
+
+.pipeline-bar-track { width: 100%; height: 100%; display: flex; align-items: flex-end; }
+.pipeline-bar { width: 100%; border-radius: 7px 7px 2px 2px; min-height: 4px; transition: filter 0.15s ease; }
+.pipeline-bar:hover { filter: brightness(1.08); }
+.pipeline-bar.new { background: linear-gradient(180deg, #7ab8e8, #a7d4f5); }
+.pipeline-bar.negotiating { background: linear-gradient(180deg, var(--gold), #f1d98a); }
+.pipeline-bar.accepted { background: linear-gradient(180deg, var(--olive), #9fb87a); }
+.pipeline-bar.closed { background: linear-gradient(180deg, var(--terracotta), var(--terracotta-dark)); }
+
+.pipeline-label { font-size: 12px; color: var(--ink-soft); font-weight: 600; }
+
 .deadlines-panel { margin-bottom: 40px; }
 
 .deadline-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }

@@ -44,40 +44,14 @@
 
   <div class="dash-head">
     <div>
-      <div class="eyebrow">Your Dashboard</div>
+      <div class="eyebrow" id="dash-eyebrow">Your Dashboard</div>
       <h1 id="welcome-heading">Welcome back</h1>
-      <p class="lede">Here's what's happening across THE INTROductory today.</p>
+      <p class="lede" id="dash-lede">Here's what's happening across THE INTROductory today.</p>
     </div>
     <a href="messaging.html" class="btn btn-primary">Go to Messaging</a>
   </div>
 
-  <div class="stat-grid">
-    <div class="stat-card">
-      <div class="label">Profile Views</div>
-      <div class="value" id="profile-views-stat">0</div>
-      <div class="delta up" id="profile-views-delta">No views yet</div>
-    </div>
-    <div class="stat-card">
-      <div class="label">Active Conversations</div>
-      <div class="value" id="active-conversations-stat">0</div>
-      <div class="delta up" id="active-conversations-delta">No open threads</div>
-    </div>
-    <div class="stat-card">
-      <div class="label">Requests Sent</div>
-      <div class="value" id="requests-sent-stat">0</div>
-      <div class="delta up" id="requests-sent-delta">Start browsing The Network</div>
-    </div>
-    <div class="stat-card">
-      <div class="label">Response Rate</div>
-      <div class="value" id="response-rate-stat">—</div>
-      <div class="delta up" id="response-rate-delta">No replies yet</div>
-    </div>
-    <div class="stat-card">
-      <div class="label">Deals Closed</div>
-      <div class="value" id="deals-closed-stat">0</div>
-      <div class="delta up" id="deals-closed-delta">None yet</div>
-    </div>
-  </div>
+  <div class="stat-grid" id="stat-grid"></div>
 
   <div class="dash-grid">
     <div class="panel">
@@ -90,6 +64,11 @@
       <ul class="activity-list" id="recent-activity-list"></ul>
       <p class="activity-empty" id="recent-activity-empty" hidden>Nothing to show yet — activity will show up here as deals, contracts, and connections happen.</p>
     </div>
+  </div>
+
+  <div class="panel pipeline-panel" id="pipeline-panel">
+    <h2 id="pipeline-heading">Deal Pipeline</h2>
+    <div class="pipeline-row" id="pipeline-row"></div>
   </div>
 
   <div class="panel deadlines-panel" id="deadlines-panel" hidden>
@@ -125,36 +104,88 @@
   var myUsername = localStorage.getItem('tba_username');
   var myRole = localStorage.getItem('tba_role') || 'business';
 
+  var isBusiness = myRole === 'business';
+
   document.getElementById('welcome-heading').textContent = myUsername
     ? 'Welcome back, @' + myUsername
     : 'Welcome back';
+  document.getElementById('dash-eyebrow').textContent = isBusiness ? 'Business Dashboard' : 'Creator Dashboard';
+  document.getElementById('dash-lede').textContent = isBusiness
+    ? "Here's how your campaigns and creator outreach are doing today."
+    : "Here's how your brand deals and audience are doing today.";
 
-  // --- Stat cards, all computed from real thread/contract/view data ---
+  // --- Stat cards ---
+  // The shared ones (views, conversations, response rate, deals
+  // closed) mean the same thing to both roles; a business and a
+  // creator genuinely differ on where their money and reach come
+  // from, so those get their own cards and labels instead of forcing
+  // one generic set onto both.
 
-  var profileViews = tbaGetProfileViews(myUsername);
-  document.getElementById('profile-views-stat').textContent = profileViews.length;
-  var viewsThisWeek = tbaGetProfileViewsLast7Days(myUsername).reduce(function (sum, d) { return sum + d.count; }, 0);
-  document.getElementById('profile-views-delta').textContent =
-    profileViews.length === 0 ? 'No views yet' : viewsThisWeek + ' in the last 7 days';
-
-  var activeConversations = tbaGetActiveConversationsCount();
-  document.getElementById('active-conversations-stat').textContent = activeConversations;
-  var newOffers = tbaGetNewOffersCount();
-  document.getElementById('active-conversations-delta').textContent =
-    newOffers > 0 ? newOffers + ' new offer' + (newOffers === 1 ? '' : 's') : (activeConversations === 0 ? 'No open threads' : 'Up to date');
-
-  var responseRate = tbaGetResponseRate();
-  document.getElementById('response-rate-stat').textContent = responseRate === null ? '—' : responseRate + '%';
-  document.getElementById('response-rate-delta').textContent =
-    responseRate === null ? 'No replies yet' : (responseRate >= 80 ? 'Above average' : responseRate >= 50 ? 'Steady' : 'Needs attention');
-  if (responseRate !== null && responseRate < 50) {
-    document.getElementById('response-rate-delta').classList.remove('up');
-    document.getElementById('response-rate-delta').classList.add('down');
+  function statCardHtml(id, label, value, deltaText, deltaDown) {
+    return '<div class="stat-card">' +
+      '<div class="label">' + label + '</div>' +
+      '<div class="value" id="' + id + '-stat">' + value + '</div>' +
+      '<div class="delta' + (deltaDown ? ' down' : ' up') + '" id="' + id + '-delta">' + deltaText + '</div>' +
+      '</div>';
   }
 
+  var profileViews = tbaGetProfileViews(myUsername);
+  var viewsThisWeek = tbaGetProfileViewsLast7Days(myUsername).reduce(function (sum, d) { return sum + d.count; }, 0);
+
+  var activeConversations = tbaGetActiveConversationsCount();
+  var newOffers = tbaGetNewOffersCount();
+
+  var responseRate = tbaGetResponseRate();
+  var responseRateDown = responseRate !== null && responseRate < 50;
+
   var dealsClosed = tbaGetDealsClosedCount(true);
-  document.getElementById('deals-closed-stat').textContent = dealsClosed;
-  document.getElementById('deals-closed-delta').textContent = dealsClosed === 0 ? 'None yet' : 'All time';
+
+  var sentRequests = tbaGetSentRequests();
+
+  var dealValue = tbaGetTotalDealValue();
+  var avgDealSize = tbaGetAverageDealSize();
+  var followers = tbaGetMyFollowers(myUsername);
+
+  var cardsHtml =
+    statCardHtml('profile-views', 'Profile Views', profileViews.length,
+      profileViews.length === 0 ? 'No views yet' : viewsThisWeek + ' in the last 7 days') +
+    statCardHtml('active-conversations', 'Active Conversations', activeConversations,
+      newOffers > 0 ? newOffers + ' new offer' + (newOffers === 1 ? '' : 's') : (activeConversations === 0 ? 'No open threads' : 'Up to date')) +
+    statCardHtml('requests-sent', isBusiness ? 'Influencers Contacted' : 'Brands Contacted', sentRequests.length,
+      sentRequests.length > 0 ? sentRequests.length + ' pending reply' : 'Start browsing The Network') +
+    statCardHtml('response-rate', 'Response Rate', responseRate === null ? '—' : responseRate + '%',
+      responseRate === null ? 'No replies yet' : (responseRate >= 80 ? 'Above average' : responseRate >= 50 ? 'Steady' : 'Needs attention'),
+      responseRateDown) +
+    statCardHtml('deals-closed', 'Deals Closed', dealsClosed, dealsClosed === 0 ? 'None yet' : 'All time') +
+    statCardHtml('deal-value', isBusiness ? 'Total Spend' : 'Total Earnings', '$' + dealValue.toLocaleString(),
+      avgDealSize === null ? 'No deals settled yet' : 'Avg deal $' + avgDealSize.toLocaleString());
+
+  if (!isBusiness) {
+    cardsHtml += statCardHtml('audience-reach', 'Audience Reach', followers ? followers.toLocaleString() : '—',
+      followers ? 'Followers on file' : 'Add your follower count in Profile');
+  }
+
+  document.getElementById('stat-grid').innerHTML = cardsHtml;
+
+  // --- Deal Pipeline ---
+  // Same four negotiation stages for both roles — a business watches
+  // deals move through it, a creator watches pitches move through it,
+  // so only the heading needs to say which.
+
+  document.getElementById('pipeline-heading').textContent = isBusiness ? 'Campaign Pipeline' : 'Deal Pipeline';
+  var stageLabels = { new: 'New', negotiating: 'Negotiating', accepted: 'Accepted', closed: 'Closed' };
+  var stageCounts = tbaGetThreadStatusCounts();
+  var stageMax = Math.max.apply(null, Object.keys(stageCounts).map(function (k) { return stageCounts[k]; }).concat([1]));
+
+  document.getElementById('pipeline-row').innerHTML = Object.keys(stageLabels).map(function (stage) {
+    var count = stageCounts[stage];
+    var heightPct = Math.max(6, Math.round((count / stageMax) * 100));
+    return '<div class="pipeline-col">' +
+      '<div class="pipeline-count">' + count + '</div>' +
+      '<div class="pipeline-bar-track"><div class="pipeline-bar ' + stage + '" style="height:' + heightPct + '%;"></div></div>' +
+      '<span class="pipeline-label">' + stageLabels[stage] + '</span>' +
+      '</div>';
+  }).join('');
 
   var chartDays = tbaGetProfileViewsLast7Days(myUsername);
   var maxCount = Math.max.apply(null, chartDays.map(function (d) { return d.count; }).concat([1]));
@@ -203,12 +234,6 @@
       li.querySelector('.deadline-meta').textContent = dueText;
       deadlineList.appendChild(li);
     });
-  }
-
-  var sentRequests = tbaGetSentRequests();
-  document.getElementById('requests-sent-stat').textContent = sentRequests.length;
-  if (sentRequests.length > 0) {
-    document.getElementById('requests-sent-delta').textContent = sentRequests.length + ' pending reply';
   }
 
   // Suggest accounts of the opposite type — a business sees

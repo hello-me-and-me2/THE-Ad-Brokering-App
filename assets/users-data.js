@@ -1203,6 +1203,45 @@ function tbaGetDealsClosedCount(onlyMine) {
   return closedUsernames.length;
 }
 
+// Your own threads whose terms are actually settled — accepted or
+// closed — each with the dollar amount from that thread's current
+// offer. Contracts don't carry a reusable amount field (their text is
+// freeform), so a thread's own negotiated offer is the one place a
+// dollar figure actually exists to total or average.
+function tbaGetSettledDealAmounts() {
+  return TBA_MY_THREADS_SEED.map(function (t) {
+    var statusNow = tbaGetMyThreadStatus(t.username);
+    if (statusNow.status !== 'accepted' && statusNow.status !== 'closed') return null;
+    var offer = tbaGetCurrentOffer(t.username);
+    return offer ? { username: t.username, amount: offer.amount } : null;
+  }).filter(function (d) { return d !== null; });
+}
+
+function tbaGetTotalDealValue() {
+  return tbaGetSettledDealAmounts().reduce(function (sum, d) { return sum + d.amount; }, 0);
+}
+
+// Null (not 0) when nothing's settled yet, same reasoning as
+// tbaGetRatingSummary's average — "no deals" and "deals averaging $0"
+// are different things and a dashboard card needs to tell them apart.
+function tbaGetAverageDealSize() {
+  var deals = tbaGetSettledDealAmounts();
+  if (deals.length === 0) return null;
+  return Math.round(tbaGetTotalDealValue() / deals.length);
+}
+
+// Tally of your own conversation threads by negotiation stage, for
+// the dashboard's pipeline panel — the same four statuses
+// tbaGetMyThreadStatus can return.
+function tbaGetThreadStatusCounts() {
+  var counts = { new: 0, negotiating: 0, accepted: 0, closed: 0 };
+  TBA_MY_THREADS_SEED.forEach(function (t) {
+    var statusNow = tbaGetMyThreadStatus(t.username);
+    if (counts.hasOwnProperty(statusNow.status)) counts[statusNow.status]++;
+  });
+  return counts;
+}
+
 // How many signed contracts a given account — any account, not just
 // the signed-in one — has been party to, as either the owner or a
 // participant. Used by the Network directory's "deal history" sort,
