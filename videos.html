@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script>if(!localStorage.getItem("tba_authed")){location.replace("index.html");}if("scrollRestoration" in history){history.scrollRestoration="manual";}</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Videos — THE INTROductory</title>
+<meta name="description" content="Watch creators' videos and browse business outreach — sponsorship calls, events, and networking events.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="assets/profile-picture.png">
+<link rel="stylesheet" href="assets/network.css">
+<link rel="stylesheet" href="assets/videos.css">
+<script src="assets/users-data.js"></script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="nav-wrap">
+    <a class="brand" href="home.html">
+      <span class="brand-lockup">
+        <span class="brand-logo">
+          <img src="assets/profile-picture.png" alt="THE INTROductory" class="brand-mark-img" width="256" height="256">
+        </span>
+        <span class="brand-tagline">// the_videos</span>
+      </span>
+    </a>
+    <nav class="main-nav">
+      <a href="home.html">Home</a>
+      <a href="messaging.html">Messaging &amp; Negotiation</a>
+      <a href="network.html">The Network</a>
+      <a href="videos.html" class="active">Videos</a>
+      <a href="about.html">About</a>
+      <a href="profile.html">Profile</a>
+      <div class="notif-wrap" id="notif-wrap">
+        <button type="button" class="notif-bell-btn" id="notif-bell-btn" aria-label="Notifications"></button>
+      </div>
+      <button type="button" class="theme-toggle-btn" id="theme-toggle-btn"></button>
+      <a href="index.html" class="nav-logout" id="logout-link">Log Out</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <div class="page-head">
+    <div class="eyebrow">Creators &amp; Opportunities</div>
+    <h1>Videos</h1>
+    <p>See what creators actually make, and see who's looking to work with them.</p>
+  </div>
+
+  <div class="vid-tabs">
+    <button type="button" class="vid-tab active" data-tab="videos">Creator Videos</button>
+    <button type="button" class="vid-tab" data-tab="outreach">Business Outreach</button>
+  </div>
+
+  <div class="vid-panel" id="tab-videos"></div>
+  <div class="vid-panel" id="tab-outreach" hidden></div>
+
+</main>
+
+<footer>
+  &copy; 2026 THE INTROductory. Built with care by Andre Anderson &amp; team.
+  <span style="margin-left:10px;"><a href="terms.html" style="color:inherit;">Terms</a> &middot; <a href="privacy.html" style="color:inherit;">Privacy</a></span>
+</footer>
+
+<script>
+  document.getElementById('logout-link').addEventListener('click', function () {
+    localStorage.removeItem('tba_authed');
+  });
+  tbaWireThemeToggle('theme-toggle-btn', 'dark');
+  tbaWireNotificationBell('notif-wrap', 'notif-bell-btn');
+
+  var me = localStorage.getItem('tba_username');
+  var isCreator = tbaIsMyRole('influencer');
+  var isBusiness = tbaIsMyRole('business');
+
+  function escapeHtml(str) {
+    return String(str || '').replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function initials(name) {
+    return name.replace('@', '').slice(0, 2).toUpperCase();
+  }
+
+  function avatarHtml(u) {
+    var inner = u.avatar
+      ? '<img src="' + u.avatar + '" alt="" style="width:100%;height:100%;object-fit:cover;">'
+      : initials(u.username);
+    return '<a class="vid-avatar' + tbaChampionAvatarClass(u.username) + '" href="profile.html?u=' + encodeURIComponent(u.username) + '">' + inner + '</a>';
+  }
+
+  function nameRowHtml(u) {
+    return '<a class="vid-name" href="profile.html?u=' + encodeURIComponent(u.username) + '">' + escapeHtml(u.name) + '</a>' +
+      (u.verified ? tbaVerifiedBadgeHtml(u.username) : '');
+  }
+
+  // --- Tabs ---
+
+  var tabButtons = document.querySelectorAll('.vid-tab');
+  function showTab(name) {
+    tabButtons.forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-tab') === name); });
+    document.getElementById('tab-videos').hidden = name !== 'videos';
+    document.getElementById('tab-outreach').hidden = name !== 'outreach';
+    if (history.replaceState) history.replaceState(null, '', name === 'outreach' ? '#outreach' : '#videos');
+  }
+  tabButtons.forEach(function (b) {
+    b.addEventListener('click', function () { showTab(b.getAttribute('data-tab')); });
+  });
+
+  // --- Creator Videos tab ---
+
+  var watchFilter = 'all';
+
+  function videoCardHtml(video, removable) {
+    return '<div class="vid-card">' +
+      tbaVideoEmbedHtml(video) +
+      '<div class="vid-card-meta">' +
+      '<span class="vid-type-tag ' + video.type + '">' + tbaVideoTypeLabel(video.type) + '</span>' +
+      '<span class="vid-card-title">' + escapeHtml(video.title) + '</span>' +
+      (removable ? '<button type="button" class="vid-remove-btn" data-remove="' + video.id + '">Remove</button>' : '') +
+      '</div>' +
+      '</div>';
+  }
+
+  function mySlotsHtml() {
+    var videos = tbaGetMyVideos();
+    var slots = '';
+    for (var i = 0; i < TBA_MAX_VIDEOS; i++) {
+      if (videos[i]) {
+        slots += '<div class="vid-slot filled">' +
+          '<div class="vid-slot-num">Slot ' + (i + 1) + '</div>' + videoCardHtml(videos[i], true) + '</div>';
+      } else {
+        slots += '<div class="vid-slot empty" data-slot="' + i + '">' +
+          '<div class="vid-slot-num">Slot ' + (i + 1) + '</div>' +
+          '<button type="button" class="vid-add-btn" data-open-form="' + i + '">+ Add a video</button>' +
+          '<form class="vid-form" data-form="' + i + '" hidden novalidate>' +
+          '<div class="vid-type-picker">' +
+          '<label><input type="radio" name="type-' + i + '" value="short" checked><span>Short-form</span></label>' +
+          '<label><input type="radio" name="type-' + i + '" value="long"><span>Long-form</span></label>' +
+          '</div>' +
+          '<input type="text" class="vid-input" name="title" maxlength="80" placeholder="Video title" autocomplete="off">' +
+          '<input type="url" class="vid-input" name="url" placeholder="Link (YouTube, Vimeo, TikTok, or a video file)" autocomplete="off" autocapitalize="off" spellcheck="false">' +
+          '<p class="vid-error" hidden></p>' +
+          '<div class="vid-form-actions">' +
+          '<button type="submit" class="vid-save-btn">Save</button>' +
+          '<button type="button" class="vid-cancel-btn" data-cancel-form="' + i + '">Cancel</button>' +
+          '</div>' +
+          '</form>' +
+          '</div>';
+      }
+    }
+    return slots;
+  }
+
+  var VIDEO_ERRORS = {
+    'no-title': 'Give your video a title.',
+    'bad-url': 'That link doesn\'t look right — paste a full https:// link.',
+    'full': 'You\'ve used all 3 slots — remove one to add another.',
+    'not-creator': 'Only creator accounts can post videos.',
+    'bad-type': 'Pick long-form or short-form.'
+  };
+
+  function renderVideosTab() {
+    var el = document.getElementById('tab-videos');
+    var html = '';
+
+    if (isCreator) {
+      var used = tbaGetMyVideos().length;
+      html +=
+        '<section class="vid-section">' +
+        '<div class="vid-section-head"><h2>Your Videos</h2><span class="vid-count">' + used + ' of ' + TBA_MAX_VIDEOS + ' slots used</span></div>' +
+        '<p class="vid-lede">Show businesses what you make. Pick three — each one long-form or short-form.</p>' +
+        '<div class="vid-slots">' + mySlotsHtml() + '</div>' +
+        '</section>';
+    } else if (isBusiness) {
+      html += '<p class="vid-note">Creators post their videos here. Browse them below, then reach out from <a href="network.html">The Network</a> or <a href="messaging.html">Messaging</a>.</p>';
+    }
+
+    var groups = tbaGetCreatorVideoGroups().filter(function (g) { return g.user.username !== me; });
+
+    var visibleGroups = groups.map(function (g) {
+      var shown = watchFilter === 'all' ? g.videos : g.videos.filter(function (v) { return v.type === watchFilter; });
+      return { user: g.user, all: g.videos, shown: shown };
+    }).filter(function (g) { return g.shown.length > 0; });
+
+    html +=
+      '<section class="vid-section">' +
+      '<div class="vid-section-head"><h2>Watch Creators</h2></div>' +
+      '<div class="vid-filter-pills">' +
+      [['all', 'All'], ['short', 'Short-form'], ['long', 'Long-form']].map(function (f) {
+        return '<button type="button" class="vid-filter-pill' + (watchFilter === f[0] ? ' active' : '') + '" data-watch-filter="' + f[0] + '">' + f[1] + '</button>';
+      }).join('') +
+      '</div>';
+
+    if (visibleGroups.length === 0) {
+      html += '<p class="vid-empty">' + (groups.length === 0
+        ? '🎬 No creator has posted a video yet. Once they do, you can watch them here.'
+        : 'No ' + tbaVideoTypeLabel(watchFilter).toLowerCase() + ' videos yet.') + '</p>';
+    } else {
+      html += visibleGroups.map(function (g) {
+        var shortCount = g.all.filter(function (v) { return v.type === 'short'; }).length;
+        var longCount = g.all.length - shortCount;
+        var mix = [];
+        if (shortCount) mix.push('<span class="vid-type-tag short">' + shortCount + ' short-form</span>');
+        if (longCount) mix.push('<span class="vid-type-tag long">' + longCount + ' long-form</span>');
+        return '<div class="vid-creator">' +
+          '<div class="vid-creator-head">' + avatarHtml(g.user) +
+          '<div class="vid-creator-info"><div class="vid-name-row">' + nameRowHtml(g.user) + '</div>' +
+          '<div class="vid-creator-sub">' + (g.user.niche ? escapeHtml(g.user.niche) : 'Creator') + '</div></div>' +
+          '<div class="vid-mix">' + mix.join('') + '</div></div>' +
+          '<div class="vid-grid">' + g.shown.map(function (v) { return videoCardHtml(v, false); }).join('') + '</div>' +
+          '</div>';
+      }).join('');
+    }
+    html += '</section>';
+
+    el.innerHTML = html;
+    wireVideosTab(el);
+  }
+
+  function wireVideosTab(el) {
+    el.querySelectorAll('[data-watch-filter]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        watchFilter = b.getAttribute('data-watch-filter');
+        renderVideosTab();
+      });
+    });
+
+    el.querySelectorAll('[data-open-form]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var i = b.getAttribute('data-open-form');
+        b.hidden = true;
+        var form = el.querySelector('[data-form="' + i + '"]');
+        form.hidden = false;
+        form.querySelector('input[name="title"]').focus();
+      });
+    });
+
+    el.querySelectorAll('[data-cancel-form]').forEach(function (b) {
+      b.addEventListener('click', function () { renderVideosTab(); });
+    });
+
+    el.querySelectorAll('.vid-form').forEach(function (form) {
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var type = form.querySelector('input[type="radio"]:checked').value;
+        var result = tbaAddMyVideo(type, form.elements.title.value, form.elements.url.value);
+        if (!result.ok) {
+          var err = form.querySelector('.vid-error');
+          err.textContent = VIDEO_ERRORS[result.error] || 'Something went wrong.';
+          err.hidden = false;
+          return;
+        }
+        tbaShowToast('Video added', 'success');
+        renderVideosTab();
+      });
+    });
+
+    el.querySelectorAll('[data-remove]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        tbaRemoveMyVideo(b.getAttribute('data-remove'));
+        tbaShowToast('Video removed');
+        renderVideosTab();
+      });
+    });
+  }
+
+  // --- Business Outreach tab ---
+
+  var outreachFilter = 'all';
+
+  var OUTREACH_ERRORS = {
+    'no-title': 'Give your post a title.',
+    'not-business': 'Only business accounts can post outreach.',
+    'bad-kind': 'Pick what kind of post this is.'
+  };
+
+  function postFormHtml() {
+    return '<form class="vid-post-form" id="outreach-form" novalidate>' +
+      '<h2>Post an opportunity</h2>' +
+      '<div class="vid-post-row">' +
+      '<select name="kind" class="vid-input">' +
+      Object.keys(TBA_OUTREACH_KINDS).map(function (k) { return '<option value="' + k + '">' + TBA_OUTREACH_KINDS[k] + '</option>'; }).join('') +
+      '</select>' +
+      '<input type="date" name="date" class="vid-input" title="Date (optional, for events)">' +
+      '</div>' +
+      '<input type="text" name="title" class="vid-input" maxlength="100" placeholder="Title" autocomplete="off">' +
+      '<textarea name="description" class="vid-input" maxlength="500" placeholder="What are you looking for? Who should say they\'re in?"></textarea>' +
+      '<p class="vid-error" id="outreach-error" hidden></p>' +
+      '<button type="submit" class="vid-save-btn">Post</button>' +
+      '</form>';
+  }
+
+  function outreachCardHtml(post) {
+    var author = tbaGetUserByUsername(post.author);
+    var interested = tbaGetOutreachInterested(post.id);
+    var isAuthor = post.author === me;
+    var isIn = interested.indexOf(me) !== -1;
+
+    var action;
+    if (isAuthor) {
+      action = '<span class="vid-interest-count">' + interested.length + ' interested</span>' +
+        (post.seed ? '' : '<button type="button" class="vid-remove-btn" data-delete-post="' + post.id + '">Delete</button>');
+    } else {
+      action = '<button type="button" class="vid-in-btn' + (isIn ? ' is-in' : '') + '" data-in="' + post.id + '">' +
+        (isIn ? '✓ You\'re in' : 'I\'m in') + '</button>' +
+        '<span class="vid-interest-count">' + interested.length + ' interested</span>';
+    }
+
+    var interestedList = '';
+    if (isAuthor && interested.length > 0) {
+      interestedList = '<div class="vid-interested-list"><span>Interested:</span>' + interested.map(function (u) {
+        var p = tbaGetUserByUsername(u);
+        return '<a href="profile.html?u=' + encodeURIComponent(u) + '">' + escapeHtml(p ? p.name : '@' + u) + '</a>';
+      }).join('') + '</div>';
+    }
+
+    return '<div class="vid-post">' +
+      '<div class="vid-post-head"><span class="vid-kind-tag ' + post.kind + '">' + TBA_OUTREACH_KINDS[post.kind] + '</span>' +
+      (post.date ? '<span class="vid-post-date">📅 ' + tbaFormatDateLong(post.date + 'T12:00:00') + '</span>' : '') + '</div>' +
+      '<h3>' + escapeHtml(post.title) + '</h3>' +
+      (post.description ? '<p class="vid-post-desc">' + escapeHtml(post.description) + '</p>' : '') +
+      '<div class="vid-post-by">' + (author ? avatarHtml(author) + nameRowHtml(author) : '@' + escapeHtml(post.author)) +
+      '<span class="vid-post-posted">' + tbaFormatDateLong(post.createdAt) + '</span></div>' +
+      interestedList +
+      '<div class="vid-post-actions">' + action + '</div>' +
+      '</div>';
+  }
+
+  function renderOutreachTab() {
+    var el = document.getElementById('tab-outreach');
+    var html = '';
+
+    if (isBusiness) {
+      html += postFormHtml();
+    } else {
+      html += '<p class="vid-note">Businesses post sponsorship calls and events here. Tap <strong>I\'m in</strong> on anything you\'re interested in.</p>';
+    }
+
+    var kinds = ['all'].concat(Object.keys(TBA_OUTREACH_KINDS));
+    html += '<div class="vid-filter-pills">' + kinds.map(function (k) {
+      return '<button type="button" class="vid-filter-pill' + (outreachFilter === k ? ' active' : '') + '" data-outreach-filter="' + k + '">' +
+        (k === 'all' ? 'All' : TBA_OUTREACH_KINDS[k]) + '</button>';
+    }).join('') + '</div>';
+
+    var posts = tbaGetOutreachPosts().filter(function (p) { return outreachFilter === 'all' || p.kind === outreachFilter; });
+    html += posts.length === 0
+      ? '<p class="vid-empty">📣 Nothing posted here yet.</p>'
+      : '<div class="vid-posts">' + posts.map(outreachCardHtml).join('') + '</div>';
+
+    el.innerHTML = html;
+    wireOutreachTab(el);
+  }
+
+  function wireOutreachTab(el) {
+    el.querySelectorAll('[data-outreach-filter]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        outreachFilter = b.getAttribute('data-outreach-filter');
+        renderOutreachTab();
+      });
+    });
+
+    var form = el.querySelector('#outreach-form');
+    if (form) {
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var result = tbaCreateOutreachPost(form.elements.kind.value, form.elements.title.value, form.elements.description.value, form.elements.date.value);
+        if (!result.ok) {
+          var err = el.querySelector('#outreach-error');
+          err.textContent = OUTREACH_ERRORS[result.error] || 'Something went wrong.';
+          err.hidden = false;
+          return;
+        }
+        tbaShowToast('Posted', 'success');
+        renderOutreachTab();
+      });
+    }
+
+    el.querySelectorAll('[data-in]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var nowIn = tbaToggleOutreachInterest(b.getAttribute('data-in'));
+        tbaShowToast(nowIn ? 'Marked as interested' : 'Interest withdrawn', nowIn ? 'success' : undefined);
+        renderOutreachTab();
+      });
+    });
+
+    el.querySelectorAll('[data-delete-post]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        tbaDeleteOutreachPost(b.getAttribute('data-delete-post'));
+        tbaShowToast('Post deleted');
+        renderOutreachTab();
+      });
+    });
+  }
+
+  renderVideosTab();
+  renderOutreachTab();
+  showTab(location.hash === '#outreach' ? 'outreach' : 'videos');
+</script>
+</body>
+</html>

@@ -1364,6 +1364,269 @@ function tbaEnsureReviewStyles() {
   document.head.appendChild(style);
 }
 
+// --- Creator videos ---
+// Creator accounts get exactly three video slots, each long-form or
+// short-form. Videos are stored as links (YouTube, Vimeo, TikTok, or a
+// direct video file) rather than uploaded files — there's no backend to
+// host uploads, and localStorage can't hold video-sized data. Scoped per
+// account like everything else on a profile.
+var TBA_MAX_VIDEOS = 3;
+
+function tbaIsMyRole(role) {
+  return localStorage.getItem('tba_role') === role;
+}
+
+function tbaGetMyVideos(forUsername) {
+  try {
+    var list = JSON.parse(localStorage.getItem(tbaAccountKey('tba_videos', forUsername)) || '[]');
+    return Array.isArray(list) ? list.slice(0, TBA_MAX_VIDEOS) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+// Turns a pasted link into something safe to embed. Only ever builds the
+// embed URL from an ID parsed out of a known host — never drops the
+// pasted URL into an iframe directly. Returns null for anything that
+// isn't an https link.
+function tbaParseVideoUrl(raw) {
+  var url;
+  try { url = new URL((raw || '').trim()); } catch (e) { return null; }
+  if (url.protocol !== 'https:') return null;
+
+  var host = url.hostname.replace(/^www\.|^m\./, '').toLowerCase();
+  var path = url.pathname;
+  var id;
+
+  if (host === 'youtube.com' || host === 'youtu.be') {
+    if (host === 'youtu.be') id = path.slice(1).split('/')[0];
+    else if (path === '/watch') id = url.searchParams.get('v');
+    else {
+      var ytMatch = path.match(/^\/(?:shorts|embed|live)\/([^/?]+)/);
+      id = ytMatch && ytMatch[1];
+    }
+    if (id && /^[A-Za-z0-9_-]{11}$/.test(id)) {
+      return { provider: 'youtube', embedUrl: 'https://www.youtube-nocookie.com/embed/' + id, href: url.href };
+    }
+    return null;
+  }
+
+  if (host === 'vimeo.com') {
+    var vimeoMatch = path.match(/^\/(\d+)/);
+    if (vimeoMatch) return { provider: 'vimeo', embedUrl: 'https://player.vimeo.com/video/' + vimeoMatch[1], href: url.href };
+    return null;
+  }
+
+  if (host === 'tiktok.com') {
+    var tiktokMatch = path.match(/\/video\/(\d+)/);
+    if (tiktokMatch) return { provider: 'tiktok', embedUrl: 'https://www.tiktok.com/embed/v2/' + tiktokMatch[1], href: url.href };
+    return { provider: 'link', host: host, href: url.href };
+  }
+
+  if (/\.(mp4|webm|mov|ogg)$/i.test(path)) {
+    return { provider: 'file', src: url.href, href: url.href };
+  }
+
+  return { provider: 'link', host: host, href: url.href };
+}
+
+// Only creator accounts post videos, only three, and only a link that
+// parses — enforced here rather than trusted from the page, since these
+// show up on other people's screens.
+function tbaAddMyVideo(type, title, url) {
+  if (!tbaIsMyRole('influencer')) return { ok: false, error: 'not-creator' };
+  var videos = tbaGetMyVideos();
+  if (videos.length >= TBA_MAX_VIDEOS) return { ok: false, error: 'full' };
+  if (type !== 'long' && type !== 'short') return { ok: false, error: 'bad-type' };
+  title = (title || '').trim().slice(0, 80);
+  if (!title) return { ok: false, error: 'no-title' };
+  var parsed = tbaParseVideoUrl(url);
+  if (!parsed) return { ok: false, error: 'bad-url' };
+
+  var video = {
+    id: 'v_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+    type: type,
+    title: title,
+    url: parsed.href,
+    createdAt: new Date().toISOString()
+  };
+  videos.push(video);
+  localStorage.setItem(tbaAccountKey('tba_videos'), JSON.stringify(videos));
+  return { ok: true, video: video };
+}
+
+function tbaRemoveMyVideo(id) {
+  var videos = tbaGetMyVideos().filter(function (v) { return v.id !== id; });
+  localStorage.setItem(tbaAccountKey('tba_videos'), JSON.stringify(videos));
+}
+
+// Every creator's videos for the Videos tab, grouped per creator so
+// "what kind of content do they make" is visible at a glance.
+function tbaGetCreatorVideoGroups() {
+  return tbaGetAllUsers()
+    .filter(function (u) { return u.role === 'influencer'; })
+    .map(function (u) { return { user: u, videos: tbaGetMyVideos(u.username) }; })
+    .filter(function (g) { return g.videos.length > 0; });
+}
+
+function tbaVideoTypeLabel(type) {
+  return type === 'short' ? 'Short-form' : 'Long-form';
+}
+
+function tbaEnsureVideoStyles() {
+  if (document.getElementById('tba-video-styles')) return;
+  var style = document.createElement('style');
+  style.id = 'tba-video-styles';
+  style.textContent =
+    '.tba-video-frame { position: relative; width: 100%; background: #000; border-radius: 12px; overflow: hidden; aspect-ratio: 16 / 9; }' +
+    '.tba-video-frame.short { aspect-ratio: 9 / 16; max-width: 260px; margin: 0 auto; }' +
+    '.tba-video-frame iframe, .tba-video-frame video { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }' +
+    '.tba-video-link { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; width: 100%; height: 100%; position: absolute; inset: 0; background: linear-gradient(135deg, #1b2330, #0f141c); color: #eef1f6; text-decoration: none; font-family: inherit; font-size: 13px; font-weight: 600; text-align: center; padding: 14px; }' +
+    '.tba-video-link span { font-size: 28px; }';
+  document.head.appendChild(style);
+}
+
+// The embed for one stored video. The iframe/video src always comes
+// from tbaParseVideoUrl's output, never straight from stored text.
+function tbaVideoEmbedHtml(video) {
+  tbaEnsureVideoStyles();
+  var parsed = tbaParseVideoUrl(video.url);
+  var cls = 'tba-video-frame' + (video.type === 'short' ? ' short' : '');
+  var inner;
+
+  if (!parsed) {
+    inner = '<div class="tba-video-link"><span>⚠️</span>This link can\'t be played</div>';
+  } else if (parsed.embedUrl) {
+    inner = '<iframe src="' + parsed.embedUrl + '" title="Video" loading="lazy" allow="fullscreen; picture-in-picture" allowfullscreen referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"></iframe>';
+  } else if (parsed.provider === 'file') {
+    inner = '<video src="' + parsed.src + '" controls preload="metadata" playsinline></video>';
+  } else {
+    inner = '<a class="tba-video-link" href="' + parsed.href + '" target="_blank" rel="noopener noreferrer"><span>▶️</span>Watch on ' + parsed.host + '</a>';
+  }
+  return '<div class="' + cls + '">' + inner + '</div>';
+}
+
+// --- Business outreach ---
+// Business accounts post sponsorship calls, events, and networking
+// events; anyone else can tap "I'm in" to say they're interested.
+// Posts and interest are stored globally (not account-scoped) since a
+// post has to be visible to every other account.
+var TBA_OUTREACH_KINDS = {
+  sponsorship: 'Creator Sponsorship',
+  event: 'Event',
+  networking: 'Networking Event'
+};
+
+var TBA_SEED_OUTREACH = [
+  {
+    id: 'seed_outreach_1', author: 'skylinecoffee', kind: 'sponsorship', daysAgo: 2,
+    title: 'Spring Menu Launch — looking for coffee & lifestyle creators',
+    description: 'We\'re launching three new seasonal drinks and want 5 creators to feature them. Free product plus a paid sponsorship per post. Short-form preferred.',
+    date: ''
+  },
+  {
+    id: 'seed_outreach_2', author: 'riversidegear', kind: 'event', daysAgo: 4,
+    title: 'Riverside Basecamp Weekend',
+    description: 'A two-day outdoor gear demo weekend in the Pacific Northwest. Creators get a free pass, gear to test, and a campsite.',
+    date: tbaSeedFutureDate(21)
+  },
+  {
+    id: 'seed_outreach_3', author: 'thecraftedtable', kind: 'networking', daysAgo: 6,
+    title: 'Makers & Creators Mixer',
+    description: 'An evening for independent makers and food/home creators to meet over a long-table dinner. Come say hi and swap ideas.',
+    date: tbaSeedFutureDate(14)
+  },
+  {
+    id: 'seed_outreach_4', author: 'brightlinestudio', kind: 'sponsorship', daysAgo: 8,
+    title: 'Case study collab — video series',
+    description: 'We\'re looking for a creator to co-produce a short video series about small-business branding. Paid, with full creative input.',
+    date: ''
+  }
+];
+
+function tbaSeedFutureDate(daysAhead) {
+  var d = new Date();
+  d.setDate(d.getDate() + daysAhead);
+  return d.toISOString().slice(0, 10);
+}
+
+function tbaGetOutreachPosts() {
+  var stored;
+  try {
+    stored = JSON.parse(localStorage.getItem('tba_outreach') || '[]');
+    if (!Array.isArray(stored)) stored = [];
+  } catch (e) {
+    stored = [];
+  }
+  var seeds = TBA_SEED_OUTREACH.map(function (s) {
+    var created = new Date();
+    created.setDate(created.getDate() - s.daysAgo);
+    return { id: s.id, author: s.author, kind: s.kind, title: s.title, description: s.description, date: s.date, createdAt: created.toISOString(), seed: true };
+  });
+  return stored.concat(seeds).sort(function (a, b) { return new Date(b.createdAt) - new Date(a.createdAt); });
+}
+
+// Only business accounts can post, with a title, a real kind, and (for
+// events) an optional date — enforced here, not just in the form.
+function tbaCreateOutreachPost(kind, title, description, date) {
+  if (!tbaIsMyRole('business')) return { ok: false, error: 'not-business' };
+  if (!TBA_OUTREACH_KINDS[kind]) return { ok: false, error: 'bad-kind' };
+  title = (title || '').trim().slice(0, 100);
+  if (!title) return { ok: false, error: 'no-title' };
+
+  var post = {
+    id: 'o_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+    author: localStorage.getItem('tba_username'),
+    kind: kind,
+    title: title,
+    description: (description || '').trim().slice(0, 500),
+    date: /^\d{4}-\d{2}-\d{2}$/.test(date || '') ? date : '',
+    createdAt: new Date().toISOString()
+  };
+  var stored;
+  try { stored = JSON.parse(localStorage.getItem('tba_outreach') || '[]'); } catch (e) { stored = []; }
+  stored.push(post);
+  localStorage.setItem('tba_outreach', JSON.stringify(stored));
+  return { ok: true, post: post };
+}
+
+function tbaDeleteOutreachPost(id) {
+  var me = localStorage.getItem('tba_username');
+  var stored;
+  try { stored = JSON.parse(localStorage.getItem('tba_outreach') || '[]'); } catch (e) { stored = []; }
+  var kept = stored.filter(function (p) { return !(p.id === id && p.author === me); });
+  localStorage.setItem('tba_outreach', JSON.stringify(kept));
+}
+
+function tbaGetOutreachInterest() {
+  try {
+    var map = JSON.parse(localStorage.getItem('tba_outreach_interest') || '{}');
+    return map && typeof map === 'object' && !Array.isArray(map) ? map : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function tbaGetOutreachInterested(postId) {
+  return tbaGetOutreachInterest()[postId] || [];
+}
+
+// Toggles the signed-in account's "I'm in" on a post. The author can't
+// mark interest in their own post. Returns whether they're now in.
+function tbaToggleOutreachInterest(postId) {
+  var me = localStorage.getItem('tba_username');
+  var post = tbaGetOutreachPosts().find(function (p) { return p.id === postId; });
+  if (!me || !post || post.author === me) return null;
+
+  var map = tbaGetOutreachInterest();
+  var list = map[postId] || [];
+  var idx = list.indexOf(me);
+  if (idx === -1) list.push(me); else list.splice(idx, 1);
+  map[postId] = list;
+  localStorage.setItem('tba_outreach_interest', JSON.stringify(map));
+  return idx === -1;
+}
+
 // --- Activity feed ---
 // Derived on the fly from data that already exists elsewhere (no
 // separate event log to keep in sync) — verification status, closed

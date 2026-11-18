@@ -427,6 +427,15 @@ a.activity-feed-link:hover { border-color: var(--terracotta); transform: transla
 }
 .profile-rating-badge .tba-star { font-size: 13px; }
 
+.profile-videos-section { margin-top: 28px; padding-top: 22px; border-top: 1px solid var(--border); text-align: left; }
+.profile-videos-section h3 { font-size: 15px; margin: 0 0 14px; font-weight: 700; color: var(--ink); }
+.profile-videos-manage { font-size: 12.5px; font-weight: 600; color: var(--terracotta-dark); margin-left: 8px; }
+.profile-video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; align-items: start; }
+.profile-video-meta { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.profile-video-title { font-size: 13px; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+.profile-video-type { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; padding: 3px 9px; border-radius: 999px; background: var(--border); color: var(--terracotta-dark); }
+.profile-video-type.long { background: #eef1e6; color: var(--olive); }
+
 .profile-reviews-section {
   margin-top: 28px;
   padding-top: 22px;

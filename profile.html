@@ -29,6 +29,7 @@
       <a href="home.html">Home</a>
       <a href="messaging.html">Messaging &amp; Negotiation</a>
       <a href="network.html">The Network</a>
+      <a href="videos.html">Videos</a>
       <a href="about.html">About</a>
       <a href="profile.html" class="active">Profile</a>
       <div class="notif-wrap" id="notif-wrap">
@@ -165,6 +166,31 @@
     if (summary.count === 0) return '';
     return '<p class="profile-rating-badge">' + tbaStarsHtml(summary.avg) +
       ' <span>' + summary.avg + ' (' + summary.count + ' review' + (summary.count === 1 ? '' : 's') + ')</span></p>';
+  }
+
+  // A creator's own videos, so a visitor sees the kind of content they
+  // make right on their profile — the posting itself happens in the
+  // Videos tab.
+  function renderVideosSection(user) {
+    if (user.role !== 'influencer') return '';
+    var videos = tbaGetMyVideos(user.username);
+    if (videos.length === 0 && !user.isYou) return '';
+
+    var body = videos.length === 0
+      ? '<p class="no-links">🎬 You haven\'t added any videos yet. <a href="videos.html">Add up to 3 in the Videos tab.</a></p>'
+      : '<div class="profile-video-grid">' + videos.map(function (v) {
+          return '<div class="profile-video">' + tbaVideoEmbedHtml(v) +
+            '<div class="profile-video-meta"><span class="profile-video-type ' + v.type + '">' + tbaVideoTypeLabel(v.type) + '</span>' +
+            '<span class="profile-video-title">' + escapeHtml(v.title) + '</span></div></div>';
+        }).join('') + '</div>';
+
+    return (
+      '<div class="profile-videos-section">' +
+      '<h3>Videos <span class="network-count">(' + videos.length + ')</span>' +
+      (user.isYou ? ' <a class="profile-videos-manage" href="videos.html">Manage</a>' : '') + '</h3>' +
+      body +
+      '</div>'
+    );
   }
 
   function renderReviewsSection(user) {
@@ -338,6 +364,7 @@
             : '<button type="button" class="request-btn" id="request-btn">Request to Message</button>')) +
       '</div>' +
       renderNetworkSection(user) +
+      renderVideosSection(user) +
       renderReviewsSection(user) +
       renderActivitySection(user) +
       (isYou ? renderVerifySection(user, verifyStatus) : '') +
