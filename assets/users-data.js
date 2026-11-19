@@ -405,11 +405,16 @@ function tbaGetSignupsLast7Days() {
   return days;
 }
 
-// No reporting/flagging feature exists anywhere in the app yet — this
-// returns the honest answer (nothing) rather than inventing activity
-// for a moderation queue that isn't actually wired to anything.
+// Open (not yet reviewed) reports, shaped for the admin overview's
+// list. The full queue and the actions on it live on the admin Reports
+// page.
 function tbaGetFlaggedReports() {
-  return [];
+  return tbaGetOpenReports().map(function (r) {
+    return {
+      title: TBA_REPORT_REASONS[r.reason] + ': ' + r.label,
+      meta: 'Reported by @' + r.reporter + ' · ' + tbaFormatDateLong(r.createdAt)
+    };
+  });
 }
 
 // Looks up a single user by username — your own account, any other
@@ -1464,7 +1469,7 @@ function tbaRemoveMyVideo(id) {
 // "what kind of content do they make" is visible at a glance.
 function tbaGetCreatorVideoGroups() {
   return tbaGetAllUsers()
-    .filter(function (u) { return u.role === 'influencer'; })
+    .filter(function (u) { return u.role === 'influencer' && !tbaIsHiddenUser(u.username); })
     .map(function (u) { return { user: u, videos: tbaGetMyVideos(u.username) }; })
     .filter(function (g) { return g.videos.length > 0; });
 }
@@ -1563,7 +1568,22 @@ function tbaGetOutreachPosts() {
     created.setDate(created.getDate() - s.daysAgo);
     return { id: s.id, author: s.author, kind: s.kind, title: s.title, description: s.description, date: s.date, createdAt: created.toISOString(), seed: true };
   });
-  return stored.concat(seeds).sort(function (a, b) { return new Date(b.createdAt) - new Date(a.createdAt); });
+  var removed = tbaGetRemovedOutreachIds();
+  return stored.concat(seeds)
+    .filter(function (p) { return removed.indexOf(p.id) === -1 && !tbaIsHiddenUser(p.author); })
+    .sort(function (a, b) { return new Date(b.createdAt) - new Date(a.createdAt); });
+}
+
+// Posts an admin took down (the only way to remove a seed post, or
+// someone else's) — kept as a list of hidden ids rather than editing
+// the posts themselves.
+function tbaGetRemovedOutreachIds() {
+  try {
+    var list = JSON.parse(localStorage.getItem('tba_outreach_removed') || '[]');
+    return Array.isArray(list) ? list : [];
+  } catch (e) {
+    return [];
+  }
 }
 
 // Only business accounts can post, with a title, a real kind, and (for
@@ -1624,7 +1644,400 @@ function tbaToggleOutreachInterest(postId) {
   if (idx === -1) list.push(me); else list.splice(idx, 1);
   map[postId] = list;
   localStorage.setItem('tba_outreach_interest', JSON.stringify(map));
+
+  // A timestamped log alongside the list, so the author's
+  // notifications can say when someone said they're in.
+  var log = tbaGetOutreachInterestLog().filter(function (e) { return !(e.postId === postId && e.user === me); });
+  if (idx === -1) log.push({ postId: postId, user: me, at: new Date().toISOString() });
+  localStorage.setItem('tba_outreach_interest_log', JSON.stringify(log));
   return idx === -1;
+}
+
+function tbaGetOutreachInterestLog() {
+  try {
+    var log = JSON.parse(localStorage.getItem('tba_outreach_interest_log') || '[]');
+    return Array.isArray(log) ? log : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+// --- Reports, blocking, and suspension ---
+// Anyone can report a profile, a creator video, or an outreach post;
+// admins review the queue and can dismiss it, take the content down,
+// or suspend the account. Blocking is personal: it hides two accounts
+// from each other. Reports and suspensions are stored globally (admins
+// need to see everyone's); a block list belongs to the account that
+// made it.
+var TBA_REPORT_REASONS = {
+  spam: 'Spam or scam',
+  harassment: 'Harassment or abuse',
+  inappropriate: 'Inappropriate content',
+  impersonation: 'Impersonation',
+  other: 'Something else'
+};
+
+function tbaGetReports() {
+  try {
+    var list = JSON.parse(localStorage.getItem('tba_reports') || '[]');
+    return Array.isArray(list) ? list : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function tbaGetOpenReports() {
+  return tbaGetReports().filter(function (r) { return r.status === 'open'; })
+    .sort(function (a, b) { return new Date(b.createdAt) - new Date(a.createdAt); });
+}
+
+function tbaGetResolvedReports() {
+  return tbaGetReports().filter(function (r) { return r.status !== 'open'; })
+    .sort(function (a, b) { return new Date(b.resolvedAt) - new Date(a.resolvedAt); });
+}
+
+// targetType is 'profile', 'video', or 'outreach'; targetId is the
+// username, video id, or post id; label is a snapshot of what it was
+// called, so the queue still reads sensibly after the content is gone.
+// You can't report yourself, and the same person can't stack open
+// reports on the same thing.
+function tbaSubmitReport(targetType, targetId, targetUser, label, reason, details) {
+  var me = localStorage.getItem('tba_username');
+  if (!me) return { ok: false, error: 'not-signed-in' };
+  if (['profile', 'video', 'outreach'].indexOf(targetType) === -1) return { ok: false, error: 'bad-target' };
+  if (!TBA_REPORT_REASONS[reason]) return { ok: false, error: 'bad-reason' };
+  if (targetUser && targetUser.toLowerCase() === me.toLowerCase()) return { ok: false, error: 'self' };
+
+  var reports = tbaGetReports();
+  var duplicate = reports.some(function (r) {
+    return r.status === 'open' && r.reporter === me && r.targetType === targetType && r.targetId === targetId;
+  });
+  if (duplicate) return { ok: false, error: 'duplicate' };
+
+  reports.push({
+    id: 'r_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+    reporter: me,
+    targetType: targetType,
+    targetId: targetId,
+    targetUser: targetUser,
+    label: String(label || targetId).slice(0, 100),
+    reason: reason,
+    details: (details || '').trim().slice(0, 500),
+    createdAt: new Date().toISOString(),
+    status: 'open'
+  });
+  localStorage.setItem('tba_reports', JSON.stringify(reports));
+  return { ok: true };
+}
+
+// decision: 'dismissed' (nothing wrong), 'removed' (content taken
+// down), or 'suspended' (account suspended, which also hides
+// everything it posted). Settles every open report on the same
+// target at once, since they're all about the same thing.
+function tbaResolveReport(id, decision) {
+  var reports = tbaGetReports();
+  var report = reports.find(function (r) { return r.id === id; });
+  if (!report || ['dismissed', 'removed', 'suspended'].indexOf(decision) === -1) return false;
+
+  if (decision === 'removed') {
+    if (report.targetType === 'video') tbaAdminRemoveVideo(report.targetUser, report.targetId);
+    else if (report.targetType === 'outreach') tbaAdminRemoveOutreach(report.targetId);
+    else return false;
+  } else if (decision === 'suspended') {
+    tbaSuspendAccount(report.targetUser);
+  }
+
+  var now = new Date().toISOString();
+  reports.forEach(function (r) {
+    if (r.status === 'open' && r.targetType === report.targetType && r.targetId === report.targetId) {
+      r.status = decision;
+      r.resolvedAt = now;
+    }
+  });
+  localStorage.setItem('tba_reports', JSON.stringify(reports));
+  return true;
+}
+
+function tbaAdminRemoveVideo(owner, videoId) {
+  var key = tbaAccountKey('tba_videos', owner);
+  try {
+    var list = JSON.parse(localStorage.getItem(key) || '[]').filter(function (v) { return v.id !== videoId; });
+    localStorage.setItem(key, JSON.stringify(list));
+  } catch (e) { /* nothing stored — nothing to remove */ }
+}
+
+function tbaAdminRemoveOutreach(postId) {
+  var removed = tbaGetRemovedOutreachIds();
+  if (removed.indexOf(postId) === -1) removed.push(postId);
+  localStorage.setItem('tba_outreach_removed', JSON.stringify(removed));
+}
+
+function tbaGetSuspended() {
+  try {
+    var map = JSON.parse(localStorage.getItem('tba_suspended') || '{}');
+    return map && typeof map === 'object' && !Array.isArray(map) ? map : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function tbaIsSuspended(username) {
+  return !!(username && tbaGetSuspended()[username.toLowerCase()]);
+}
+
+function tbaSuspendAccount(username) {
+  if (!username) return;
+  var map = tbaGetSuspended();
+  map[username.toLowerCase()] = { username: username, at: new Date().toISOString() };
+  localStorage.setItem('tba_suspended', JSON.stringify(map));
+}
+
+function tbaRestoreAccount(username) {
+  var map = tbaGetSuspended();
+  delete map[(username || '').toLowerCase()];
+  localStorage.setItem('tba_suspended', JSON.stringify(map));
+}
+
+// A suspended account can't stay signed in: the next page it loads
+// signs it out. Admin and sign-in pages are exempt.
+(function tbaEnforceSuspension() {
+  var me = localStorage.getItem('tba_username');
+  if (!me || !localStorage.getItem('tba_authed') || !tbaIsSuspended(me)) return;
+  var page = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
+  if (page === 'index.html' || page === '' || page.indexOf('admin') === 0) return;
+  localStorage.removeItem('tba_authed');
+  location.replace('index.html');
+})();
+
+function tbaGetBlocked(forUsername) {
+  try {
+    var list = JSON.parse(localStorage.getItem(tbaAccountKey('tba_blocked', forUsername)) || '[]');
+    return Array.isArray(list) ? list : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function tbaIsBlockedByMe(username) {
+  if (!username) return false;
+  var lower = username.toLowerCase();
+  return tbaGetBlocked().some(function (u) { return u.toLowerCase() === lower; });
+}
+
+// Blocking hides two accounts from each other, whichever one did the
+// blocking — you stop seeing them and they stop seeing you.
+function tbaIsBlockedEitherWay(username) {
+  var me = localStorage.getItem('tba_username');
+  if (!me || !username || me.toLowerCase() === username.toLowerCase()) return false;
+  if (tbaIsBlockedByMe(username)) return true;
+  var lowerMe = me.toLowerCase();
+  return tbaGetBlocked(username).some(function (u) { return u.toLowerCase() === lowerMe; });
+}
+
+// The one test every list uses to decide whether to show an account:
+// suspended, or blocked either way.
+function tbaIsHiddenUser(username) {
+  return tbaIsSuspended(username) || tbaIsBlockedEitherWay(username);
+}
+
+function tbaBlockUser(username) {
+  var me = localStorage.getItem('tba_username');
+  if (!me || !username || me.toLowerCase() === username.toLowerCase() || tbaIsBlockedByMe(username)) return;
+  var list = tbaGetBlocked();
+  list.push(username);
+  localStorage.setItem(tbaAccountKey('tba_blocked'), JSON.stringify(list));
+  tbaRemoveFromMyNetwork(username);
+}
+
+function tbaUnblockUser(username) {
+  var lower = (username || '').toLowerCase();
+  var list = tbaGetBlocked().filter(function (u) { return u.toLowerCase() !== lower; });
+  localStorage.setItem(tbaAccountKey('tba_blocked'), JSON.stringify(list));
+}
+
+function tbaEnsureReportStyles() {
+  if (document.getElementById('tba-report-styles')) return;
+  var style = document.createElement('style');
+  style.id = 'tba-report-styles';
+  style.textContent =
+    '.tba-modal-overlay { position: fixed; inset: 0; z-index: 10000; background: rgba(10,8,5,0.72); display: flex; align-items: center; justify-content: center; padding: 20px; font-family: "Inter", "Helvetica Neue", Arial, sans-serif; }' +
+    '.tba-modal-card { background: #fffbf3; color: #2e2417; max-width: 440px; width: 100%; max-height: 88vh; overflow-y: auto; border-radius: 20px; padding: 28px 26px 22px; box-shadow: 0 30px 70px rgba(0,0,0,0.45); }' +
+    '.tba-modal-card h2 { font-size: 19px; margin: 0 0 4px; font-family: Georgia, "Times New Roman", serif; }' +
+    '.tba-modal-sub { font-size: 13px; color: #7a6d5a; margin: 0 0 16px; }' +
+    '.tba-modal-card label { display: block; font-size: 12.5px; font-weight: 700; color: #7a6d5a; margin-bottom: 14px; }' +
+    '.tba-modal-card select, .tba-modal-card textarea { display: block; width: 100%; margin-top: 6px; padding: 10px 12px; border: 1.5px solid #e4d9c3; border-radius: 10px; background: #fff; color: #2e2417; font-family: inherit; font-size: 14px; font-weight: 400; }' +
+    '.tba-modal-card textarea { min-height: 80px; resize: vertical; }' +
+    '.tba-modal-error { color: #b3402f; font-size: 12.5px; margin: 0 0 12px; }' +
+    '.tba-modal-actions { display: flex; gap: 10px; justify-content: flex-end; }' +
+    '.tba-modal-actions button { font-family: inherit; font-weight: 700; font-size: 13.5px; padding: 10px 20px; border-radius: 999px; cursor: pointer; border: 1.5px solid transparent; }' +
+    '.tba-modal-primary { background: #c1652c; color: #fff; }' +
+    '.tba-modal-secondary { background: transparent; border-color: #e4d9c3 !important; color: #7a6d5a; }';
+  document.head.appendChild(style);
+}
+
+// The shared report dialog every "Report" button opens.
+function tbaShowReportModal(opts) {
+  tbaEnsureReportStyles();
+  var overlay = document.createElement('div');
+  overlay.className = 'tba-modal-overlay';
+  overlay.innerHTML =
+    '<div class="tba-modal-card" role="dialog" aria-modal="true" aria-labelledby="tba-report-title">' +
+    '<h2 id="tba-report-title">Report ' + tbaEscapeHtmlForNotif(opts.noun || 'this') + '</h2>' +
+    '<p class="tba-modal-sub">Tell us what\'s wrong. An admin will review it — the person you report won\'t be told it was you.</p>' +
+    '<label>Reason<select id="tba-report-reason">' +
+    Object.keys(TBA_REPORT_REASONS).map(function (k) { return '<option value="' + k + '">' + TBA_REPORT_REASONS[k] + '</option>'; }).join('') +
+    '</select></label>' +
+    '<label>Details (optional)<textarea id="tba-report-details" maxlength="500" placeholder="Anything that helps us understand."></textarea></label>' +
+    '<p class="tba-modal-error" id="tba-report-error" hidden></p>' +
+    '<div class="tba-modal-actions">' +
+    '<button type="button" class="tba-modal-secondary" id="tba-report-cancel">Cancel</button>' +
+    '<button type="button" class="tba-modal-primary" id="tba-report-submit">Send report</button>' +
+    '</div></div>';
+  document.body.appendChild(overlay);
+
+  function close() { overlay.remove(); }
+  overlay.querySelector('#tba-report-cancel').addEventListener('click', close);
+  overlay.addEventListener('click', function (e) { if (e.target === overlay) close(); });
+  overlay.querySelector('#tba-report-submit').addEventListener('click', function () {
+    var result = tbaSubmitReport(
+      opts.targetType, opts.targetId, opts.targetUser, opts.label,
+      overlay.querySelector('#tba-report-reason').value,
+      overlay.querySelector('#tba-report-details').value
+    );
+    if (!result.ok) {
+      var err = overlay.querySelector('#tba-report-error');
+      err.textContent = result.error === 'duplicate'
+        ? 'You\'ve already reported this — an admin will take a look.'
+        : 'Couldn\'t send that report.';
+      err.hidden = false;
+      return;
+    }
+    close();
+    tbaShowToast('Report sent — thank you', 'success');
+    if (opts.onDone) opts.onDone();
+  });
+}
+
+// --- Onboarding ---
+// A first-login welcome tour (once per account) and a profile
+// checklist on the dashboard. Both are role-aware: a business and a
+// creator have different first steps.
+function tbaHasOnboarded() {
+  return localStorage.getItem(tbaAccountKey('tba_onboarded')) === '1';
+}
+
+function tbaSetOnboarded(done) {
+  if (done) localStorage.setItem(tbaAccountKey('tba_onboarded'), '1');
+  else localStorage.removeItem(tbaAccountKey('tba_onboarded'));
+}
+
+// What's still missing from this account's profile, computed from what
+// it actually has — nothing to keep in sync.
+function tbaGetProfileChecklist() {
+  var me = localStorage.getItem('tba_username');
+  var isCreator = tbaIsMyRole('influencer');
+  var items = [
+    { label: 'Add a profile photo', done: !!tbaGetMyProfilePic(), href: 'profile.html' },
+    { label: 'Write your bio', done: !!tbaGetMyBio(), href: 'profile.html' },
+    { label: 'Set your niche', done: !!tbaGetMyNiche(), href: 'profile.html' },
+    { label: 'Add a link', done: tbaGetMyLinks().length > 0, href: 'profile.html' }
+  ];
+  if (isCreator) {
+    items.push({ label: 'Add your follower count', done: tbaGetMyFollowers() > 0, href: 'profile.html' });
+    items.push({ label: 'Add a video', done: tbaGetMyVideos().length > 0, href: 'videos.html' });
+  } else {
+    items.push({
+      label: 'Post an outreach opportunity',
+      done: tbaGetOutreachPosts().some(function (p) { return p.author === me; }),
+      href: 'videos.html#outreach'
+    });
+  }
+  return items;
+}
+
+function tbaIsChecklistDismissed() {
+  return localStorage.getItem(tbaAccountKey('tba_checklist_dismissed')) === '1';
+}
+
+function tbaDismissChecklist() {
+  localStorage.setItem(tbaAccountKey('tba_checklist_dismissed'), '1');
+}
+
+function tbaGetOnboardingSteps() {
+  if (tbaIsMyRole('influencer')) {
+    return [
+      { icon: '👋', title: 'Welcome to THE INTROductory', text: 'This is where brands find creators and make real deals. Here\'s a quick look around.' },
+      { icon: '🎬', title: 'Show what you make', text: 'Add up to three videos in the Outreach tab — long-form or short-form — so businesses can see your content before they message you.', href: 'videos.html', cta: 'Add videos' },
+      { icon: '💬', title: 'Negotiate in one place', text: 'Offers, counter-offers, and contracts all live in Messaging & Negotiation, right next to the conversation.', href: 'messaging.html', cta: 'Open messaging' },
+      { icon: '✨', title: 'Finish your profile', text: 'Add your niche and follower count so you show up when brands filter The Network. Your dashboard has a checklist.' }
+    ];
+  }
+  return [
+    { icon: '👋', title: 'Welcome to THE INTROductory', text: 'This is where brands find creators and make real deals. Here\'s a quick look around.' },
+    { icon: '🔍', title: 'Find the right creators', text: 'Filter The Network by niche, audience size, deals closed, and ratings, then send a request to message.', href: 'network.html', cta: 'Browse The Network' },
+    { icon: '📣', title: 'Post an opportunity', text: 'In the Outreach tab, post a sponsorship call, an event, or a networking event. Creators tap "I\'m in" and you see who\'s interested.', href: 'videos.html#outreach', cta: 'Post outreach' },
+    { icon: '📝', title: 'From offer to signed contract', text: 'Negotiate terms in Messaging, accept an offer, and draft a contract in a click. Finish your profile too — your dashboard has a checklist.', href: 'messaging.html', cta: 'Open messaging' }
+  ];
+}
+
+function tbaEnsureOnboardingStyles() {
+  tbaEnsureReportStyles();
+  if (document.getElementById('tba-onboarding-styles')) return;
+  var style = document.createElement('style');
+  style.id = 'tba-onboarding-styles';
+  style.textContent =
+    '.tba-tour-card { text-align: center; }' +
+    '.tba-tour-icon { font-size: 44px; margin-bottom: 8px; }' +
+    '.tba-tour-dots { display: flex; gap: 6px; justify-content: center; margin: 16px 0 18px; }' +
+    '.tba-tour-dot { width: 7px; height: 7px; border-radius: 50%; background: #e4d9c3; }' +
+    '.tba-tour-dot.on { background: #c1652c; }' +
+    '.tba-tour-card .tba-modal-actions { justify-content: space-between; }' +
+    '.tba-tour-link { display: inline-block; margin-top: 4px; font-size: 13px; font-weight: 700; color: #c1652c; text-decoration: none; }';
+  document.head.appendChild(style);
+}
+
+// Shows the welcome tour once per account — skipping or finishing both
+// count. Waits for the terms gate first so two dialogs never stack.
+function tbaMaybeShowOnboardingTour() {
+  if (tbaHasOnboarded() || !tbaHasAcceptedTerms()) return;
+  tbaEnsureOnboardingStyles();
+  var steps = tbaGetOnboardingSteps();
+  var index = 0;
+
+  var overlay = document.createElement('div');
+  overlay.className = 'tba-modal-overlay';
+  document.body.appendChild(overlay);
+
+  function finish() {
+    tbaSetOnboarded(true);
+    overlay.remove();
+  }
+
+  function render() {
+    var step = steps[index];
+    var last = index === steps.length - 1;
+    overlay.innerHTML =
+      '<div class="tba-modal-card tba-tour-card" role="dialog" aria-modal="true" aria-labelledby="tba-tour-title">' +
+      '<div class="tba-tour-icon">' + step.icon + '</div>' +
+      '<h2 id="tba-tour-title">' + tbaEscapeHtmlForNotif(step.title) + '</h2>' +
+      '<p class="tba-modal-sub">' + tbaEscapeHtmlForNotif(step.text) + '</p>' +
+      (step.href ? '<a class="tba-tour-link" id="tba-tour-cta" href="' + step.href + '">' + tbaEscapeHtmlForNotif(step.cta) + ' &rarr;</a>' : '') +
+      '<div class="tba-tour-dots">' + steps.map(function (s, i) { return '<span class="tba-tour-dot' + (i === index ? ' on' : '') + '"></span>'; }).join('') + '</div>' +
+      '<div class="tba-modal-actions">' +
+      '<button type="button" class="tba-modal-secondary" id="tba-tour-skip">' + (last ? 'Back' : 'Skip tour') + '</button>' +
+      '<button type="button" class="tba-modal-primary" id="tba-tour-next">' + (last ? 'Get started' : 'Next') + '</button>' +
+      '</div></div>';
+
+    overlay.querySelector('#tba-tour-skip').addEventListener('click', function () {
+      if (last) { index--; render(); } else finish();
+    });
+    overlay.querySelector('#tba-tour-next').addEventListener('click', function () {
+      if (last) finish(); else { index++; render(); }
+    });
+    var cta = overlay.querySelector('#tba-tour-cta');
+    if (cta) cta.addEventListener('click', function () { tbaSetOnboarded(true); });
+  }
+  render();
 }
 
 // --- Activity feed ---
@@ -2024,7 +2437,10 @@ function tbaClearAllNotifications() {
 
 function tbaNotificationMessagePreview(m) {
   if (m.type === 'offer') {
-    return 'Countered with $' + m.amount.toLocaleString() + ' for ' + m.videos + ' video' + (m.videos === 1 ? '' : 's');
+    return 'Countered with $' + m.amount.toLocaleString() + ' for ' + tbaOfferDeliverablesLabel(m);
+  }
+  if (m.type === 'offer-decision') {
+    return m.decision === 'accepted' ? 'Accepted your offer' : 'Declined your offer';
   }
   if (m.type === 'contract') {
     var verb = m.action === 'sent' ? 'Sent a contract' : m.action === 'revised' ? 'Sent back a revised contract' : 'Contract update';
@@ -2066,6 +2482,38 @@ function tbaGetNotifications() {
         link: 'profile.html'
       });
     });
+
+  // Someone tapped "I'm in" on one of your outreach posts.
+  var myPostTitles = {};
+  tbaGetOutreachPosts().forEach(function (p) {
+    if (p.author === myUsername) myPostTitles[p.id] = p.title;
+  });
+  tbaGetOutreachInterestLog().forEach(function (e) {
+    if (!myPostTitles[e.postId] || tbaIsHiddenUser(e.user)) return;
+    var who = tbaGetUserByUsername(e.user);
+    notifications.push({
+      id: 'interest-' + e.postId + '-' + e.user + '-' + e.at,
+      icon: '🙋',
+      title: 'Outreach',
+      text: (who ? who.name : '@' + e.user) + ' is in for "' + myPostTitles[e.postId] + '"',
+      date: e.at,
+      link: 'videos.html#outreach'
+    });
+  });
+
+  // Someone left you a review.
+  tbaGetReviewsFor(myUsername).forEach(function (r) {
+    if (tbaIsHiddenUser(r.fromUsername)) return;
+    var reviewer = tbaGetUserByUsername(r.fromUsername);
+    notifications.push({
+      id: 'review-' + r.id,
+      icon: '⭐',
+      title: 'New review',
+      text: (reviewer ? reviewer.name : '@' + r.fromUsername) + ' left you ' + r.rating + (r.rating === 1 ? ' star' : ' stars'),
+      date: r.createdAt,
+      link: 'profile.html'
+    });
+  });
 
   notifications.sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
 
@@ -2279,6 +2727,17 @@ function tbaGetAdminNotifications() {
       text: 'New application from ' + r.name,
       date: r.submittedAt,
       link: 'admin-verifications.html'
+    });
+  });
+
+  tbaGetOpenReports().forEach(function (r) {
+    notifications.push({
+      id: 'adminreport-' + r.id,
+      icon: '🚩',
+      title: 'Report',
+      text: TBA_REPORT_REASONS[r.reason] + ' — ' + r.label,
+      date: r.createdAt,
+      link: 'admin-reports.html'
     });
   });
 

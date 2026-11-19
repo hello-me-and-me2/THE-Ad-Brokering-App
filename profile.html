@@ -144,8 +144,22 @@
         ? '<button type="button" class="btn-edit" id="withdraw-esign-btn">Withdraw Consent</button>'
         : '') +
       '</div>' +
+      '<div class="esign-consent-row">' +
+      '<div><p class="esign-consent-label">Welcome tour</p><p class="esign-consent-status">A quick look around, if you want it again.</p></div>' +
+      '<button type="button" class="btn-edit" id="replay-tour-btn">Replay Tour</button>' +
+      '</div>' +
+      renderBlockedList() +
       '</div>'
     );
+  }
+
+  function renderBlockedList() {
+    var blocked = tbaGetBlocked();
+    if (blocked.length === 0) return '';
+    return '<div class="blocked-list"><p class="esign-consent-label">Blocked accounts</p>' + blocked.map(function (u) {
+      return '<div class="blocked-row"><a href="profile.html?u=' + encodeURIComponent(u) + '">@' + escapeHtml(u) + '</a>' +
+        '<button type="button" class="btn-edit" data-unblock="' + escapeHtml(u) + '">Unblock</button></div>';
+    }).join('') + '</div>';
   }
 
   function formatFollowersCount(n) {
@@ -337,6 +351,33 @@
     }
 
     var isYou = !!user.isYou;
+
+    // Suspended accounts, and accounts that have blocked you, aren't
+    // viewable at all; an account you blocked shows only an unblock option.
+    if (!isYou && (tbaIsSuspended(user.username) || (tbaIsBlockedEitherWay(user.username) && !tbaIsBlockedByMe(user.username)))) {
+      content.innerHTML =
+        '<div class="profile-empty">' +
+        '<h1>Profile unavailable</h1>' +
+        '<p>This account isn\'t available.</p>' +
+        '<p><a href="network.html">Back to The Network &rarr;</a></p>' +
+        '</div>';
+      return;
+    }
+    if (!isYou && tbaIsBlockedByMe(user.username)) {
+      content.innerHTML =
+        '<div class="profile-empty">' +
+        '<h1>You blocked @' + escapeHtml(user.username) + '</h1>' +
+        '<p>You can\'t see each other on THE INTROductory while this block is on.</p>' +
+        '<p><button type="button" class="btn-edit" id="unblock-btn">Unblock</button></p>' +
+        '</div>';
+      document.getElementById('unblock-btn').addEventListener('click', function () {
+        tbaUnblockUser(user.username);
+        render();
+        tbaShowToast('Unblocked @' + user.username);
+      });
+      return;
+    }
+
     var alreadySent = sentRequests.indexOf(user.username) !== -1;
     var bio = user.bio || '';
 
@@ -362,6 +403,7 @@
         : (alreadySent
             ? '<button type="button" class="request-btn sent" disabled>Request Sent</button>'
             : '<button type="button" class="request-btn" id="request-btn">Request to Message</button>')) +
+      (isYou ? '' : '<button type="button" class="btn-edit" id="report-btn">Report</button><button type="button" class="btn-edit" id="block-btn">Block</button>') +
       '</div>' +
       renderNetworkSection(user) +
       renderVideosSection(user) +
@@ -373,6 +415,18 @@
       '</div>';
 
     if (isYou) {
+      document.getElementById('replay-tour-btn').addEventListener('click', function () {
+        tbaSetOnboarded(false);
+        location.href = 'home.html';
+      });
+      content.querySelectorAll('[data-unblock]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          tbaUnblockUser(b.getAttribute('data-unblock'));
+          render();
+          tbaShowToast('Unblocked');
+        });
+      });
+
       var withdrawBtn = document.getElementById('withdraw-esign-btn');
       if (withdrawBtn) {
         withdrawBtn.addEventListener('click', function () {
@@ -504,11 +558,23 @@
         render();
         tbaShowToast('Profile saved', 'success');
       });
-    } else if (!alreadySent) {
-      document.getElementById('request-btn').addEventListener('click', function () {
-        tbaAddSentRequest(user.username);
-        sentRequests = tbaGetSentRequests();
+    } else {
+      if (!alreadySent) {
+        document.getElementById('request-btn').addEventListener('click', function () {
+          tbaAddSentRequest(user.username);
+          sentRequests = tbaGetSentRequests();
+          render();
+        });
+      }
+
+      document.getElementById('report-btn').addEventListener('click', function () {
+        tbaShowReportModal({ noun: '@' + user.username, targetType: 'profile', targetId: user.username, targetUser: user.username, label: '@' + user.username + '\'s profile' });
+      });
+
+      document.getElementById('block-btn').addEventListener('click', function () {
+        tbaBlockUser(user.username);
         render();
+        tbaShowToast('Blocked @' + user.username);
       });
     }
   }

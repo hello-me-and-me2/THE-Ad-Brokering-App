@@ -52,6 +52,18 @@
     <a href="messaging.html" class="btn btn-primary">Go to Messaging</a>
   </div>
 
+  <div class="checklist-panel" id="checklist-panel" hidden>
+    <div class="checklist-head">
+      <div>
+        <h2>Finish setting up your profile</h2>
+        <p id="checklist-progress-text"></p>
+      </div>
+      <button type="button" class="checklist-hide" id="checklist-hide-btn">Hide</button>
+    </div>
+    <div class="checklist-bar"><div class="checklist-bar-fill" id="checklist-bar-fill"></div></div>
+    <ul class="checklist-items" id="checklist-items"></ul>
+  </div>
+
   <div class="stat-grid" id="stat-grid"></div>
 
   <div class="dash-grid">
@@ -168,6 +180,29 @@
 
   document.getElementById('stat-grid').innerHTML = cardsHtml;
 
+  // --- Profile checklist ---
+  // Only shown while something's still missing, and only until it's
+  // hidden — computed from what the account actually has.
+  var checklist = tbaGetProfileChecklist();
+  var checklistDone = checklist.filter(function (i) { return i.done; }).length;
+  if (checklistDone < checklist.length && !tbaIsChecklistDismissed()) {
+    document.getElementById('checklist-panel').hidden = false;
+    document.getElementById('checklist-progress-text').textContent = checklistDone + ' of ' + checklist.length + ' done';
+    document.getElementById('checklist-bar-fill').style.width = Math.round((checklistDone / checklist.length) * 100) + '%';
+    document.getElementById('checklist-items').innerHTML = checklist.map(function (i) {
+      return '<li class="' + (i.done ? 'done' : '') + '">' +
+        '<span class="checklist-check">' + (i.done ? '\u2713' : '') + '</span>' +
+        (i.done ? '<span>' + i.label + '</span>' : '<a href="' + i.href + '">' + i.label + '</a>') +
+        '</li>';
+    }).join('');
+    document.getElementById('checklist-hide-btn').addEventListener('click', function () {
+      tbaDismissChecklist();
+      document.getElementById('checklist-panel').hidden = true;
+    });
+  }
+
+  tbaMaybeShowOnboardingTour();
+
   // --- Deal Pipeline ---
   // Same four negotiation stages for both roles — a business watches
   // deals move through it, a creator watches pitches move through it,
@@ -240,7 +275,7 @@
   // Suggest accounts of the opposite type — a business sees
   // suggested influencers, and vice versa.
   var suggestRole = myRole === 'business' ? 'influencer' : 'business';
-  var suggestions = tbaGetAllUsers().filter(function (u) { return u.role === suggestRole; }).slice(0, 4);
+  var suggestions = tbaGetAllUsers().filter(function (u) { return u.role === suggestRole && !tbaIsHiddenUser(u.username); }).slice(0, 4);
 
   var grid = document.getElementById('suggested-grid');
 

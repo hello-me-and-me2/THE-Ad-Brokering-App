@@ -206,7 +206,7 @@
   // --- Network requests (from closed deals) ---
 
   function renderRequests() {
-    var requests = tbaGetIncomingNetworkRequests();
+    var requests = tbaGetIncomingNetworkRequests().filter(function (r) { return !tbaIsHiddenUser(r.username); });
     var section = document.getElementById('requests-section');
     var grid = document.getElementById('requests-grid');
 
@@ -301,7 +301,7 @@
 
   // --- Find & Connect directory ---
 
-  var allUsers = tbaGetAllUsers().filter(function (u) { return !u.isYou; });
+  var allUsers = tbaGetAllUsers().filter(function (u) { return !u.isYou && !tbaIsHiddenUser(u.username); });
   var directoryFilter = 'all';
   var directorySearch = '';
   var directoryNiche = 'all';

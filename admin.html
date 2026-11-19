@@ -25,7 +25,7 @@
     <a href="admin-users.html">Users</a>
     <a href="admin-verifications.html">Verifications</a>
     <a href="admin-contracts.html">Contracts</a>
-    <a href="#reports">Reports</a>
+    <a href="admin-reports.html">Reports</a>
     <div class="notif-wrap" id="notif-wrap">
       <button type="button" class="notif-bell-btn" id="notif-bell-btn" aria-label="Notifications"></button>
     </div>
@@ -60,9 +60,9 @@
       <div class="value" id="deals-closed-stat">0</div>
     </div>
     <div class="stat-card">
-      <div class="label">Flagged Deals</div>
+      <div class="label">Open Reports</div>
       <div class="value" id="flagged-stat">0</div>
-      <div class="delta up" id="flagged-delta">No flags yet</div>
+      <div class="delta up" id="flagged-delta">Nothing flagged</div>
     </div>
     <div class="stat-card">
       <div class="label">Pending Verifications</div>
@@ -84,9 +84,9 @@
     </div>
 
     <div class="panel" id="reports">
-      <h2>Flagged Reports</h2>
+      <h2>Open Reports <a href="admin-reports.html" style="font-size:12.5px;font-weight:600;margin-left:8px;color:var(--accent);text-decoration:none;">Review all &rarr;</a></h2>
       <ul class="report-list" id="reports-list"></ul>
-      <p class="activity-empty" id="reports-empty" hidden>No reports have been filed — reporting isn't wired up to any real feature in this demo yet.</p>
+      <p class="activity-empty" id="reports-empty" hidden>No open reports.</p>
     </div>
   </div>
 
@@ -143,6 +143,10 @@
 
     var flagged = tbaGetFlaggedReports();
     document.getElementById('flagged-stat').textContent = flagged.length;
+    var flaggedDelta = document.getElementById('flagged-delta');
+    flaggedDelta.textContent = flagged.length === 0 ? 'Nothing flagged' : 'Needs review';
+    flaggedDelta.classList.toggle('down', flagged.length > 0);
+    flaggedDelta.classList.toggle('up', flagged.length === 0);
 
     var pendingVerifyCount = tbaGetPendingVerificationRequests().length;
     document.getElementById('pending-verify-stat').textContent = pendingVerifyCount;

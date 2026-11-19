@@ -115,13 +115,14 @@
 
   var watchFilter = 'all';
 
-  function videoCardHtml(video, removable) {
+  function videoCardHtml(video, removable, ownerUsername) {
     return '<div class="vid-card">' +
       tbaVideoEmbedHtml(video) +
       '<div class="vid-card-meta">' +
       '<span class="vid-type-tag ' + video.type + '">' + tbaVideoTypeLabel(video.type) + '</span>' +
       '<span class="vid-card-title">' + escapeHtml(video.title) + '</span>' +
       (removable ? '<button type="button" class="vid-remove-btn" data-remove="' + video.id + '">Remove</button>' : '') +
+      (ownerUsername ? '<button type="button" class="vid-report-btn" data-report-video="' + video.id + '" data-owner="' + escapeHtml(ownerUsername) + '" data-title="' + escapeHtml(video.title) + '">Report</button>' : '') +
       '</div>' +
       '</div>';
   }
@@ -212,7 +213,7 @@
           '<div class="vid-creator-info"><div class="vid-name-row">' + nameRowHtml(g.user) + '</div>' +
           '<div class="vid-creator-sub">' + (g.user.niche ? escapeHtml(g.user.niche) : 'Creator') + '</div></div>' +
           '<div class="vid-mix">' + mix.join('') + '</div></div>' +
-          '<div class="vid-grid">' + g.shown.map(function (v) { return videoCardHtml(v, false); }).join('') + '</div>' +
+          '<div class="vid-grid">' + g.shown.map(function (v) { return videoCardHtml(v, false, g.user.username); }).join('') + '</div>' +
           '</div>';
       }).join('');
     }
@@ -257,6 +258,15 @@
         }
         tbaShowToast('Video added', 'success');
         renderVideosTab();
+      });
+    });
+
+    el.querySelectorAll('[data-report-video]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        tbaShowReportModal({
+          noun: 'this video', targetType: 'video', targetId: b.getAttribute('data-report-video'),
+          targetUser: b.getAttribute('data-owner'), label: 'Video "' + b.getAttribute('data-title') + '" by @' + b.getAttribute('data-owner')
+        });
       });
     });
 
@@ -308,7 +318,8 @@
     } else {
       action = '<button type="button" class="vid-in-btn' + (isIn ? ' is-in' : '') + '" data-in="' + post.id + '">' +
         (isIn ? '✓ You\'re in' : 'I\'m in') + '</button>' +
-        '<span class="vid-interest-count">' + interested.length + ' interested</span>';
+        '<span class="vid-interest-count">' + interested.length + ' interested</span>' +
+        '<button type="button" class="vid-report-btn" data-report-post="' + post.id + '" data-owner="' + escapeHtml(post.author) + '" data-title="' + escapeHtml(post.title) + '">Report</button>';
     }
 
     var interestedList = '';
@@ -385,6 +396,15 @@
         var nowIn = tbaToggleOutreachInterest(b.getAttribute('data-in'));
         tbaShowToast(nowIn ? 'Marked as interested' : 'Interest withdrawn', nowIn ? 'success' : undefined);
         renderOutreachTab();
+      });
+    });
+
+    el.querySelectorAll('[data-report-post]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        tbaShowReportModal({
+          noun: 'this post', targetType: 'outreach', targetId: b.getAttribute('data-report-post'),
+          targetUser: b.getAttribute('data-owner'), label: 'Post "' + b.getAttribute('data-title') + '" by @' + b.getAttribute('data-owner')
+        });
       });
     });
 

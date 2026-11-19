@@ -230,6 +230,12 @@
       return;
     }
 
+    if (tbaIsSuspended(matchedUsername)) {
+      loginError.textContent = 'This account has been suspended.';
+      loginError.hidden = false;
+      return;
+    }
+
     function completeLogin() {
       loginError.hidden = true;
       localStorage.setItem('tba_authed', '1');

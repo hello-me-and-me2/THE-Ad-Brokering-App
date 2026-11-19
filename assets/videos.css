@@ -66,6 +66,8 @@ textarea.vid-input { min-height: 80px; resize: vertical; }
   font-weight: 700; font-size: 11.5px; padding: 5px 12px; border-radius: 999px; cursor: pointer;
 }
 .vid-remove-btn:hover { border-color: #e2695f; color: #e2695f; }
+.vid-report-btn { background: none; border: none; color: var(--text-soft); font-family: inherit; font-size: 11.5px; font-weight: 600; text-decoration: underline; cursor: pointer; padding: 5px 4px; margin-left: auto; }
+.vid-report-btn:hover { color: #e2695f; }
 
 .vid-type-tag, .vid-kind-tag {
   display: inline-block; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px;

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script>if(!localStorage.getItem("tba_admin_authed")){location.replace("admin-signin.html");}if("scrollRestoration" in history){history.scrollRestoration="manual";}</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reports — Admin — THE INTROductory</title>
+<meta name="description" content="Review reported profiles, videos, and outreach posts on THE INTROductory.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="assets/profile-picture.png">
+<link rel="stylesheet" href="assets/admin.css">
+<script src="assets/users-data.js"></script>
+</head>
+<body>
+
+<header class="admin-header">
+  <a class="brand" href="admin.html">
+    <img src="assets/admin-logo.png" alt="THE INTROductory — Admin" class="brand-mark-img">
+    <span class="badge">ADMIN</span>
+  </a>
+  <nav>
+    <a href="admin.html">Overview</a>
+    <a href="admin-users.html">Users</a>
+    <a href="admin-verifications.html">Verifications</a>
+    <a href="admin-contracts.html">Contracts</a>
+    <a href="admin-reports.html" class="active">Reports</a>
+    <div class="notif-wrap" id="notif-wrap">
+      <button type="button" class="notif-bell-btn" id="notif-bell-btn" aria-label="Notifications"></button>
+    </div>
+    <button type="button" class="theme-toggle-btn" id="theme-toggle-btn"></button>
+    <a class="signout" href="index.html" id="signout-link">Sign Out</a>
+  </nav>
+</header>
+
+<main class="admin-main">
+
+  <a class="admin-back-link" href="admin.html">&larr; Back to Overview</a>
+
+  <div class="admin-page-head">
+    <h1>Reports</h1>
+    <p>Profiles, videos, and outreach posts people have flagged. Dismiss a report, take the content down, or suspend the account.</p>
+  </div>
+
+  <div class="panel">
+    <h2>Open <span id="open-count"></span></h2>
+    <div id="open-list"></div>
+  </div>
+
+  <div class="panel" style="margin-top: 20px;">
+    <h2>Suspended Accounts</h2>
+    <ul class="verify-log-list" id="suspended-list"></ul>
+    <p class="admin-empty" id="suspended-empty" hidden>No suspended accounts.</p>
+  </div>
+
+  <div class="panel" style="margin-top: 20px;">
+    <h2>Recently Resolved</h2>
+    <ul class="verify-log-list" id="resolved-list"></ul>
+    <p class="admin-empty" id="resolved-empty" hidden>Nothing resolved yet.</p>
+  </div>
+
+</main>
+
+<script>
+  tbaWireThemeToggle('theme-toggle-btn', 'dark');
+  tbaWireAdminNotificationBell('notif-wrap', 'notif-bell-btn');
+  document.getElementById('signout-link').addEventListener('click', function () {
+    localStorage.removeItem('tba_admin_authed');
+    localStorage.removeItem('tba_authed');
+  });
+
+  function escapeHtml(str) {
+    return String(str || '').replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function formatDate(iso) {
+    return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  var TARGET_LABELS = { profile: 'Profile', video: 'Video', outreach: 'Outreach post' };
+  var DECISION_LABELS = { dismissed: 'Dismissed', removed: 'Content removed', suspended: 'Account suspended' };
+
+  function renderOpen() {
+    var reports = tbaGetOpenReports();
+    document.getElementById('open-count').textContent = '(' + reports.length + ')';
+    var list = document.getElementById('open-list');
+
+    if (reports.length === 0) {
+      list.innerHTML = '<div class="admin-empty">✅ All caught up — no open reports.</div>';
+      return;
+    }
+
+    list.innerHTML = reports.map(function (r) {
+      var canRemove = r.targetType === 'video' || r.targetType === 'outreach';
+      return (
+        '<div class="verify-request-card" data-id="' + escapeHtml(r.id) + '">' +
+        '<div class="verify-request-info">' +
+        '<div class="verify-request-name">' + escapeHtml(r.label) + '</div>' +
+        '<div class="verify-request-meta">' + TARGET_LABELS[r.targetType] + ' · ' + escapeHtml(TBA_REPORT_REASONS[r.reason]) +
+        ' · reported by @' + escapeHtml(r.reporter) + ' · ' + formatDate(r.createdAt) + '</div>' +
+        '<div class="verify-reason">' + escapeHtml(r.details || 'No details given.') + '</div>' +
+        '</div>' +
+        '<div class="verify-actions">' +
+        '<button type="button" class="btn-neutral" data-action="dismissed">Dismiss</button>' +
+        (canRemove ? '<button type="button" class="btn-deny" data-action="removed">Remove content</button>' : '') +
+        '<button type="button" class="btn-deny" data-action="suspended">Suspend account</button>' +
+        '</div>' +
+        '</div>'
+      );
+    }).join('');
+
+    list.querySelectorAll('button[data-action]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.closest('.verify-request-card').getAttribute('data-id');
+        var decision = btn.getAttribute('data-action');
+        if (tbaResolveReport(id, decision)) {
+          renderAll();
+          tbaShowToast(DECISION_LABELS[decision], decision === 'dismissed' ? null : 'success');
+        }
+      });
+    });
+  }
+
+  function renderSuspended() {
+    var suspended = Object.keys(tbaGetSuspended()).map(function (k) { return tbaGetSuspended()[k]; });
+    document.getElementById('suspended-empty').hidden = suspended.length !== 0;
+    document.getElementById('suspended-list').innerHTML = suspended.map(function (s) {
+      return '<li><span>@' + escapeHtml(s.username) + ' <span class="admin-user-username">since ' + formatDate(s.at) + '</span></span>' +
+        '<button type="button" class="btn-neutral" data-restore="' + escapeHtml(s.username) + '">Restore</button></li>';
+    }).join('');
+    document.querySelectorAll('[data-restore]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        tbaRestoreAccount(btn.getAttribute('data-restore'));
+        renderAll();
+        tbaShowToast('Account restored', 'success');
+      });
+    });
+  }
+
+  function renderResolved() {
+    var resolved = tbaGetResolvedReports().slice(0, 15);
+    document.getElementById('resolved-empty').hidden = resolved.length !== 0;
+    document.getElementById('resolved-list').innerHTML = resolved.map(function (r) {
+      return '<li><span>' + escapeHtml(r.label) + ' <span class="admin-user-username">' + escapeHtml(TBA_REPORT_REASONS[r.reason]) + '</span></span>' +
+        '<span class="verify-log-decision ' + (r.status === 'dismissed' ? 'dismissed' : 'denied') + '">' + DECISION_LABELS[r.status] + '</span></li>';
+    }).join('');
+  }
+
+  function renderAll() {
+    renderOpen();
+    renderSuspended();
+    renderResolved();
+  }
+
+  renderAll();
+</script>
+</body>
+</html>

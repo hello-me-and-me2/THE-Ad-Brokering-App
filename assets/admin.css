@@ -774,3 +774,10 @@ img.admin-avatar-lg { object-fit: cover; }
 .verify-log-decision { font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; padding: 3px 9px; border-radius: 999px; }
 .verify-log-decision.approved { color: var(--money); background: rgba(52,201,138,0.12); }
 .verify-log-decision.denied { color: var(--danger); background: rgba(241,101,101,0.12); }
+
+.btn-neutral {
+  font-family: inherit; font-weight: 700; font-size: 13px; border-radius: 999px; padding: 10px 18px; cursor: pointer;
+  white-space: nowrap; background: transparent; border: 1.5px solid var(--line); color: var(--text-soft);
+}
+.btn-neutral:hover { border-color: var(--text-soft); color: var(--text); }
+.verify-log-decision.dismissed { color: var(--text-soft); background: rgba(139,147,163,0.14); }

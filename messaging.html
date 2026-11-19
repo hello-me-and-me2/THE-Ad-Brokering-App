@@ -1170,7 +1170,7 @@
   })();
 
   // Find People directory + message requests
-  var allUsers = tbaGetAllUsers();
+  var allUsers = tbaGetAllUsers().filter(function (u) { return !tbaIsHiddenUser(u.username); });
   var sentRequests = tbaGetSentRequests();
   var activeFilter = 'all';
   var searchTerm = '';
