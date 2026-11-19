@@ -15,6 +15,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="assets/profile-picture.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#c1652c">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
 <link rel="stylesheet" href="assets/signin.css">
 <script src="assets/users-data.js"></script>
 </head>
@@ -133,6 +136,7 @@
         <div class="auth-tab-panel" id="tab-signup" hidden>
           <h2>Create your account</h2>
           <p class="signin-sub">Join THE INTROductory and start making deals.</p>
+          <p class="invite-note" id="invite-note" hidden></p>
 
           <form id="signin-form" novalidate>
             <label class="field">
@@ -233,6 +237,20 @@
       showTab(link.dataset.switchTo);
     });
   });
+
+  // Invite link: ?invite=<username> opens sign-up and remembers who invited you.
+  var inviteParam = new URLSearchParams(window.location.search).get('invite');
+  if (inviteParam) {
+    var inviter = tbaGetUserByUsername(inviteParam);
+    if (inviter) {
+      var note = document.getElementById('invite-note');
+      note.textContent = 'You were invited by ' + inviter.name + '.';
+      note.hidden = false;
+      showTab('signup');
+    } else {
+      inviteParam = null;
+    }
+  }
 
   // Forgot password. No email can be sent from a static site, so when
   // an account matches, the page shows the reset link itself (clearly
@@ -435,6 +453,7 @@
       localStorage.setItem('tba_username', username);
       localStorage.setItem('tba_role', role);
       tbaRegisterLocalAccount(username, role, new Date().toISOString());
+      if (inviteParam) tbaRecordReferral(inviteParam, username);
       tbaSaveMyEmail(email);
       tbaSaveMyPasswordHash(passwordHash);
 

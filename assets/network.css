@@ -630,3 +630,7 @@ footer { padding: 30px 24px; text-align: center; color: var(--text-soft); font-s
   .share-panel-grid { grid-template-columns: 1fr; }
   .share-buttons { justify-content: center; }
 }
+
+.net-check-label { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--text); align-self: flex-end; padding: 10px 4px; cursor: pointer; }
+.net-check-label input { width: 17px; height: 17px; accent-color: var(--node); }
+.net-stat-open { color: #06131c; background: var(--node); border-color: var(--node); }

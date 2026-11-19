@@ -54,7 +54,7 @@ var TBA_SEED_USERS = [
   },
   {
     username: "marencole", name: "Maren Cole", role: "influencer", daysAgoJoined: 11,
-    niche: "Coffee & Food", followers: 210000, mediaKit: { rates: [{ item: "Instagram Reel", price: "$900" }, { item: "TikTok video", price: "$700" }, { item: "YouTube mention", price: "$1,500" }], partners: ["Skyline Coffee Co.", "Oatly Hills", "Brew Lab"], audience: { age: "25–34 (62%)", location: "US & Canada", platform: "Instagram 70% · TikTok 30%" } },
+    niche: "Coffee & Food", followers: 210000, openToWork: false, mediaKit: { rates: [{ item: "Instagram Reel", price: "$900" }, { item: "TikTok video", price: "$700" }, { item: "YouTube mention", price: "$1,500" }], partners: ["Skyline Coffee Co.", "Oatly Hills", "Brew Lab"], audience: { age: "25–34 (62%)", location: "US & Canada", platform: "Instagram 70% · TikTok 30%" } },
     tagline: "Lifestyle & coffee content · 210K followers.",
     bio: "Lifestyle and coffee content creator sharing slow mornings and honest reviews with 210K people who feel the same way.",
     links: [
@@ -65,7 +65,7 @@ var TBA_SEED_USERS = [
   },
   {
     username: "jordanblake", name: "Jordan Blake", role: "influencer", daysAgoJoined: 4,
-    niche: "Outdoor & Adventure", followers: 85000, mediaKit: { rates: [{ item: "YouTube review", price: "$1,200" }, { item: "Instagram Reel", price: "$450" }], partners: ["Riverside Outdoor Gear", "Trailhead"], audience: { age: "22–35 (71%)", location: "Pacific Northwest", platform: "YouTube 65% · Instagram 35%" } },
+    niche: "Outdoor & Adventure", followers: 85000, openToWork: true, mediaKit: { rates: [{ item: "YouTube review", price: "$1,200" }, { item: "Instagram Reel", price: "$450" }], partners: ["Riverside Outdoor Gear", "Trailhead"], audience: { age: "22–35 (71%)", location: "Pacific Northwest", platform: "YouTube 65% · Instagram 35%" } },
     tagline: "Outdoor & adventure creator · 85K followers.",
     bio: "Outdoor and adventure creator documenting real trips, real gear tests, and the occasional disaster. 85K people come along for the ride.",
     links: [
@@ -75,7 +75,7 @@ var TBA_SEED_USERS = [
   },
   {
     username: "ninareyes", name: "Nina Reyes", role: "influencer", daysAgoJoined: 6,
-    niche: "Beauty & Skincare", followers: 340000, mediaKit: { rates: [{ item: "Instagram Reel", price: "$1,800" }, { item: "TikTok video", price: "$1,400" }, { item: "Story set", price: "$600" }], partners: ["Pear & Co. Skincare", "Glow Theory", "Bare Botanics"], audience: { age: "18–29 (74%)", location: "US", platform: "Instagram 55% · TikTok 45%" } },
+    niche: "Beauty & Skincare", followers: 340000, openToWork: false, mediaKit: { rates: [{ item: "Instagram Reel", price: "$1,800" }, { item: "TikTok video", price: "$1,400" }, { item: "Story set", price: "$600" }], partners: ["Pear & Co. Skincare", "Glow Theory", "Bare Botanics"], audience: { age: "18–29 (74%)", location: "US", platform: "Instagram 55% · TikTok 45%" } },
     tagline: "Beauty & skincare reviews · 340K followers.",
     bio: "Beauty and skincare reviews with zero filter — if it doesn't work, I'll say so. 340K followers trust me to tell them the truth.",
     links: [
@@ -85,7 +85,7 @@ var TBA_SEED_USERS = [
   },
   {
     username: "leoortiz", name: "Leo Ortiz", role: "influencer", daysAgoJoined: 2,
-    niche: "Fitness & Wellness", followers: 122000, mediaKit: { rates: [{ item: "YouTube video", price: "$1,100" }, { item: "Instagram Reel", price: "$550" }], partners: ["Brightline Studio", "Peak Fuel"], audience: { age: "20–34 (68%)", location: "US & UK", platform: "YouTube 50% · Instagram 50%" } },
+    niche: "Fitness & Wellness", followers: 122000, openToWork: true, mediaKit: { rates: [{ item: "YouTube video", price: "$1,100" }, { item: "Instagram Reel", price: "$550" }], partners: ["Brightline Studio", "Peak Fuel"], audience: { age: "20–34 (68%)", location: "US & UK", platform: "YouTube 50% · Instagram 50%" } },
     tagline: "Fitness & wellness · 122K followers.",
     bio: "Fitness and wellness creator helping 122K people build habits that actually stick. Big on honest brand partnerships, not hype.",
     links: [
@@ -95,7 +95,7 @@ var TBA_SEED_USERS = [
   },
   {
     username: "avaqian", name: "Ava Qian", role: "influencer", daysAgoJoined: 1,
-    niche: "Travel & Food", followers: 96000, mediaKit: { rates: [{ item: "Instagram Reel", price: "$500" }, { item: "TikTok video", price: "$400" }], partners: ["The Crafted Table", "Atlas Eats"], audience: { age: "24–38 (66%)", location: "US West Coast", platform: "TikTok 60% · Instagram 40%" } },
+    niche: "Travel & Food", followers: 96000, openToWork: true, mediaKit: { rates: [{ item: "Instagram Reel", price: "$500" }, { item: "TikTok video", price: "$400" }], partners: ["The Crafted Table", "Atlas Eats"], audience: { age: "24–38 (66%)", location: "US West Coast", platform: "TikTok 60% · Instagram 40%" } },
     tagline: "Travel & food content · 96K followers.",
     bio: "Travel and food creator finding the best small-town spots and local makers worth knowing about. 96K people exploring along with me.",
     links: [
@@ -360,6 +360,7 @@ function tbaBuildLocalAccountProfile(account) {
     avatar: tbaGetMyProfilePic(account.username),
     niche: tbaGetMyNiche(account.username),
     followers: tbaGetMyFollowers(account.username),
+    openToWork: tbaIsOpenToWork(account.username),
     verified: tbaIsVerified(account.username),
     joinedAt: account.joinedAt || new Date().toISOString(),
     isYou: isYou
@@ -2066,8 +2067,9 @@ function tbaFilterDirectory(users, filters) {
       (filters.role === 'saved' ? tbaIsFavorite(u.username) : u.role === filters.role);
     var searchOk = term === '' || u.username.toLowerCase().indexOf(term) !== -1;
     var nicheOk = !filters.niche || filters.niche === 'all' || u.niche === filters.niche;
+    var openOk = !filters.openToWork || !!u.openToWork;
     var followersOk = !range || ((u.followers || 0) >= range[0] && (u.followers || 0) <= range[1]);
-    return roleOk && searchOk && nicheOk && followersOk;
+    return roleOk && searchOk && nicheOk && followersOk && openOk;
   });
 
   if (filters.sort === 'deals') {
@@ -2104,7 +2106,7 @@ function tbaSaveSearch(name, filters) {
   var entry = {
     id: 'ss_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
     name: name,
-    filters: { search: filters.search || '', role: filters.role || 'all', niche: filters.niche || 'all', followers: filters.followers || 'all', sort: filters.sort || 'default' },
+    filters: { search: filters.search || '', role: filters.role || 'all', niche: filters.niche || 'all', followers: filters.followers || 'all', sort: filters.sort || 'default', openToWork: !!filters.openToWork },
     createdAt: new Date().toISOString(),
     seen: tbaFilterDirectory(tbaGetDirectoryUsers(), filters).map(function (u) { return u.username; })
   };
@@ -2433,6 +2435,185 @@ function tbaCompleteReset(token, newPassword) {
     localStorage.setItem('tba_reset_tokens', JSON.stringify(map));
     return { ok: true, username: username };
   });
+}
+
+// --- Calendar ---
+// Everything with a date on it, gathered from data that already
+// exists: contract deliverable deadlines, events and networking events
+// you posted or said you're in for, and the deadlines of briefs you
+// posted or applied to.
+function tbaDateKey(date) {
+  var d = new Date(date);
+  var m = d.getMonth() + 1;
+  var day = d.getDate();
+  return d.getFullYear() + '-' + (m < 10 ? '0' : '') + m + '-' + (day < 10 ? '0' : '') + day;
+}
+
+function tbaGetCalendarEvents() {
+  var me = localStorage.getItem('tba_username');
+  var events = [];
+  if (!me) return events;
+
+  tbaGetUpcomingDeadlines().forEach(function (d) {
+    events.push({ date: tbaDateKey(d.dueDate), kind: 'contract', title: d.contract.name + ' — deliverable due', link: 'messaging.html?contract=' + encodeURIComponent(d.contract.id) });
+  });
+
+  tbaGetOutreachPosts().forEach(function (p) {
+    if (!p.date) return;
+    var mine = p.author === me;
+    if (!mine && tbaGetOutreachInterested(p.id).indexOf(me) === -1) return;
+    events.push({ date: p.date, kind: p.kind === 'networking' ? 'networking' : 'event', title: p.title + (mine ? ' (yours)' : ' — you\'re in'), link: 'videos.html?post=' + encodeURIComponent(p.id) + '#outreach' });
+  });
+
+  tbaGetBriefs().forEach(function (b) {
+    if (!b.deadline) return;
+    if (b.author !== me && !tbaGetMyBriefApplication(b.id)) return;
+    events.push({ date: b.deadline, kind: 'brief', title: b.title + (b.author === me ? ' — brief due (yours)' : ' — brief due'), link: 'videos.html?brief=' + encodeURIComponent(b.id) + '#briefs' });
+  });
+
+  return events.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+}
+
+// --- Contract templates ---
+// Starting points for the common deal shapes. Each fills in the real
+// terms already negotiated in the conversation (brand, rate,
+// deliverables, timeline) and leaves the rest as ordinary clauses.
+var TBA_CONTRACT_TEMPLATES = [
+  { id: 'single-post', name: 'Single post', description: 'One sponsored post for a flat fee, with one round of revisions.' },
+  { id: 'campaign', name: 'Multi-post campaign', description: 'Several pieces of content over a few weeks, paid in two parts.' },
+  { id: 'event', name: 'Event appearance', description: 'Attend or host an event, with content before and after.' },
+  { id: 'retainer', name: 'Monthly retainer', description: 'Ongoing content for a fixed monthly fee, with notice to end.' }
+];
+
+function tbaGenerateTemplateContract(templateId, myUsername, participantUsername) {
+  var today = tbaFormatDateLong(new Date().toISOString());
+  var thread = tbaGetMyThread(participantUsername);
+  var counterpart = tbaGetUserByUsername(participantUsername);
+  var offer = tbaGetCurrentOffer(participantUsername) || { amount: 0, videos: 1 };
+  var brand = thread ? thread.deal.brand : (counterpart ? counterpart.name : participantUsername);
+  var timeline = offer.timeline || (thread ? thread.deal.timeline : '4 weeks');
+  var deliverables = tbaOfferDeliverablesLabel(offer);
+  var amount = '$' + (offer.amount || 0).toLocaleString() + ' USD';
+
+  var head = function (title) {
+    return title + '\n\nThis Agreement is entered into on ' + today + ' by and between:\n\n' +
+      'Creator: @' + myUsername + '\nBrand: ' + brand + ' (@' + participantUsername + ')\n\n';
+  };
+  var tail = function (n) {
+    return n + '. DISCLOSURE\nThe Creator will clearly disclose the paid partnership in each piece of content, as required by applicable advertising rules.\n\n' +
+      (n + 1) + '. TERMINATION\nEither party may end this Agreement with written notice if the other fails to meet its obligations.\n\n' +
+      (n + 2) + '. ENTIRE AGREEMENT\nThis Agreement is the full understanding between the parties on this collaboration.\n\n' +
+      'SIGNATURES\nThis Agreement is not binding until signed by both parties below.';
+  };
+
+  if (templateId === 'campaign') {
+    return head('MULTI-POST CAMPAIGN AGREEMENT') +
+      '1. SCOPE OF WORK\nThe Creator will produce and deliver the following across the campaign: ' + deliverables + '.\n\n' +
+      '2. TIMELINE\nAll content will be delivered within ' + timeline + ' of the Effective Date, in the order agreed between the parties.\n\n' +
+      '3. COMPENSATION\nThe Brand will pay the Creator ' + amount + ' in total: half on signing, and half within 15 days of final content approval.\n\n' +
+      '4. APPROVAL\nThe Brand may request up to two rounds of reasonable revisions on each piece before it is considered final.\n\n' +
+      '5. REPORTING\nAfter publishing, the Creator will share basic performance numbers (views, reach, engagement) on request.\n\n' +
+      '6. USAGE\nThe Creator keeps ownership of the content. The Brand may repost it on its own channels for the length of the campaign.\n\n' +
+      tail(7);
+  }
+  if (templateId === 'event') {
+    return head('EVENT APPEARANCE AGREEMENT') +
+      '1. THE EVENT\nThe Creator will attend or host the Brand\'s event on [event date and location].\n\n' +
+      '2. CONTENT\nIn connection with the event, the Creator will deliver: ' + deliverables + ', published before, during, or after the event as agreed.\n\n' +
+      '3. TIMELINE\nContent will be delivered within ' + timeline + ' of the event.\n\n' +
+      '4. COMPENSATION\nThe Brand will pay the Creator ' + amount + ', payable within 15 days after the event.\n\n' +
+      '5. EXPENSES\nThe Brand will cover reasonable, pre-approved travel and lodging costs.\n\n' +
+      '6. CANCELLATION\nIf either party cancels with less than 7 days\' notice, the other may keep any amounts already paid or incurred.\n\n' +
+      tail(7);
+  }
+  if (templateId === 'retainer') {
+    return head('MONTHLY RETAINER AGREEMENT') +
+      '1. SCOPE OF WORK\nEach month, the Creator will deliver: ' + deliverables + '.\n\n' +
+      '2. TERM\nThis Agreement starts on the Effective Date and runs for three months, renewing monthly after that until either party ends it.\n\n' +
+      '3. COMPENSATION\nThe Brand will pay the Creator ' + amount + ' per month, due at the start of each month.\n\n' +
+      '4. APPROVAL\nThe Brand may request one round of reasonable revisions on each piece.\n\n' +
+      '5. USAGE\nThe Creator keeps ownership of the content. The Brand may repost it on its own channels during the term.\n\n' +
+      '6. NOTICE\nEither party may end the retainer with 30 days\' written notice.\n\n' +
+      tail(7);
+  }
+  return head('SINGLE POST AGREEMENT') +
+    '1. SCOPE OF WORK\nThe Creator will produce and publish: ' + deliverables + '.\n\n' +
+    '2. TIMELINE\nThe content will be delivered within ' + timeline + ' of the Effective Date.\n\n' +
+    '3. COMPENSATION\nThe Brand will pay the Creator a flat fee of ' + amount + ', payable within 15 days of final content approval.\n\n' +
+    '4. APPROVAL\nThe Brand may request one round of reasonable revisions before the content is considered final.\n\n' +
+    '5. USAGE\nThe Creator keeps ownership of the content. The Brand may repost it on its own channels.\n\n' +
+    tail(6);
+}
+
+// --- Open to work ---
+// A creator's own switch for "I'm taking new brand deals right now".
+function tbaIsOpenToWork(username) {
+  if (!username) return false;
+  var seed = TBA_SEED_USERS.find(function (u) { return u.username.toLowerCase() === username.toLowerCase(); });
+  if (seed && !tbaFindLocalAccount(username)) return !!seed.openToWork;
+  return localStorage.getItem(tbaAccountKey('tba_open_to_work', username)) === '1';
+}
+
+function tbaSetOpenToWork(open) {
+  if (!tbaIsMyRole('influencer')) return false;
+  if (open) localStorage.setItem(tbaAccountKey('tba_open_to_work'), '1');
+  else localStorage.removeItem(tbaAccountKey('tba_open_to_work'));
+  return true;
+}
+
+// --- Invite links ---
+// A link that carries the inviter's username into sign-up; when
+// someone creates an account through it, it's recorded so the inviter
+// can see who joined.
+function tbaGetInviteLink() {
+  return tbaBuildShareUrl('index.html', '?invite=' + encodeURIComponent(localStorage.getItem('tba_username') || ''));
+}
+
+function tbaGetReferrals() {
+  try {
+    var list = JSON.parse(localStorage.getItem('tba_referrals') || '[]');
+    return Array.isArray(list) ? list : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+// Only counts when the inviter is a real account, isn't the new
+// account itself, and the new account hasn't already been credited.
+function tbaRecordReferral(inviterRaw, invitee) {
+  var needle = (inviterRaw || '').trim().toLowerCase();
+  if (!needle || !invitee || needle === invitee.toLowerCase()) return false;
+  var inviter = tbaGetUserByUsername(needle);
+  if (!inviter) return false;
+  var list = tbaGetReferrals();
+  if (list.some(function (r) { return r.invitee.toLowerCase() === invitee.toLowerCase(); })) return false;
+  list.push({ inviter: inviter.username, invitee: invitee, at: new Date().toISOString() });
+  localStorage.setItem('tba_referrals', JSON.stringify(list));
+  return true;
+}
+
+function tbaGetMyReferrals() {
+  var me = localStorage.getItem('tba_username');
+  return tbaGetReferrals().filter(function (r) { return r.inviter === me; });
+}
+
+// --- Installable app ---
+// Offline support lives in sw.js; this registers it and holds on to
+// the browser's "install" prompt so Settings can offer a button.
+if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js').catch(function () { /* unsupported here — the site works without it */ });
+  });
+}
+
+window.addEventListener('beforeinstallprompt', function (e) {
+  e.preventDefault();
+  window.__tbaInstallPrompt = e;
+  document.dispatchEvent(new Event('tba-install-available'));
+});
+
+function tbaIsInstalledApp() {
+  return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
 }
 
 function tbaEnsureReportStyles() {
@@ -3079,6 +3260,15 @@ function tbaGetNotifications() {
       text: (who ? who.name : '@' + e.user) + ' is in for "' + myPostTitles[e.postId] + '"',
       date: e.at,
       link: 'videos.html#outreach'
+    });
+  });
+
+  // Someone joined through your invite link.
+  tbaGetMyReferrals().forEach(function (r) {
+    notifications.push({
+      id: 'invite-' + r.invitee, icon: '🎉', title: 'Invite',
+      text: '@' + r.invitee + ' joined using your invite link',
+      date: r.at, link: 'settings.html'
     });
   });
 

@@ -637,3 +637,6 @@ footer { padding: 30px 24px; text-align: center; color: var(--ink-soft); font-si
   .profile-card { padding: 32px 22px; }
   .link-row { grid-template-columns: 1fr; }
 }
+
+.open-badge { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 700; color: var(--olive); background: #eef1e6; border-radius: 999px; padding: 4px 12px; margin: 0 0 12px; }
+.open-badge span { width: 7px; height: 7px; border-radius: 50%; background: var(--olive); }

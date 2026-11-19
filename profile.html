@@ -10,6 +10,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="assets/profile-picture.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#c1652c">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
 <link rel="stylesheet" href="assets/profile.css">
 <script src="assets/users-data.js"></script>
 </head>
@@ -33,6 +36,7 @@
       <a href="about.html">About</a>
       <a href="profile.html" class="active">Profile</a>
       <a href="search.html" class="nav-search" aria-label="Search" title="Search"><svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="9" r="5.5"/><path d="M13.2 13.2L17 17"/></svg></a>
+      <a href="calendar.html" class="nav-search" aria-label="Calendar" title="Calendar"><svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="14" height="12.5" rx="2"/><path d="M3 8.5h14M7 2.8v3M13 2.8v3"/></svg></a>
       <div class="notif-wrap" id="notif-wrap">
         <button type="button" class="notif-bell-btn" id="notif-bell-btn" aria-label="Notifications"></button>
       </div>
@@ -448,6 +452,7 @@
       (isYou ? '<span class="you-badge">You</span>' : '') + '</h1>' +
       '<div class="profile-username">@' + escapeHtml(user.username) + '</div>' +
       '<span class="role-tag ' + user.role + '">' + (user.role === 'business' ? 'Business' : 'Influencer') + '</span>' +
+      (user.role === 'influencer' && user.openToWork ? '<p class="open-badge"><span></span>Open to work</p>' : '') +
       renderMetaRow(user) +
       renderRatingBadge(user) +
       (bio
@@ -460,6 +465,7 @@
         : (alreadySent
             ? '<button type="button" class="request-btn sent" disabled>Request Sent</button>'
             : '<button type="button" class="request-btn" id="request-btn">Request to Message</button>')) +
+      (isYou && user.role === 'influencer' ? '<button type="button" class="btn-edit" id="open-toggle-btn">Open to work: ' + (user.openToWork ? 'On' : 'Off') + '</button>' : '') +
       (isYou ? '' : '<button type="button" class="btn-edit" id="fav-btn">' + (tbaIsFavorite(user.username) ? '\u2605 Saved' : '\u2606 Save') + '</button>') +
       '<button type="button" class="btn-edit" id="share-btn">Share</button>' +
       (isYou ? '' : '<button type="button" class="btn-edit" id="report-btn">Report</button><button type="button" class="btn-edit" id="block-btn">Block</button>') +
@@ -483,6 +489,16 @@
         var nowSaved = tbaToggleFavorite(user.username);
         favBtn.textContent = nowSaved ? '\u2605 Saved' : '\u2606 Save';
         tbaShowToast(nowSaved ? 'Saved to your favorites' : 'Removed from favorites', nowSaved ? 'success' : undefined);
+      });
+    }
+
+    var openToggle = document.getElementById('open-toggle-btn');
+    if (openToggle) {
+      openToggle.addEventListener('click', function () {
+        var nowOpen = !tbaIsOpenToWork(user.username);
+        tbaSetOpenToWork(nowOpen);
+        render();
+        tbaShowToast(nowOpen ? 'You\'re marked open to work' : 'You\'re no longer marked open to work', nowOpen ? 'success' : undefined);
       });
     }
 

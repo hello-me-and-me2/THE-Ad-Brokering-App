@@ -36,3 +36,12 @@
 .faq p { margin: 10px 0 0; font-size: 14px; color: var(--ink-soft); line-height: 1.6; }
 .faq a { color: var(--terracotta-dark); }
 @media (max-width: 640px) { .settings-page h1 { font-size: 26px; } .settings-card { padding: 18px; } }
+
+.invite-row { flex-direction: row; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+.invite-row input { flex: 1; min-width: 200px; font-size: 13px; }
+.invite-list { list-style: none; margin: 0; padding: 0; }
+.invite-list li { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+.invite-list li:last-child { border-bottom: none; }
+.invite-list a { color: var(--terracotta-dark); font-weight: 600; }
+.invite-list span { color: var(--ink-soft); font-size: 12.5px; }
+.settings-btn[hidden] { display: none; }

@@ -403,3 +403,6 @@ footer {
 .reset-result p { margin: 0 0 10px; }
 .reset-demo { background: rgba(244,184,96,0.14); border-radius: 10px; padding: 10px 12px; }
 .reset-demo a { font-weight: 700; }
+
+.invite-note { background: rgba(110,231,216,0.14); border-radius: 10px; padding: 9px 12px; font-size: 13px; font-weight: 600; margin: 0 0 14px; }
+.invite-note[hidden] { display: none; }
