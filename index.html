@@ -87,7 +87,47 @@
             <button type="submit" class="btn-submit">Log In</button>
           </form>
 
+          <p class="signin-foot"><a href="#" data-switch-to="forgot">Forgot your password?</a></p>
+
           <p class="signin-foot">New here? <a href="#" data-switch-to="signup">Create an account</a></p>
+        </div>
+
+        <div class="auth-tab-panel" id="tab-forgot" hidden>
+          <h2>Reset your password</h2>
+          <p class="signin-sub">Enter your username or email and we'll send a reset link.</p>
+
+          <form id="forgot-form" novalidate>
+            <label class="field">
+              Username or email
+              <input type="text" id="forgot-identifier" placeholder="your username or email" autocomplete="username" autocapitalize="off" spellcheck="false">
+            </label>
+            <p class="field-error" id="forgot-error" hidden></p>
+            <button type="submit" class="btn-submit">Send reset link</button>
+          </form>
+
+          <div class="reset-result" id="forgot-result" hidden>
+            <p>If an account matches, a reset link is on its way to that email.</p>
+            <p class="reset-demo" id="forgot-demo" hidden>
+              <strong>Demo only:</strong> this site can't send email, so here's the link it would have sent —
+              <a id="forgot-demo-link" href="#">Choose a new password</a>
+            </p>
+          </div>
+
+          <p class="signin-foot"><a href="#" data-switch-to="login">Back to log in</a></p>
+        </div>
+
+        <div class="auth-tab-panel" id="tab-resetpw" hidden>
+          <h2>Choose a new password</h2>
+          <p class="signin-sub" id="resetpw-sub"></p>
+
+          <form id="resetpw-form" novalidate>
+            <label class="field">
+              New password
+              <input type="password" id="resetpw-input" placeholder="At least 8 characters" autocomplete="new-password">
+            </label>
+            <p class="field-error" id="resetpw-error" hidden></p>
+            <button type="submit" class="btn-submit">Save new password</button>
+          </form>
         </div>
 
         <div class="auth-tab-panel" id="tab-signup" hidden>
@@ -181,6 +221,8 @@
     tabButtons.forEach(function (b) { b.classList.toggle('active', b.dataset.tab === name); });
     document.getElementById('tab-login').hidden = name !== 'login';
     document.getElementById('tab-signup').hidden = name !== 'signup';
+    document.getElementById('tab-forgot').hidden = name !== 'forgot';
+    document.getElementById('tab-resetpw').hidden = name !== 'resetpw';
   }
   tabButtons.forEach(function (btn) {
     btn.addEventListener('click', function () { showTab(btn.dataset.tab); });
@@ -189,6 +231,51 @@
     link.addEventListener('click', function (e) {
       e.preventDefault();
       showTab(link.dataset.switchTo);
+    });
+  });
+
+  // Forgot password. No email can be sent from a static site, so when
+  // an account matches, the page shows the reset link itself (clearly
+  // labelled demo-only); a backend would email it and show nothing.
+  document.getElementById('forgot-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var identifier = document.getElementById('forgot-identifier').value;
+    var errorEl = document.getElementById('forgot-error');
+    if (!identifier.trim()) {
+      errorEl.textContent = 'Enter your username or email.';
+      errorEl.hidden = false;
+      return;
+    }
+    errorEl.hidden = true;
+    var token = tbaCreateResetToken(identifier);
+    document.getElementById('forgot-result').hidden = false;
+    document.getElementById('forgot-demo').hidden = !token;
+    if (token) document.getElementById('forgot-demo-link').href = 'index.html?reset=' + token;
+  });
+
+  var resetToken = new URLSearchParams(window.location.search).get('reset');
+  if (resetToken) {
+    var resetUser = tbaGetResetTokenUser(resetToken);
+    showTab('resetpw');
+    document.getElementById('resetpw-sub').textContent = resetUser
+      ? 'For @' + resetUser + '.'
+      : 'This reset link has expired or was already used. Request a new one from the log in screen.';
+    if (!resetUser) document.getElementById('resetpw-form').hidden = true;
+  }
+
+  document.getElementById('resetpw-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var errorEl = document.getElementById('resetpw-error');
+    tbaCompleteReset(resetToken, document.getElementById('resetpw-input').value).then(function (r) {
+      if (!r.ok) {
+        errorEl.textContent = r.error === 'too-short' ? 'Choose a password that\'s at least 8 characters.' : 'This reset link has expired.';
+        errorEl.hidden = false;
+        return;
+      }
+      history.replaceState(null, '', 'index.html');
+      showTab('login');
+      document.getElementById('login-username').value = r.username;
+      tbaShowToast('Password updated — log in with your new one', 'success');
     });
   });
 

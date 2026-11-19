@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script>if(!localStorage.getItem("tba_authed")){location.replace("index.html");}if("scrollRestoration" in history){history.scrollRestoration="manual";}</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Help — THE INTROductory</title>
+<meta name="description" content="Answers to common questions and a way to contact THE INTROductory support.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="assets/profile-picture.png">
+<link rel="stylesheet" href="assets/profile.css">
+<link rel="stylesheet" href="assets/settings.css">
+<script src="assets/users-data.js"></script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="nav-wrap">
+    <a class="brand" href="home.html">
+      <span class="brand-lockup">
+        <span class="brand-logo">
+          <img src="assets/profile-picture.png" alt="THE INTROductory" class="brand-mark-img" width="256" height="256">
+        </span>
+        <span class="brand-tagline">settings & help</span>
+      </span>
+    </a>
+    <nav class="main-nav">
+      <a href="home.html">Home</a>
+      <a href="messaging.html">Messaging &amp; Negotiation</a>
+      <a href="network.html">The Network</a>
+      <a href="videos.html">Outreach</a>
+      <a href="about.html">About</a>
+      <a href="profile.html">Profile</a>
+      <a href="search.html" class="nav-search" aria-label="Search" title="Search"><svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="9" r="5.5"/><path d="M13.2 13.2L17 17"/></svg></a>
+      <div class="notif-wrap" id="notif-wrap">
+        <button type="button" class="notif-bell-btn" id="notif-bell-btn" aria-label="Notifications"></button>
+      </div>
+      <button type="button" class="theme-toggle-btn" id="theme-toggle-btn"></button>
+      <a href="index.html" class="nav-logout" id="logout-link">Log Out</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="settings-page">
+    <h1>Help</h1>
+    <p class="settings-lede">Quick answers, and a way to reach us.</p>
+
+    <section class="settings-card">
+      <h2>Common questions</h2>
+      <div class="faq">
+        <details><summary>How do deals work here?</summary><p>Find someone in The Network or Outreach, send a request to message, then negotiate in Messaging &amp; Negotiation. Send offers and counter-offers, accept one, and draft a contract from the accepted terms. Both sides sign, and the contract's owner can record when it's paid.</p></details>
+        <details><summary>Does THE INTROductory handle payments?</summary><p>No. Payment happens between you and the other party. You can mark a signed contract as paid so you have a record, but no money moves through the app.</p></details>
+        <details><summary>How many videos can I post?</summary><p>Creator accounts get three video slots, each long-form or short-form. Add a link to a YouTube, Vimeo, or TikTok video, or a direct video file, in the Outreach tab.</p></details>
+        <details><summary>What's the difference between Business Outreach and Campaign Briefs?</summary><p>Outreach posts are open invitations — sponsorship calls, events, networking — where people tap "I'm in". A campaign brief is a specific job with a budget and deliverables, and creators apply with a pitch that the business accepts or declines.</p></details>
+        <details><summary>How do I get verified?</summary><p>Apply from your Profile with a short reason. An admin reviews it, and you'll get a notification with the decision.</p></details>
+        <details><summary>How do I report or block someone?</summary><p>Open their profile (or the video or post) and use Report or Block. Reports go to an admin. Blocking hides you and them from each other.</p></details>
+        <details><summary>Are electronic signatures legally binding?</summary><p>This app is not legal advice, and signing a contract here does not by itself make it legally binding. Talk to a lawyer for anything important. See the <a href="terms.html">Terms</a>.</p></details>
+        <details><summary>How do I delete my account or download my data?</summary><p>Both are in <a href="settings.html">Settings</a>.</p></details>
+      </div>
+    </section>
+
+    <section class="settings-card">
+      <h2>Contact support</h2>
+      <p class="settings-help">Tell us what's going on and we'll get back to you by email.</p>
+      <form id="support-form" class="settings-form" novalidate>
+        <label>Topic<select id="support-topic"></select></label>
+        <label>Your email<input type="email" id="support-email" autocomplete="email"></label>
+        <label>Message<textarea id="support-message" maxlength="1000" placeholder="What can we help with?"></textarea></label>
+        <p class="settings-msg" id="support-msg" hidden></p>
+        <button type="submit" class="settings-btn">Send</button>
+      </form>
+    </section>
+  </div>
+</main>
+
+<footer>
+  &copy; 2026 THE INTROductory. Built with care by Andre Anderson &amp; team.
+  <span style="margin-left:10px;"><a href="terms.html" style="color:inherit;">Terms</a> &middot; <a href="privacy.html" style="color:inherit;">Privacy</a> &middot; <a href="help.html" style="color:inherit;">Help</a></span>
+</footer>
+
+<script>
+  document.getElementById('logout-link').addEventListener('click', function () {
+    localStorage.removeItem('tba_authed');
+  });
+  tbaWireThemeToggle('theme-toggle-btn', 'light');
+  tbaWireNotificationBell('notif-wrap', 'notif-bell-btn');
+
+  function escapeHtml(str) {
+    return String(str || '').replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  var topicSelect = document.getElementById('support-topic');
+  Object.keys(TBA_SUPPORT_TOPICS).forEach(function (k) {
+    var opt = document.createElement('option');
+    opt.value = k;
+    opt.textContent = TBA_SUPPORT_TOPICS[k];
+    topicSelect.appendChild(opt);
+  });
+  document.getElementById('support-email').value = tbaGetMyEmail();
+
+  document.getElementById('support-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var msg = document.getElementById('support-msg');
+    var r = tbaSubmitSupportRequest(topicSelect.value, document.getElementById('support-message').value, document.getElementById('support-email').value);
+    if (r.ok) {
+      document.getElementById('support-message').value = '';
+      msg.textContent = 'Thanks — we got your message.';
+      msg.className = 'settings-msg ok';
+      tbaShowToast('Message sent', 'success');
+    } else {
+      msg.textContent = r.error === 'bad-email' ? 'Enter a valid email so we can reply.' : 'Write a message first.';
+      msg.className = 'settings-msg bad';
+    }
+    msg.hidden = false;
+  });
+
+</script>
+</body>
+</html>

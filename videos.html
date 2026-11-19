@@ -33,6 +33,7 @@
       <a href="videos.html" class="active">Outreach</a>
       <a href="about.html">About</a>
       <a href="profile.html">Profile</a>
+      <a href="search.html" class="nav-search" aria-label="Search" title="Search"><svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="9" r="5.5"/><path d="M13.2 13.2L17 17"/></svg></a>
       <div class="notif-wrap" id="notif-wrap">
         <button type="button" class="notif-bell-btn" id="notif-bell-btn" aria-label="Notifications"></button>
       </div>
@@ -53,16 +54,18 @@
   <div class="vid-tabs">
     <button type="button" class="vid-tab active" data-tab="videos">Creator Videos</button>
     <button type="button" class="vid-tab" data-tab="outreach">Business Outreach</button>
+    <button type="button" class="vid-tab" data-tab="briefs">Campaign Briefs</button>
   </div>
 
   <div class="vid-panel" id="tab-videos"></div>
   <div class="vid-panel" id="tab-outreach" hidden></div>
+  <div class="vid-panel" id="tab-briefs" hidden></div>
 
 </main>
 
 <footer>
   &copy; 2026 THE INTROductory. Built with care by Andre Anderson &amp; team.
-  <span style="margin-left:10px;"><a href="terms.html" style="color:inherit;">Terms</a> &middot; <a href="privacy.html" style="color:inherit;">Privacy</a></span>
+  <span style="margin-left:10px;"><a href="terms.html" style="color:inherit;">Terms</a> &middot; <a href="privacy.html" style="color:inherit;">Privacy</a> &middot; <a href="help.html" style="color:inherit;">Help</a></span>
 </footer>
 
 <script>
@@ -105,7 +108,8 @@
     tabButtons.forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-tab') === name); });
     document.getElementById('tab-videos').hidden = name !== 'videos';
     document.getElementById('tab-outreach').hidden = name !== 'outreach';
-    if (history.replaceState) history.replaceState(null, '', name === 'outreach' ? '#outreach' : '#videos');
+    document.getElementById('tab-briefs').hidden = name !== 'briefs';
+    if (history.replaceState) history.replaceState(null, '', location.pathname + location.search + '#' + name);
   }
   tabButtons.forEach(function (b) {
     b.addEventListener('click', function () { showTab(b.getAttribute('data-tab')); });
@@ -219,6 +223,8 @@
     }
     html += '</section>';
 
+    visibleGroups.forEach(function (g) { tbaRecordVideoViews(g.shown, g.user.username); });
+
     el.innerHTML = html;
     wireVideosTab(el);
   }
@@ -314,11 +320,13 @@
     var action;
     if (isAuthor) {
       action = '<span class="vid-interest-count">' + interested.length + ' interested</span>' +
+        '<button type="button" class="vid-report-btn" data-share-post="' + post.id + '" data-title="' + escapeHtml(post.title) + '">Share</button>' +
         (post.seed ? '' : '<button type="button" class="vid-remove-btn" data-delete-post="' + post.id + '">Delete</button>');
     } else {
       action = '<button type="button" class="vid-in-btn' + (isIn ? ' is-in' : '') + '" data-in="' + post.id + '">' +
         (isIn ? '✓ You\'re in' : 'I\'m in') + '</button>' +
         '<span class="vid-interest-count">' + interested.length + ' interested</span>' +
+        '<button type="button" class="vid-report-btn" data-share-post="' + post.id + '" data-title="' + escapeHtml(post.title) + '">Share</button>' +
         '<button type="button" class="vid-report-btn" data-report-post="' + post.id + '" data-owner="' + escapeHtml(post.author) + '" data-title="' + escapeHtml(post.title) + '">Report</button>';
     }
 
@@ -330,7 +338,7 @@
       }).join('') + '</div>';
     }
 
-    return '<div class="vid-post">' +
+    return '<div class="vid-post" data-post-id="' + post.id + '">' +
       '<div class="vid-post-head"><span class="vid-kind-tag ' + post.kind + '">' + TBA_OUTREACH_KINDS[post.kind] + '</span>' +
       (post.date ? '<span class="vid-post-date">📅 ' + tbaFormatDateLong(post.date + 'T12:00:00') + '</span>' : '') + '</div>' +
       '<h3>' + escapeHtml(post.title) + '</h3>' +
@@ -408,6 +416,12 @@
       });
     });
 
+    el.querySelectorAll('[data-share-post]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        tbaShareLink(tbaBuildShareUrl('videos.html', '?post=' + encodeURIComponent(b.getAttribute('data-share-post')) + '#outreach'), b.getAttribute('data-title'));
+      });
+    });
+
     el.querySelectorAll('[data-delete-post]').forEach(function (b) {
       b.addEventListener('click', function () {
         tbaDeleteOutreachPost(b.getAttribute('data-delete-post'));
@@ -417,9 +431,206 @@
     });
   }
 
+  // --- Campaign Briefs tab ---
+
+  var BRIEF_ERRORS = {
+    'no-title': 'Give the brief a title.',
+    'bad-budget': 'Enter a budget in dollars.',
+    'no-deliverables': 'Say what you need delivered.',
+    'not-business': 'Only business accounts can post briefs.'
+  };
+
+  var APPLY_ERRORS = {
+    'no-pitch': 'Write a short pitch first.',
+    'duplicate': 'You already applied to this brief.',
+    'not-creator': 'Only creator accounts can apply.',
+    'bad-brief': 'You can\'t apply to this brief.'
+  };
+
+  var openApplyId = null;
+
+  function briefFormHtml() {
+    return '<form class="vid-post-form" id="brief-form" novalidate>' +
+      '<h2>Post a campaign brief</h2>' +
+      '<input type="text" name="title" class="vid-input" maxlength="100" placeholder="Title" autocomplete="off">' +
+      '<div class="vid-post-row">' +
+      '<input type="number" name="budget" class="vid-input" min="1" step="1" placeholder="Budget ($)">' +
+      '<input type="date" name="deadline" class="vid-input" title="Deadline (optional)">' +
+      '</div>' +
+      '<input type="text" name="deliverables" class="vid-input" maxlength="100" placeholder="Deliverables (e.g. 1 Reel + 3 Stories)" autocomplete="off">' +
+      '<textarea name="description" class="vid-input" maxlength="500" placeholder="What is this campaign, and who are you looking for?"></textarea>' +
+      '<p class="vid-error" id="brief-error" hidden></p>' +
+      '<button type="submit" class="vid-save-btn">Post brief</button>' +
+      '</form>';
+  }
+
+  function applicantsHtml(brief) {
+    var apps = tbaGetBriefApplications(brief.id);
+    if (apps.length === 0) return '<p class="vid-interest-count">No applicants yet.</p>';
+    return '<div class="vid-applicants">' + apps.map(function (a) {
+      var u = tbaGetUserByUsername(a.applicant);
+      return '<div class="vid-applicant">' +
+        '<div class="vid-applicant-head"><a href="profile.html?u=' + encodeURIComponent(a.applicant) + '">' + escapeHtml(u ? u.name : '@' + a.applicant) + '</a>' +
+        '<span class="vid-status-chip ' + a.status + '">' + a.status + '</span></div>' +
+        '<p class="vid-post-desc">' + escapeHtml(a.pitch) + '</p>' +
+        (a.status === 'pending'
+          ? '<div class="vid-form-actions"><button type="button" class="vid-save-btn" data-decide="accepted" data-app="' + a.id + '">Accept</button>' +
+            '<button type="button" class="vid-cancel-btn" data-decide="declined" data-app="' + a.id + '">Decline</button></div>'
+          : '') +
+        '</div>';
+    }).join('') + '</div>';
+  }
+
+  function briefCardHtml(brief) {
+    var author = tbaGetUserByUsername(brief.author);
+    var isAuthor = brief.author === me;
+    var mine = tbaGetMyBriefApplication(brief.id);
+    var body = '';
+
+    if (isAuthor) {
+      body = applicantsHtml(brief);
+    } else if (isCreator) {
+      if (mine) {
+        body = '<div class="vid-post-actions"><span class="vid-status-chip ' + mine.status + '">Application ' + mine.status + '</span>' +
+          (mine.status === 'pending' ? '<button type="button" class="vid-report-btn" data-withdraw="' + brief.id + '">Withdraw</button>' : '') + '</div>';
+      } else if (openApplyId === brief.id) {
+        body = '<div class="vid-apply-form"><textarea class="vid-input" maxlength="400" placeholder="Why are you a fit? Mention relevant content or past work."></textarea>' +
+          '<p class="vid-error" hidden></p>' +
+          '<div class="vid-form-actions"><button type="button" class="vid-save-btn" data-send-apply="' + brief.id + '">Send application</button>' +
+          '<button type="button" class="vid-cancel-btn" data-cancel-apply>Cancel</button></div></div>';
+      } else {
+        body = '<div class="vid-post-actions"><button type="button" class="vid-in-btn" data-open-apply="' + brief.id + '">Apply</button>' +
+          '<span class="vid-interest-count">' + tbaGetBriefApplications(brief.id).length + ' applied</span></div>';
+      }
+    }
+
+    return '<div class="vid-post" data-brief-id="' + brief.id + '">' +
+      '<div class="vid-post-head"><span class="vid-kind-tag brief">Campaign Brief</span>' +
+      '<span class="vid-budget">$' + brief.budget.toLocaleString() + '</span></div>' +
+      '<h3>' + escapeHtml(brief.title) + '</h3>' +
+      (brief.description ? '<p class="vid-post-desc">' + escapeHtml(brief.description) + '</p>' : '') +
+      '<p class="vid-post-desc"><strong>Deliverables:</strong> ' + escapeHtml(brief.deliverables) +
+      (brief.deadline ? ' &middot; <strong>Due</strong> ' + tbaFormatDateLong(brief.deadline + 'T12:00:00') : '') + '</p>' +
+      '<div class="vid-post-by">' + (author ? avatarHtml(author) + nameRowHtml(author) : '@' + escapeHtml(brief.author)) +
+      '<span class="vid-post-posted">' + tbaFormatDateLong(brief.createdAt) + '</span></div>' +
+      body +
+      '<div class="vid-post-actions">' +
+      '<button type="button" class="vid-report-btn" data-share-brief="' + brief.id + '" data-title="' + escapeHtml(brief.title) + '">Share</button>' +
+      (isAuthor
+        ? (brief.seed ? '' : '<button type="button" class="vid-remove-btn" data-delete-brief="' + brief.id + '">Delete</button>')
+        : '<button type="button" class="vid-report-btn" data-report-brief="' + brief.id + '" data-owner="' + escapeHtml(brief.author) + '" data-title="' + escapeHtml(brief.title) + '">Report</button>') +
+      '</div>' +
+      '</div>';
+  }
+
+  function renderBriefsTab() {
+    var el = document.getElementById('tab-briefs');
+    var html = '';
+    if (isBusiness) html += briefFormHtml();
+    else if (isCreator) html += '<p class="vid-note">Businesses post specific jobs here. Apply with a short pitch and they\'ll accept or decline.</p>';
+
+    var briefs = tbaGetBriefs();
+    html += briefs.length === 0
+      ? '<p class="vid-empty">📝 No campaign briefs yet.</p>'
+      : '<div class="vid-posts">' + briefs.map(briefCardHtml).join('') + '</div>';
+
+    el.innerHTML = html;
+    wireBriefsTab(el);
+  }
+
+  function wireBriefsTab(el) {
+    var form = el.querySelector('#brief-form');
+    if (form) {
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var f = form.elements;
+        var result = tbaCreateBrief(f.title.value, f.description.value, f.budget.value, f.deliverables.value, f.deadline.value);
+        if (!result.ok) {
+          var err = el.querySelector('#brief-error');
+          err.textContent = BRIEF_ERRORS[result.error] || 'Something went wrong.';
+          err.hidden = false;
+          return;
+        }
+        tbaShowToast('Brief posted', 'success');
+        renderBriefsTab();
+      });
+    }
+
+    el.querySelectorAll('[data-open-apply]').forEach(function (b) {
+      b.addEventListener('click', function () { openApplyId = b.getAttribute('data-open-apply'); renderBriefsTab(); });
+    });
+    el.querySelectorAll('[data-cancel-apply]').forEach(function (b) {
+      b.addEventListener('click', function () { openApplyId = null; renderBriefsTab(); });
+    });
+    el.querySelectorAll('[data-send-apply]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var box = b.closest('.vid-apply-form');
+        var result = tbaApplyToBrief(b.getAttribute('data-send-apply'), box.querySelector('textarea').value);
+        if (!result.ok) {
+          var err = box.querySelector('.vid-error');
+          err.textContent = APPLY_ERRORS[result.error] || 'Something went wrong.';
+          err.hidden = false;
+          return;
+        }
+        openApplyId = null;
+        tbaShowToast('Application sent', 'success');
+        renderBriefsTab();
+      });
+    });
+    el.querySelectorAll('[data-withdraw]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        tbaWithdrawBriefApplication(b.getAttribute('data-withdraw'));
+        tbaShowToast('Application withdrawn');
+        renderBriefsTab();
+      });
+    });
+    el.querySelectorAll('[data-decide]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        if (tbaDecideBriefApplication(b.getAttribute('data-app'), b.getAttribute('data-decide'))) {
+          tbaShowToast('Applicant ' + b.getAttribute('data-decide'), b.getAttribute('data-decide') === 'accepted' ? 'success' : undefined);
+          renderBriefsTab();
+        }
+      });
+    });
+    el.querySelectorAll('[data-delete-brief]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        tbaDeleteBrief(b.getAttribute('data-delete-brief'));
+        tbaShowToast('Brief deleted');
+        renderBriefsTab();
+      });
+    });
+    el.querySelectorAll('[data-share-brief]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        tbaShareLink(tbaBuildShareUrl('videos.html', '?brief=' + encodeURIComponent(b.getAttribute('data-share-brief')) + '#briefs'), b.getAttribute('data-title'));
+      });
+    });
+    el.querySelectorAll('[data-report-brief]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        tbaShowReportModal({
+          noun: 'this brief', targetType: 'brief', targetId: b.getAttribute('data-report-brief'),
+          targetUser: b.getAttribute('data-owner'), label: 'Brief "' + b.getAttribute('data-title') + '" by @' + b.getAttribute('data-owner')
+        });
+      });
+    });
+  }
+
   renderVideosTab();
   renderOutreachTab();
-  showTab(location.hash === '#outreach' ? 'outreach' : 'videos');
+  renderBriefsTab();
+
+  // Deep links: ?post=<id> or ?brief=<id> opens that tab and highlights the card.
+  (function () {
+    var params = new URLSearchParams(location.search);
+    var target = null;
+    if (params.get('post')) target = document.querySelector('[data-post-id="' + params.get('post').replace(/[^\w-]/g, '') + '"]');
+    else if (params.get('brief')) target = document.querySelector('[data-brief-id="' + params.get('brief').replace(/[^\w-]/g, '') + '"]');
+    var tabName = ['outreach', 'briefs'].indexOf(location.hash.slice(1)) !== -1 ? location.hash.slice(1) : 'videos';
+    showTab(tabName);
+    if (target) {
+      target.classList.add('vid-highlight');
+      target.scrollIntoView({ block: 'center' });
+    }
+  })();
 </script>
 </body>
 </html>

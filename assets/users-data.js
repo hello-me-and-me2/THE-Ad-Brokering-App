@@ -54,7 +54,7 @@ var TBA_SEED_USERS = [
   },
   {
     username: "marencole", name: "Maren Cole", role: "influencer", daysAgoJoined: 11,
-    niche: "Coffee & Food", followers: 210000,
+    niche: "Coffee & Food", followers: 210000, mediaKit: { rates: [{ item: "Instagram Reel", price: "$900" }, { item: "TikTok video", price: "$700" }, { item: "YouTube mention", price: "$1,500" }], partners: ["Skyline Coffee Co.", "Oatly Hills", "Brew Lab"], audience: { age: "25–34 (62%)", location: "US & Canada", platform: "Instagram 70% · TikTok 30%" } },
     tagline: "Lifestyle & coffee content · 210K followers.",
     bio: "Lifestyle and coffee content creator sharing slow mornings and honest reviews with 210K people who feel the same way.",
     links: [
@@ -65,7 +65,7 @@ var TBA_SEED_USERS = [
   },
   {
     username: "jordanblake", name: "Jordan Blake", role: "influencer", daysAgoJoined: 4,
-    niche: "Outdoor & Adventure", followers: 85000,
+    niche: "Outdoor & Adventure", followers: 85000, mediaKit: { rates: [{ item: "YouTube review", price: "$1,200" }, { item: "Instagram Reel", price: "$450" }], partners: ["Riverside Outdoor Gear", "Trailhead"], audience: { age: "22–35 (71%)", location: "Pacific Northwest", platform: "YouTube 65% · Instagram 35%" } },
     tagline: "Outdoor & adventure creator · 85K followers.",
     bio: "Outdoor and adventure creator documenting real trips, real gear tests, and the occasional disaster. 85K people come along for the ride.",
     links: [
@@ -75,7 +75,7 @@ var TBA_SEED_USERS = [
   },
   {
     username: "ninareyes", name: "Nina Reyes", role: "influencer", daysAgoJoined: 6,
-    niche: "Beauty & Skincare", followers: 340000,
+    niche: "Beauty & Skincare", followers: 340000, mediaKit: { rates: [{ item: "Instagram Reel", price: "$1,800" }, { item: "TikTok video", price: "$1,400" }, { item: "Story set", price: "$600" }], partners: ["Pear & Co. Skincare", "Glow Theory", "Bare Botanics"], audience: { age: "18–29 (74%)", location: "US", platform: "Instagram 55% · TikTok 45%" } },
     tagline: "Beauty & skincare reviews · 340K followers.",
     bio: "Beauty and skincare reviews with zero filter — if it doesn't work, I'll say so. 340K followers trust me to tell them the truth.",
     links: [
@@ -85,7 +85,7 @@ var TBA_SEED_USERS = [
   },
   {
     username: "leoortiz", name: "Leo Ortiz", role: "influencer", daysAgoJoined: 2,
-    niche: "Fitness & Wellness", followers: 122000,
+    niche: "Fitness & Wellness", followers: 122000, mediaKit: { rates: [{ item: "YouTube video", price: "$1,100" }, { item: "Instagram Reel", price: "$550" }], partners: ["Brightline Studio", "Peak Fuel"], audience: { age: "20–34 (68%)", location: "US & UK", platform: "YouTube 50% · Instagram 50%" } },
     tagline: "Fitness & wellness · 122K followers.",
     bio: "Fitness and wellness creator helping 122K people build habits that actually stick. Big on honest brand partnerships, not hype.",
     links: [
@@ -95,7 +95,7 @@ var TBA_SEED_USERS = [
   },
   {
     username: "avaqian", name: "Ava Qian", role: "influencer", daysAgoJoined: 1,
-    niche: "Travel & Food", followers: 96000,
+    niche: "Travel & Food", followers: 96000, mediaKit: { rates: [{ item: "Instagram Reel", price: "$500" }, { item: "TikTok video", price: "$400" }], partners: ["The Crafted Table", "Atlas Eats"], audience: { age: "24–38 (66%)", location: "US West Coast", platform: "TikTok 60% · Instagram 40%" } },
     tagline: "Travel & food content · 96K followers.",
     bio: "Travel and food creator finding the best small-town spots and local makers worth knowing about. 96K people exploring along with me.",
     links: [
@@ -1704,7 +1704,7 @@ function tbaGetResolvedReports() {
 function tbaSubmitReport(targetType, targetId, targetUser, label, reason, details) {
   var me = localStorage.getItem('tba_username');
   if (!me) return { ok: false, error: 'not-signed-in' };
-  if (['profile', 'video', 'outreach'].indexOf(targetType) === -1) return { ok: false, error: 'bad-target' };
+  if (['profile', 'video', 'outreach', 'brief'].indexOf(targetType) === -1) return { ok: false, error: 'bad-target' };
   if (!TBA_REPORT_REASONS[reason]) return { ok: false, error: 'bad-reason' };
   if (targetUser && targetUser.toLowerCase() === me.toLowerCase()) return { ok: false, error: 'self' };
 
@@ -1742,6 +1742,7 @@ function tbaResolveReport(id, decision) {
   if (decision === 'removed') {
     if (report.targetType === 'video') tbaAdminRemoveVideo(report.targetUser, report.targetId);
     else if (report.targetType === 'outreach') tbaAdminRemoveOutreach(report.targetId);
+    else if (report.targetType === 'brief') tbaAdminRemoveBrief(report.targetId);
     else return false;
   } else if (decision === 'suspended') {
     tbaSuspendAccount(report.targetUser);
@@ -1855,6 +1856,585 @@ function tbaUnblockUser(username) {
   localStorage.setItem(tbaAccountKey('tba_blocked'), JSON.stringify(list));
 }
 
+// --- Campaign briefs ---
+// A brief is a specific job: budget, deliverables, deadline. Business
+// accounts post them; creator accounts apply with a short pitch; the
+// author accepts or declines each applicant. Unlike an outreach post
+// (just "I'm in" taps), an application carries a pitch and a decision.
+var TBA_SEED_BRIEFS = [
+  {
+    id: 'seed_brief_1', author: 'pearandco', daysAgo: 3,
+    title: 'Holiday skincare routine — 2 creators',
+    description: 'We want two creators to show a real week with our holiday set. Honest reviews only; we send the product and never script you.',
+    budget: 1500, deliverables: '1 Reel + 3 Stories each', deadline: tbaSeedFutureDate(30)
+  },
+  {
+    id: 'seed_brief_2', author: 'riversidegear', daysAgo: 5,
+    title: 'Winter camping gear test',
+    description: 'Looking for an outdoor creator to test our winter line on a real overnight trip and put it on YouTube.',
+    budget: 2400, deliverables: '1 long-form YouTube video', deadline: tbaSeedFutureDate(45)
+  }
+];
+
+function tbaGetRemovedIds(key) {
+  try {
+    var list = JSON.parse(localStorage.getItem(key) || '[]');
+    return Array.isArray(list) ? list : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function tbaGetBriefs() {
+  var stored;
+  try { stored = JSON.parse(localStorage.getItem('tba_briefs') || '[]'); if (!Array.isArray(stored)) stored = []; } catch (e) { stored = []; }
+  var seeds = TBA_SEED_BRIEFS.map(function (s) {
+    var created = new Date();
+    created.setDate(created.getDate() - s.daysAgo);
+    return { id: s.id, author: s.author, title: s.title, description: s.description, budget: s.budget, deliverables: s.deliverables, deadline: s.deadline, createdAt: created.toISOString(), seed: true };
+  });
+  var removed = tbaGetRemovedIds('tba_briefs_removed');
+  return stored.concat(seeds)
+    .filter(function (b) { return removed.indexOf(b.id) === -1 && !tbaIsHiddenUser(b.author); })
+    .sort(function (a, b) { return new Date(b.createdAt) - new Date(a.createdAt); });
+}
+
+function tbaCreateBrief(title, description, budget, deliverables, deadline) {
+  if (!tbaIsMyRole('business')) return { ok: false, error: 'not-business' };
+  title = (title || '').trim().slice(0, 100);
+  if (!title) return { ok: false, error: 'no-title' };
+  var amount = parseInt(budget, 10);
+  if (!amount || amount <= 0) return { ok: false, error: 'bad-budget' };
+  deliverables = (deliverables || '').trim().slice(0, 100);
+  if (!deliverables) return { ok: false, error: 'no-deliverables' };
+
+  var brief = {
+    id: 'b_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+    author: localStorage.getItem('tba_username'),
+    title: title,
+    description: (description || '').trim().slice(0, 500),
+    budget: amount,
+    deliverables: deliverables,
+    deadline: /^\d{4}-\d{2}-\d{2}$/.test(deadline || '') ? deadline : '',
+    createdAt: new Date().toISOString()
+  };
+  var stored;
+  try { stored = JSON.parse(localStorage.getItem('tba_briefs') || '[]'); } catch (e) { stored = []; }
+  stored.push(brief);
+  localStorage.setItem('tba_briefs', JSON.stringify(stored));
+  return { ok: true, brief: brief };
+}
+
+function tbaDeleteBrief(id) {
+  var me = localStorage.getItem('tba_username');
+  var stored;
+  try { stored = JSON.parse(localStorage.getItem('tba_briefs') || '[]'); } catch (e) { stored = []; }
+  localStorage.setItem('tba_briefs', JSON.stringify(stored.filter(function (b) { return !(b.id === id && b.author === me); })));
+}
+
+function tbaAdminRemoveBrief(id) {
+  var removed = tbaGetRemovedIds('tba_briefs_removed');
+  if (removed.indexOf(id) === -1) removed.push(id);
+  localStorage.setItem('tba_briefs_removed', JSON.stringify(removed));
+}
+
+function tbaGetAllBriefApplications() {
+  try {
+    var list = JSON.parse(localStorage.getItem('tba_brief_applications') || '[]');
+    return Array.isArray(list) ? list : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function tbaGetBriefApplications(briefId) {
+  return tbaGetAllBriefApplications().filter(function (a) { return a.briefId === briefId && !tbaIsHiddenUser(a.applicant); });
+}
+
+function tbaGetMyBriefApplication(briefId) {
+  var me = localStorage.getItem('tba_username');
+  return tbaGetAllBriefApplications().find(function (a) { return a.briefId === briefId && a.applicant === me; }) || null;
+}
+
+// Creators only, not the brief's own author, one application per
+// brief, and a pitch is required — enforced here, not just in the form.
+function tbaApplyToBrief(briefId, pitch) {
+  var me = localStorage.getItem('tba_username');
+  if (!tbaIsMyRole('influencer')) return { ok: false, error: 'not-creator' };
+  var brief = tbaGetBriefs().find(function (b) { return b.id === briefId; });
+  if (!brief || brief.author === me) return { ok: false, error: 'bad-brief' };
+  if (tbaGetMyBriefApplication(briefId)) return { ok: false, error: 'duplicate' };
+  pitch = (pitch || '').trim().slice(0, 400);
+  if (!pitch) return { ok: false, error: 'no-pitch' };
+
+  var list = tbaGetAllBriefApplications();
+  list.push({
+    id: 'ba_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+    briefId: briefId, applicant: me, pitch: pitch, status: 'pending', createdAt: new Date().toISOString()
+  });
+  localStorage.setItem('tba_brief_applications', JSON.stringify(list));
+  return { ok: true };
+}
+
+function tbaWithdrawBriefApplication(briefId) {
+  var me = localStorage.getItem('tba_username');
+  var list = tbaGetAllBriefApplications().filter(function (a) { return !(a.briefId === briefId && a.applicant === me && a.status === 'pending'); });
+  localStorage.setItem('tba_brief_applications', JSON.stringify(list));
+}
+
+// Only the brief's author can decide, and only on a pending application.
+function tbaDecideBriefApplication(appId, decision) {
+  var me = localStorage.getItem('tba_username');
+  if (decision !== 'accepted' && decision !== 'declined') return false;
+  var list = tbaGetAllBriefApplications();
+  var app = list.find(function (a) { return a.id === appId; });
+  if (!app || app.status !== 'pending') return false;
+  var brief = tbaGetBriefs().find(function (b) { return b.id === app.briefId; });
+  if (!brief || brief.author !== me) return false;
+  app.status = decision;
+  app.decidedAt = new Date().toISOString();
+  localStorage.setItem('tba_brief_applications', JSON.stringify(list));
+  return true;
+}
+
+// --- Media kit ---
+// What a business wants to see before messaging a creator: a rate
+// card, brands they've worked with, and who their audience is.
+function tbaGetMediaKit(forUsername) {
+  var empty = { rates: [], partners: [], audience: { age: '', location: '', platform: '' } };
+  try {
+    var stored = JSON.parse(localStorage.getItem(tbaAccountKey('tba_mediakit', forUsername)) || 'null');
+    if (stored) return { rates: stored.rates || [], partners: stored.partners || [], audience: Object.assign({}, empty.audience, stored.audience || {}) };
+  } catch (e) { /* fall through */ }
+  var seed = TBA_SEED_USERS.find(function (u) { return forUsername && u.username.toLowerCase() === forUsername.toLowerCase(); });
+  if (seed && seed.mediaKit) return seed.mediaKit;
+  return empty;
+}
+
+function tbaMediaKitIsEmpty(kit) {
+  return kit.rates.length === 0 && kit.partners.length === 0 && !kit.audience.age && !kit.audience.location && !kit.audience.platform;
+}
+
+function tbaSaveMediaKit(kit) {
+  var clean = {
+    rates: (kit.rates || []).map(function (r) {
+      return { item: String(r.item || '').trim().slice(0, 40), price: String(r.price || '').trim().slice(0, 20) };
+    }).filter(function (r) { return r.item && r.price; }).slice(0, 4),
+    partners: (kit.partners || []).map(function (p) { return String(p).trim().slice(0, 30); }).filter(Boolean).slice(0, 6),
+    audience: {
+      age: String((kit.audience || {}).age || '').trim().slice(0, 40),
+      location: String((kit.audience || {}).location || '').trim().slice(0, 40),
+      platform: String((kit.audience || {}).platform || '').trim().slice(0, 40)
+    }
+  };
+  localStorage.setItem(tbaAccountKey('tba_mediakit'), JSON.stringify(clean));
+}
+
+// --- Favorites and saved searches ---
+function tbaGetFavorites() {
+  try {
+    var list = JSON.parse(localStorage.getItem(tbaAccountKey('tba_favorites')) || '[]');
+    return Array.isArray(list) ? list : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function tbaIsFavorite(username) {
+  var lower = (username || '').toLowerCase();
+  return tbaGetFavorites().some(function (u) { return u.toLowerCase() === lower; });
+}
+
+function tbaToggleFavorite(username) {
+  var lower = (username || '').toLowerCase();
+  var list = tbaGetFavorites();
+  var idx = list.findIndex(function (u) { return u.toLowerCase() === lower; });
+  if (idx === -1) list.push(username); else list.splice(idx, 1);
+  localStorage.setItem(tbaAccountKey('tba_favorites'), JSON.stringify(list));
+  return idx === -1;
+}
+
+// The directory's filter + sort, shared so a saved search matches
+// exactly what the page would show. filters: { search, role
+// ('all' | 'business' | 'influencer' | 'saved'), niche, followers
+// ('all' or 'min-max'), sort }.
+function tbaFilterDirectory(users, filters) {
+  var term = (filters.search || '').trim().toLowerCase();
+  var range = !filters.followers || filters.followers === 'all' ? null : filters.followers.split('-').map(Number);
+  var result = users.filter(function (u) {
+    var roleOk = !filters.role || filters.role === 'all' ||
+      (filters.role === 'saved' ? tbaIsFavorite(u.username) : u.role === filters.role);
+    var searchOk = term === '' || u.username.toLowerCase().indexOf(term) !== -1;
+    var nicheOk = !filters.niche || filters.niche === 'all' || u.niche === filters.niche;
+    var followersOk = !range || ((u.followers || 0) >= range[0] && (u.followers || 0) <= range[1]);
+    return roleOk && searchOk && nicheOk && followersOk;
+  });
+
+  if (filters.sort === 'deals') {
+    result.sort(function (a, b) { return tbaGetDealsClosedCountFor(b.username) - tbaGetDealsClosedCountFor(a.username); });
+  } else if (filters.sort === 'rating') {
+    result.sort(function (a, b) {
+      var sa = tbaGetRatingSummary(a.username), sb = tbaGetRatingSummary(b.username);
+      return (sb.avg || 0) - (sa.avg || 0) || sb.count - sa.count;
+    });
+  } else if (filters.sort === 'followers') {
+    result.sort(function (a, b) { return (b.followers || 0) - (a.followers || 0); });
+  }
+  return result;
+}
+
+function tbaGetDirectoryUsers() {
+  return tbaGetAllUsers().filter(function (u) { return !u.isYou && !tbaIsHiddenUser(u.username); });
+}
+
+function tbaGetSavedSearches() {
+  try {
+    var list = JSON.parse(localStorage.getItem(tbaAccountKey('tba_saved_searches')) || '[]');
+    return Array.isArray(list) ? list : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function tbaSaveSearch(name, filters) {
+  name = (name || '').trim().slice(0, 40);
+  if (!name) return null;
+  var list = tbaGetSavedSearches();
+  if (list.length >= 8) return null;
+  var entry = {
+    id: 'ss_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+    name: name,
+    filters: { search: filters.search || '', role: filters.role || 'all', niche: filters.niche || 'all', followers: filters.followers || 'all', sort: filters.sort || 'default' },
+    createdAt: new Date().toISOString(),
+    seen: tbaFilterDirectory(tbaGetDirectoryUsers(), filters).map(function (u) { return u.username; })
+  };
+  list.push(entry);
+  localStorage.setItem(tbaAccountKey('tba_saved_searches'), JSON.stringify(list));
+  return entry;
+}
+
+function tbaDeleteSavedSearch(id) {
+  localStorage.setItem(tbaAccountKey('tba_saved_searches'), JSON.stringify(tbaGetSavedSearches().filter(function (s) { return s.id !== id; })));
+}
+
+// Marks everything that currently matches as seen, so only accounts
+// that show up afterwards count as "new matches".
+function tbaMarkSavedSearchSeen(id) {
+  var list = tbaGetSavedSearches();
+  var s = list.find(function (x) { return x.id === id; });
+  if (!s) return;
+  s.seen = tbaFilterDirectory(tbaGetDirectoryUsers(), s.filters).map(function (u) { return u.username; });
+  localStorage.setItem(tbaAccountKey('tba_saved_searches'), JSON.stringify(list));
+}
+
+function tbaGetSavedSearchNewMatches(s) {
+  return tbaFilterDirectory(tbaGetDirectoryUsers(), s.filters).filter(function (u) { return s.seen.indexOf(u.username) === -1; });
+}
+
+// --- Payment status on signed contracts ---
+// There's no real payment here — this is a record the contract's
+// owner keeps of whether they've been paid (or have paid).
+function tbaSetContractPayment(contractId, status, note) {
+  var me = localStorage.getItem('tba_username');
+  var contract = tbaGetContract(contractId);
+  if (!contract || contract.status !== 'signed' || contract.owner !== me) return false;
+  if (status !== 'paid' && status !== 'unpaid') return false;
+  tbaUpdateContract(contractId, {
+    payment: { status: status, note: (note || '').trim().slice(0, 140), at: new Date().toISOString() }
+  });
+  return true;
+}
+
+function tbaGetContractPayment(contract) {
+  return contract.payment || { status: 'unpaid', note: '', at: null };
+}
+
+// --- Creator analytics ---
+// A creator's video views: one per viewer per video per day, never
+// counting your own views of your own videos.
+function tbaGetVideoViewLog() {
+  try {
+    var list = JSON.parse(localStorage.getItem('tba_video_views') || '[]');
+    return Array.isArray(list) ? list : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function tbaRecordVideoViews(videos, ownerUsername) {
+  var me = localStorage.getItem('tba_username');
+  if (!me || !ownerUsername || me.toLowerCase() === ownerUsername.toLowerCase() || videos.length === 0) return;
+  var day = new Date().toISOString().slice(0, 10);
+  var log = tbaGetVideoViewLog();
+  var changed = false;
+  videos.forEach(function (v) {
+    var seen = log.some(function (e) { return e.videoId === v.id && e.viewer === me && e.day === day; });
+    if (!seen) {
+      log.push({ videoId: v.id, owner: ownerUsername, viewer: me, day: day, at: new Date().toISOString() });
+      changed = true;
+    }
+  });
+  if (changed) localStorage.setItem('tba_video_views', JSON.stringify(log.slice(-2000)));
+}
+
+function tbaGetVideoViewCounts(ownerUsername) {
+  var lower = (ownerUsername || '').toLowerCase();
+  var counts = {};
+  tbaGetVideoViewLog().forEach(function (e) {
+    if (e.owner.toLowerCase() === lower) counts[e.videoId] = (counts[e.videoId] || 0) + 1;
+  });
+  return counts;
+}
+
+function tbaGetVideoViewsLast7Days(ownerUsername) {
+  var lower = (ownerUsername || '').toLowerCase();
+  var views = tbaGetVideoViewLog().filter(function (e) { return e.owner.toLowerCase() === lower; })
+    .map(function (e) { return new Date(e.at); });
+  var days = [];
+  for (var i = 6; i >= 0; i--) {
+    var day = new Date();
+    day.setHours(0, 0, 0, 0);
+    day.setDate(day.getDate() - i);
+    var next = new Date(day);
+    next.setDate(next.getDate() + 1);
+    days.push({ label: day.toLocaleDateString(undefined, { weekday: 'short' }), count: views.filter(function (v) { return v >= day && v < next; }).length });
+  }
+  return days;
+}
+
+// --- Share links ---
+function tbaBuildShareUrl(page, query) {
+  var dir = location.pathname.replace(/[^/]*$/, '');
+  return location.origin + dir + page + (query || '');
+}
+
+// Native share sheet where there is one, otherwise copies the link.
+function tbaShareLink(url, title, text) {
+  if (navigator.share) {
+    navigator.share({ title: title, text: text || title, url: url }).catch(function () {});
+    return;
+  }
+  var done = function () { tbaShowToast('Link copied', 'success'); };
+  var fail = function () { window.prompt('Copy this link:', url); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, fail);
+  else fail();
+}
+
+// --- Support requests ---
+function tbaGetSupportRequests() {
+  try {
+    var list = JSON.parse(localStorage.getItem('tba_support_requests') || '[]');
+    return Array.isArray(list) ? list : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+var TBA_SUPPORT_TOPICS = { account: 'My account', deals: 'Deals & contracts', content: 'Videos & outreach', bug: 'Something is broken', other: 'Something else' };
+
+function tbaSubmitSupportRequest(topic, message, email) {
+  message = (message || '').trim().slice(0, 1000);
+  if (!TBA_SUPPORT_TOPICS[topic]) return { ok: false, error: 'bad-topic' };
+  if (!message) return { ok: false, error: 'no-message' };
+  email = (email || '').trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { ok: false, error: 'bad-email' };
+  var list = tbaGetSupportRequests();
+  list.push({
+    id: 'sr_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    from: localStorage.getItem('tba_username') || '',
+    email: email, topic: topic, message: message, createdAt: new Date().toISOString(), handled: false
+  });
+  localStorage.setItem('tba_support_requests', JSON.stringify(list));
+  return { ok: true };
+}
+
+function tbaMarkSupportHandled(id) {
+  var list = tbaGetSupportRequests();
+  list.forEach(function (r) { if (r.id === id) r.handled = true; });
+  localStorage.setItem('tba_support_requests', JSON.stringify(list));
+}
+
+// --- Account settings ---
+function tbaChangeMyEmail(email) {
+  email = (email || '').trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { ok: false, error: 'bad-email' };
+  tbaSaveMyEmail(email);
+  return { ok: true };
+}
+
+// Needs the current password when the account has one. Hashes in the
+// browser like signup does — which, as everywhere here, protects
+// nothing against someone with the browser open; a real backend
+// replaces this.
+function tbaChangeMyPassword(currentPassword, newPassword) {
+  return tbaSha256Hex(currentPassword || '').then(function (currentHash) {
+    var stored = tbaGetMyPasswordHash();
+    if (stored && currentHash !== stored) return { ok: false, error: 'wrong-current' };
+    if (!newPassword || newPassword.length < 8) return { ok: false, error: 'too-short' };
+    return tbaSha256Hex(newPassword).then(function (newHash) {
+      tbaSaveMyPasswordHash(newHash);
+      return { ok: true };
+    });
+  });
+}
+
+var TBA_NOTIF_PREF_LABELS = {
+  messages: 'Messages, offers, and contracts',
+  outreach: 'Outreach, briefs, and saved searches',
+  reviews: 'Reviews',
+  verification: 'Verification updates'
+};
+
+function tbaGetNotifPrefs() {
+  var prefs = { messages: true, outreach: true, reviews: true, verification: true };
+  try {
+    var stored = JSON.parse(localStorage.getItem(tbaAccountKey('tba_notif_prefs')) || '{}');
+    Object.keys(prefs).forEach(function (k) { if (stored[k] === false) prefs[k] = false; });
+  } catch (e) { /* defaults */ }
+  return prefs;
+}
+
+function tbaSaveNotifPrefs(prefs) {
+  localStorage.setItem(tbaAccountKey('tba_notif_prefs'), JSON.stringify(prefs));
+}
+
+function tbaNotificationCategory(id) {
+  if (id.indexOf('msg-') === 0) return 'messages';
+  if (id.indexOf('review-') === 0) return 'reviews';
+  if (id.indexOf('verify-') === 0) return 'verification';
+  return 'outreach';
+}
+
+// Everything tied to this account, as a downloadable snapshot. Never
+// includes the password hash.
+function tbaExportMyData() {
+  var me = localStorage.getItem('tba_username');
+  var lower = me.toLowerCase();
+  var scoped = {};
+  tbaGetKeysOwnedBy(lower).forEach(function (key) {
+    if (key.indexOf('tba_password_hash') === 0) return;
+    var raw = localStorage.getItem(key);
+    try { scoped[key] = JSON.parse(raw); } catch (e) { scoped[key] = raw; }
+  });
+  return {
+    exportedAt: new Date().toISOString(),
+    account: { username: me, role: localStorage.getItem('tba_role'), email: tbaGetMyEmail() },
+    profile: scoped,
+    contracts: tbaGetContracts().filter(function (c) { return c.owner === me; }),
+    reviewsWritten: tbaGetReviews().filter(function (r) { return r.fromUsername === me; }),
+    reviewsReceived: tbaGetReviewsFor(me),
+    outreachPosts: tbaGetOutreachPosts().filter(function (p) { return p.author === me; }),
+    briefs: tbaGetBriefs().filter(function (b) { return b.author === me; }),
+    briefApplications: tbaGetAllBriefApplications().filter(function (a) { return a.applicant === me; })
+  };
+}
+
+// Scoped keys are "<base>_<username>", but usernames can contain
+// underscores, so a key can end with more than one account's name
+// ("bob_alice" ends with "alice" too). Each key belongs to the
+// longest username it ends with.
+function tbaGetKeysOwnedBy(lowerUsername) {
+  var names = tbaGetLocalAccounts().map(function (a) { return a.username.toLowerCase(); })
+    .concat(TBA_SEED_USERS.map(function (u) { return u.username.toLowerCase(); }));
+  var keys = [];
+  Object.keys(localStorage).forEach(function (key) {
+    if (key.indexOf('tba_') !== 0) return;
+    var owner = null;
+    names.forEach(function (n) {
+      if (key.length > n.length + 1 && key.slice(-(n.length + 1)) === '_' + n && (!owner || n.length > owner.length)) owner = n;
+    });
+    if (owner === lowerUsername) keys.push(key);
+  });
+  return keys;
+}
+
+// Removes the account and what it created. Reports about it, and
+// moderation records, are kept.
+function tbaDeleteMyAccount() {
+  var me = localStorage.getItem('tba_username');
+  if (!me) return;
+  var lower = me.toLowerCase();
+
+  tbaGetKeysOwnedBy(lower).forEach(function (key) { localStorage.removeItem(key); });
+  localStorage.removeItem('tba_profile_views_' + lower);
+  localStorage.removeItem('tba_account_migrated_' + lower);
+
+  tbaSaveContracts(tbaGetContracts().filter(function (c) { return c.owner !== me; }));
+  tbaSaveReviews(tbaGetReviews().filter(function (r) { return r.fromUsername !== me && r.toUsername.toLowerCase() !== lower; }));
+
+  var posts; try { posts = JSON.parse(localStorage.getItem('tba_outreach') || '[]'); } catch (e) { posts = []; }
+  localStorage.setItem('tba_outreach', JSON.stringify(posts.filter(function (p) { return p.author !== me; })));
+  var briefs; try { briefs = JSON.parse(localStorage.getItem('tba_briefs') || '[]'); } catch (e) { briefs = []; }
+  var myBriefIds = briefs.filter(function (b) { return b.author === me; }).map(function (b) { return b.id; });
+  localStorage.setItem('tba_briefs', JSON.stringify(briefs.filter(function (b) { return b.author !== me; })));
+  localStorage.setItem('tba_brief_applications', JSON.stringify(tbaGetAllBriefApplications().filter(function (a) {
+    return a.applicant !== me && myBriefIds.indexOf(a.briefId) === -1;
+  })));
+
+  var interest = tbaGetOutreachInterest();
+  Object.keys(interest).forEach(function (id) { interest[id] = interest[id].filter(function (u) { return u !== me; }); });
+  localStorage.setItem('tba_outreach_interest', JSON.stringify(interest));
+  localStorage.setItem('tba_outreach_interest_log', JSON.stringify(tbaGetOutreachInterestLog().filter(function (e) { return e.user !== me; })));
+
+  localStorage.setItem('tba_local_accounts', JSON.stringify(tbaGetLocalAccounts().filter(function (a) { return a.username.toLowerCase() !== lower; })));
+
+  localStorage.removeItem('tba_authed');
+  localStorage.removeItem('tba_username');
+  localStorage.removeItem('tba_role');
+}
+
+// --- Password reset ---
+// No email can be sent from here, so the "link" is handed back to the
+// page. A backend would email it instead and never return it.
+function tbaGetResetTokens() {
+  try {
+    var map = JSON.parse(localStorage.getItem('tba_reset_tokens') || '{}');
+    return map && typeof map === 'object' && !Array.isArray(map) ? map : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function tbaFindAccountByUsernameOrEmail(identifier) {
+  var needle = (identifier || '').trim().toLowerCase();
+  if (!needle) return null;
+  return tbaGetLocalAccounts().find(function (a) {
+    return a.username.toLowerCase() === needle || (tbaGetMyEmail(a.username) || '').toLowerCase() === needle;
+  }) || null;
+}
+
+function tbaCreateResetToken(identifier) {
+  var account = tbaFindAccountByUsernameOrEmail(identifier);
+  if (!account) return null;
+  var bytes = new Uint8Array(12);
+  crypto.getRandomValues(bytes);
+  var token = Array.prototype.map.call(bytes, function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
+  var map = tbaGetResetTokens();
+  var now = Date.now();
+  Object.keys(map).forEach(function (t) { if (map[t].expiresAt < now) delete map[t]; });
+  map[token] = { username: account.username, expiresAt: now + 30 * 60 * 1000 };
+  localStorage.setItem('tba_reset_tokens', JSON.stringify(map));
+  return token;
+}
+
+function tbaGetResetTokenUser(token) {
+  var entry = tbaGetResetTokens()[token];
+  return entry && entry.expiresAt > Date.now() ? entry.username : null;
+}
+
+function tbaCompleteReset(token, newPassword) {
+  var username = tbaGetResetTokenUser(token);
+  if (!username) return Promise.resolve({ ok: false, error: 'bad-token' });
+  if (!newPassword || newPassword.length < 8) return Promise.resolve({ ok: false, error: 'too-short' });
+  return tbaSha256Hex(newPassword).then(function (hash) {
+    localStorage.setItem(tbaAccountKey('tba_password_hash', username), hash);
+    var map = tbaGetResetTokens();
+    delete map[token];
+    localStorage.setItem('tba_reset_tokens', JSON.stringify(map));
+    return { ok: true, username: username };
+  });
+}
+
 function tbaEnsureReportStyles() {
   if (document.getElementById('tba-report-styles')) return;
   var style = document.createElement('style');
@@ -1945,6 +2525,7 @@ function tbaGetProfileChecklist() {
   if (isCreator) {
     items.push({ label: 'Add your follower count', done: tbaGetMyFollowers() > 0, href: 'profile.html' });
     items.push({ label: 'Add a video', done: tbaGetMyVideos().length > 0, href: 'videos.html' });
+    items.push({ label: 'Fill in your media kit', done: !tbaMediaKitIsEmpty(tbaGetMediaKit(me)), href: 'profile.html' });
   } else {
     items.push({
       label: 'Post an outreach opportunity',
@@ -2515,6 +3096,47 @@ function tbaGetNotifications() {
     });
   });
 
+  // Applications to your briefs, and decisions on your applications.
+  var myBriefTitles = {};
+  tbaGetBriefs().forEach(function (b) { if (b.author === myUsername) myBriefTitles[b.id] = b.title; });
+  var allBriefs = tbaGetBriefs();
+  tbaGetAllBriefApplications().forEach(function (a) {
+    if (myBriefTitles[a.briefId] && !tbaIsHiddenUser(a.applicant)) {
+      var who = tbaGetUserByUsername(a.applicant);
+      notifications.push({
+        id: 'briefapp-' + a.id, icon: '📝', title: 'Campaign brief',
+        text: (who ? who.name : '@' + a.applicant) + ' applied to "' + myBriefTitles[a.briefId] + '"',
+        date: a.createdAt, link: 'videos.html#briefs'
+      });
+    }
+    if (a.applicant === myUsername && a.status !== 'pending') {
+      var brief = allBriefs.find(function (b) { return b.id === a.briefId; });
+      if (brief) {
+        notifications.push({
+          id: 'briefdecision-' + a.id + '-' + a.status, icon: a.status === 'accepted' ? '🎉' : '✖️', title: 'Campaign brief',
+          text: 'Your application to "' + brief.title + '" was ' + a.status,
+          date: a.decidedAt || a.createdAt, link: 'videos.html#briefs'
+        });
+      }
+    }
+  });
+
+  // New accounts matching a search you saved.
+  tbaGetSavedSearches().forEach(function (ss) {
+    var fresh = tbaGetSavedSearchNewMatches(ss);
+    if (fresh.length === 0) return;
+    var newest = fresh.map(function (u) { return u.joinedAt || ss.createdAt; }).sort().slice(-1)[0];
+    notifications.push({
+      id: 'savedsearch-' + ss.id + '-' + fresh.map(function (u) { return u.username; }).sort().join('.'),
+      icon: '🔖', title: 'Saved search',
+      text: fresh.length + ' new ' + (fresh.length === 1 ? 'account matches' : 'accounts match') + ' "' + ss.name + '"',
+      date: newest, link: 'network.html?search=' + encodeURIComponent(ss.id)
+    });
+  });
+
+  var prefs = tbaGetNotifPrefs();
+  notifications = notifications.filter(function (n) { return prefs[tbaNotificationCategory(n.id)] !== false; });
+
   notifications.sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
 
   var readTimes = tbaGetReadNotificationTimes();
@@ -2727,6 +3349,14 @@ function tbaGetAdminNotifications() {
       text: 'New application from ' + r.name,
       date: r.submittedAt,
       link: 'admin-verifications.html'
+    });
+  });
+
+  tbaGetSupportRequests().filter(function (r) { return !r.handled; }).forEach(function (r) {
+    notifications.push({
+      id: 'adminsupport-' + r.id, icon: '💬', title: 'Support request',
+      text: TBA_SUPPORT_TOPICS[r.topic] + ' — ' + (r.from ? '@' + r.from : r.email),
+      date: r.createdAt, link: 'admin-reports.html#support'
     });
   });
 

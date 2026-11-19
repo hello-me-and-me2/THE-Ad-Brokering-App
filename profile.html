@@ -32,6 +32,7 @@
       <a href="videos.html">Outreach</a>
       <a href="about.html">About</a>
       <a href="profile.html" class="active">Profile</a>
+      <a href="search.html" class="nav-search" aria-label="Search" title="Search"><svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="9" r="5.5"/><path d="M13.2 13.2L17 17"/></svg></a>
       <div class="notif-wrap" id="notif-wrap">
         <button type="button" class="notif-bell-btn" id="notif-bell-btn" aria-label="Notifications"></button>
       </div>
@@ -47,7 +48,7 @@
 
 <footer>
   &copy; 2026 THE INTROductory. Built with care by Andre Anderson &amp; team.
-  <span style="margin-left:10px;"><a href="terms.html" style="color:inherit;">Terms</a> &middot; <a href="privacy.html" style="color:inherit;">Privacy</a></span><span id="egg-dot" aria-hidden="true" title="nothing to see here&#8230; 👀">&#9917;</span>
+  <span style="margin-left:10px;"><a href="terms.html" style="color:inherit;">Terms</a> &middot; <a href="privacy.html" style="color:inherit;">Privacy</a> &middot; <a href="help.html" style="color:inherit;">Help</a></span><span id="egg-dot" aria-hidden="true" title="nothing to see here&#8230; 👀">&#9917;</span>
 </footer>
 
 
@@ -148,6 +149,10 @@
       '<div><p class="esign-consent-label">Welcome tour</p><p class="esign-consent-status">A quick look around, if you want it again.</p></div>' +
       '<button type="button" class="btn-edit" id="replay-tour-btn">Replay Tour</button>' +
       '</div>' +
+      '<div class="esign-consent-row">' +
+      '<div><p class="esign-consent-label">Settings</p><p class="esign-consent-status">Email, password, notifications, your data, and deleting your account.</p></div>' +
+      '<a class="btn-edit" href="settings.html" style="text-decoration:none;">Open Settings</a>' +
+      '</div>' +
       renderBlockedList() +
       '</div>'
     );
@@ -182,6 +187,40 @@
       ' <span>' + summary.avg + ' (' + summary.count + ' review' + (summary.count === 1 ? '' : 's') + ')</span></p>';
   }
 
+  // Rate card, past partners, and audience — what a business wants to
+  // see before messaging a creator.
+  function renderMediaKitSection(user) {
+    if (user.role !== 'influencer') return '';
+    var kit = tbaGetMediaKit(user.username);
+    if (tbaMediaKitIsEmpty(kit)) {
+      return user.isYou
+        ? '<div class="profile-mediakit-section"><h3>Media Kit</h3><p class="no-links">Add your rates, past brand partners, and audience in <strong>Edit Profile</strong> so businesses know what to expect.</p></div>'
+        : '';
+    }
+
+    var rates = kit.rates.length
+      ? '<ul class="mk-rates">' + kit.rates.map(function (r) {
+          return '<li><span>' + escapeHtml(r.item) + '</span><strong>' + escapeHtml(r.price) + '</strong></li>';
+        }).join('') + '</ul>'
+      : '';
+    var partners = kit.partners.length
+      ? '<div class="mk-block"><h4>Worked with</h4><div class="mk-chips">' + kit.partners.map(function (p) {
+          return '<span class="mk-chip">' + escapeHtml(p) + '</span>';
+        }).join('') + '</div></div>'
+      : '';
+    var audienceRows = [['Age', kit.audience.age], ['Location', kit.audience.location], ['Platforms', kit.audience.platform]]
+      .filter(function (r) { return r[1]; });
+    var audience = audienceRows.length
+      ? '<div class="mk-block"><h4>Audience</h4><dl class="mk-audience">' + audienceRows.map(function (r) {
+          return '<dt>' + r[0] + '</dt><dd>' + escapeHtml(r[1]) + '</dd>';
+        }).join('') + '</dl></div>'
+      : '';
+
+    return '<div class="profile-mediakit-section"><h3>Media Kit</h3>' +
+      (rates ? '<div class="mk-block"><h4>Rate card</h4>' + rates + '</div>' : '') +
+      partners + audience + '</div>';
+  }
+
   // A creator's own videos, so a visitor sees the kind of content they
   // make right on their profile — the posting itself happens in the
   // Outreach tab.
@@ -189,6 +228,7 @@
     if (user.role !== 'influencer') return '';
     var videos = tbaGetMyVideos(user.username);
     if (videos.length === 0 && !user.isYou) return '';
+    if (!user.isYou) tbaRecordVideoViews(videos, user.username);
 
     var body = videos.length === 0
       ? '<p class="no-links">🎬 You haven\'t added any videos yet. <a href="videos.html">Add up to 3 in the Outreach tab.</a></p>'
@@ -287,6 +327,22 @@
     );
   }
 
+  function renderMediaKitEditFields() {
+    var kit = tbaGetMediaKit(localStorage.getItem('tba_username'));
+    var rows = '';
+    for (var i = 0; i < 4; i++) {
+      var r = kit.rates[i] || { item: '', price: '' };
+      rows += '<div class="link-row"><input type="text" class="mk-rate-item" maxlength="40" placeholder="e.g. Instagram Reel" value="' + escapeHtml(r.item) + '">' +
+        '<input type="text" class="mk-rate-price" maxlength="20" placeholder="$500" value="' + escapeHtml(r.price) + '"></div>';
+    }
+    return '<div class="edit-field">Media kit — rate card <span class="link-hint">(up to 4)</span><div>' + rows + '</div></div>' +
+      '<label class="edit-field">Brands you\'ve worked with <span class="link-hint">(comma separated, up to 6)</span>' +
+      '<input type="text" id="mk-partners" maxlength="200" placeholder="Brand A, Brand B" value="' + escapeHtml(kit.partners.join(', ')) + '"></label>' +
+      '<label class="edit-field">Audience — age range<input type="text" id="mk-age" maxlength="40" placeholder="e.g. 25–34 (60%)" value="' + escapeHtml(kit.audience.age) + '"></label>' +
+      '<label class="edit-field">Audience — location<input type="text" id="mk-location" maxlength="40" placeholder="e.g. US & Canada" value="' + escapeHtml(kit.audience.location) + '"></label>' +
+      '<label class="edit-field">Audience — platforms<input type="text" id="mk-platform" maxlength="40" placeholder="e.g. Instagram 70% · TikTok 30%" value="' + escapeHtml(kit.audience.platform) + '"></label>';
+  }
+
   function renderEditForm(user) {
     var rows = [];
     for (var i = 0; i < 7; i++) {
@@ -328,6 +384,7 @@
       '<label class="edit-field">Follower Count <span class="link-hint">(if applicable)</span>' +
       '<input type="number" id="followers-input" min="0" step="1" placeholder="0" value="' + (user.followers || '') + '">' +
       '</label>' +
+      (user.role === 'influencer' ? renderMediaKitEditFields() : '') +
       '<div class="edit-field">Links <span class="link-hint">(up to 7)</span>' +
       '<div id="link-rows">' + rows.join('') + '</div>' +
       '</div>' +
@@ -403,9 +460,12 @@
         : (alreadySent
             ? '<button type="button" class="request-btn sent" disabled>Request Sent</button>'
             : '<button type="button" class="request-btn" id="request-btn">Request to Message</button>')) +
+      (isYou ? '' : '<button type="button" class="btn-edit" id="fav-btn">' + (tbaIsFavorite(user.username) ? '\u2605 Saved' : '\u2606 Save') + '</button>') +
+      '<button type="button" class="btn-edit" id="share-btn">Share</button>' +
       (isYou ? '' : '<button type="button" class="btn-edit" id="report-btn">Report</button><button type="button" class="btn-edit" id="block-btn">Block</button>') +
       '</div>' +
       renderNetworkSection(user) +
+      renderMediaKitSection(user) +
       renderVideosSection(user) +
       renderReviewsSection(user) +
       renderActivitySection(user) +
@@ -413,6 +473,18 @@
       (isYou ? renderAccountSection(user) : '') +
       (isYou ? renderEditForm(user) : '') +
       '</div>';
+
+    document.getElementById('share-btn').addEventListener('click', function () {
+      tbaShareLink(tbaBuildShareUrl('profile.html', '?u=' + encodeURIComponent(user.username)), user.name + ' on THE INTROductory');
+    });
+    var favBtn = document.getElementById('fav-btn');
+    if (favBtn) {
+      favBtn.addEventListener('click', function () {
+        var nowSaved = tbaToggleFavorite(user.username);
+        favBtn.textContent = nowSaved ? '\u2605 Saved' : '\u2606 Save';
+        tbaShowToast(nowSaved ? 'Saved to your favorites' : 'Removed from favorites', nowSaved ? 'success' : undefined);
+      });
+    }
 
     if (isYou) {
       document.getElementById('replay-tour-btn').addEventListener('click', function () {
@@ -549,6 +621,21 @@
         newLinks = newLinks.slice(0, 7);
         tbaSaveMyProfile(newBio, newLinks);
         tbaSaveMyProfilePic(pendingAvatar);
+        if (document.getElementById('mk-partners')) {
+          var rateItems = editForm.querySelectorAll('.mk-rate-item');
+          var ratePrices = editForm.querySelectorAll('.mk-rate-price');
+          var rates = [];
+          for (var ri = 0; ri < rateItems.length; ri++) rates.push({ item: rateItems[ri].value, price: ratePrices[ri].value });
+          tbaSaveMediaKit({
+            rates: rates,
+            partners: document.getElementById('mk-partners').value.split(','),
+            audience: {
+              age: document.getElementById('mk-age').value,
+              location: document.getElementById('mk-location').value,
+              platform: document.getElementById('mk-platform').value
+            }
+          });
+        }
         tbaSaveMyNicheAndFollowers(
           document.getElementById('niche-input').value.trim(),
           document.getElementById('followers-input').value

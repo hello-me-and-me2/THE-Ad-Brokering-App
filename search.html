@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script>if(!localStorage.getItem("tba_authed")){location.replace("index.html");}if("scrollRestoration" in history){history.scrollRestoration="manual";}</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Search — THE INTROductory</title>
+<meta name="description" content="Search people, videos, outreach posts, and campaign briefs on THE INTROductory.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="assets/profile-picture.png">
+<link rel="stylesheet" href="assets/network.css">
+<link rel="stylesheet" href="assets/videos.css">
+<script src="assets/users-data.js"></script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="nav-wrap">
+    <a class="brand" href="home.html">
+      <span class="brand-lockup">
+        <span class="brand-logo">
+          <img src="assets/profile-picture.png" alt="THE INTROductory" class="brand-mark-img" width="256" height="256">
+        </span>
+        <span class="brand-tagline">// the_search</span>
+      </span>
+    </a>
+    <nav class="main-nav">
+      <a href="home.html">Home</a>
+      <a href="messaging.html">Messaging &amp; Negotiation</a>
+      <a href="network.html">The Network</a>
+      <a href="videos.html">Outreach</a>
+      <a href="about.html">About</a>
+      <a href="profile.html">Profile</a>
+      <a href="search.html" class="nav-search" aria-label="Search" title="Search"><svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="9" r="5.5"/><path d="M13.2 13.2L17 17"/></svg></a>
+      <div class="notif-wrap" id="notif-wrap">
+        <button type="button" class="notif-bell-btn" id="notif-bell-btn" aria-label="Notifications"></button>
+      </div>
+      <button type="button" class="theme-toggle-btn" id="theme-toggle-btn"></button>
+      <a href="index.html" class="nav-logout" id="logout-link">Log Out</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <div class="page-head">
+    <div class="eyebrow">Everything in one place</div>
+    <h1>Search</h1>
+    <p>Find people, videos, outreach posts, and campaign briefs.</p>
+  </div>
+
+  <div class="search-box">
+    <input type="search" id="search-input" class="vid-input" placeholder="Search by name, niche, title, or keyword..." autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Search">
+  </div>
+
+  <div id="search-results"></div>
+
+</main>
+
+<footer>
+  &copy; 2026 THE INTROductory. Built with care by Andre Anderson &amp; team.
+  <span style="margin-left:10px;"><a href="terms.html" style="color:inherit;">Terms</a> &middot; <a href="privacy.html" style="color:inherit;">Privacy</a> &middot; <a href="help.html" style="color:inherit;">Help</a></span>
+</footer>
+
+<script>
+  document.getElementById('logout-link').addEventListener('click', function () {
+    localStorage.removeItem('tba_authed');
+  });
+  tbaWireThemeToggle('theme-toggle-btn', 'dark');
+  tbaWireNotificationBell('notif-wrap', 'notif-bell-btn');
+
+  function escapeHtml(str) {
+    return String(str || '').replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function initials(name) { return name.replace('@', '').slice(0, 2).toUpperCase(); }
+
+  function has(text, q) { return String(text || '').toLowerCase().indexOf(q) !== -1; }
+
+  function personHtml(u) {
+    var inner = u.avatar
+      ? '<img src="' + u.avatar + '" alt="" style="width:100%;height:100%;object-fit:cover;">'
+      : initials(u.username);
+    return '<a class="search-person" href="profile.html?u=' + encodeURIComponent(u.username) + '">' +
+      '<span class="vid-avatar' + tbaChampionAvatarClass(u.username) + '">' + inner + '</span>' +
+      '<span class="search-person-info"><span class="vid-name-row"><span class="vid-name">' + escapeHtml(u.name) + '</span>' +
+      (u.verified ? tbaVerifiedBadgeHtml(u.username) : '') + '</span>' +
+      '<span class="vid-creator-sub">@' + escapeHtml(u.username) + (u.niche ? ' · ' + escapeHtml(u.niche) : '') + '</span></span>' +
+      '<span class="vid-type-tag ' + (u.role === 'business' ? 'long' : 'short') + '">' + (u.role === 'business' ? 'Business' : 'Influencer') + '</span></a>';
+  }
+
+  function snippetHtml(kindLabel, kindClass, title, desc, href) {
+    return '<a class="search-snippet" href="' + href + '">' +
+      '<span class="vid-kind-tag ' + kindClass + '">' + kindLabel + '</span>' +
+      '<span class="search-snippet-title">' + escapeHtml(title) + '</span>' +
+      (desc ? '<span class="search-snippet-desc">' + escapeHtml(desc) + '</span>' : '') + '</a>';
+  }
+
+  function section(title, count, bodyHtml) {
+    return '<section class="vid-section"><div class="vid-section-head"><h2>' + title + '</h2><span class="vid-count">' + count + '</span></div>' + bodyHtml + '</section>';
+  }
+
+  function render() {
+    var q = document.getElementById('search-input').value.trim().toLowerCase();
+    var out = document.getElementById('search-results');
+    if (history.replaceState) history.replaceState(null, '', q ? '?q=' + encodeURIComponent(q) : location.pathname);
+
+    if (q.length < 2) {
+      out.innerHTML = '<p class="vid-empty">Type at least two letters. Try a niche like "beauty", or a name.</p>';
+      return;
+    }
+
+    var people = tbaGetDirectoryUsers().filter(function (u) {
+      return has(u.username, q) || has(u.name, q) || has(u.niche, q) || has(u.tagline, q) || has(u.bio, q);
+    });
+
+    var videoHits = [];
+    tbaGetCreatorVideoGroups().forEach(function (g) {
+      g.videos.forEach(function (v) {
+        if (has(v.title, q) || has(g.user.name, q) || has(g.user.niche, q)) videoHits.push({ video: v, user: g.user });
+      });
+    });
+
+    var posts = tbaGetOutreachPosts().filter(function (p) { return has(p.title, q) || has(p.description, q); });
+    var briefs = tbaGetBriefs().filter(function (b) { return has(b.title, q) || has(b.description, q) || has(b.deliverables, q); });
+
+    var html = '';
+    if (people.length) html += section('People', people.length, '<div class="search-people">' + people.map(personHtml).join('') + '</div>');
+    if (videoHits.length) {
+      videoHits.forEach(function (h) { tbaRecordVideoViews([h.video], h.user.username); });
+      html += section('Videos', videoHits.length, '<div class="vid-grid">' + videoHits.map(function (h) {
+        return '<div class="vid-card">' + tbaVideoEmbedHtml(h.video) +
+          '<div class="vid-card-meta"><span class="vid-type-tag ' + h.video.type + '">' + tbaVideoTypeLabel(h.video.type) + '</span>' +
+          '<span class="vid-card-title">' + escapeHtml(h.video.title) + '</span></div>' +
+          '<a class="vid-creator-sub" href="profile.html?u=' + encodeURIComponent(h.user.username) + '">by ' + escapeHtml(h.user.name) + '</a></div>';
+      }).join('') + '</div>');
+    }
+    if (posts.length) html += section('Outreach', posts.length, '<div class="search-snippets">' + posts.map(function (p) {
+      return snippetHtml(TBA_OUTREACH_KINDS[p.kind], p.kind, p.title, p.description, 'videos.html?post=' + encodeURIComponent(p.id) + '#outreach');
+    }).join('') + '</div>');
+    if (briefs.length) html += section('Campaign Briefs', briefs.length, '<div class="search-snippets">' + briefs.map(function (b) {
+      return snippetHtml('$' + b.budget.toLocaleString(), 'brief', b.title, b.deliverables, 'videos.html?brief=' + encodeURIComponent(b.id) + '#briefs');
+    }).join('') + '</div>');
+
+    out.innerHTML = html || '<p class="vid-empty">Nothing matches "' + escapeHtml(q) + '".</p>';
+  }
+
+  document.getElementById('search-input').addEventListener('input', render);
+  var initial = new URLSearchParams(location.search).get('q');
+  if (initial) document.getElementById('search-input').value = initial;
+  render();
+  document.getElementById('search-input').focus();
+</script>
+</body>
+</html>

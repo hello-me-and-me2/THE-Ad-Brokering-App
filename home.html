@@ -32,6 +32,7 @@
       <a href="videos.html">Outreach</a>
       <a href="about.html">About</a>
       <a href="profile.html">Profile</a>
+      <a href="search.html" class="nav-search" aria-label="Search" title="Search"><svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="9" r="5.5"/><path d="M13.2 13.2L17 17"/></svg></a>
       <div class="notif-wrap" id="notif-wrap">
         <button type="button" class="notif-bell-btn" id="notif-bell-btn" aria-label="Notifications"></button>
       </div>
@@ -79,6 +80,19 @@
     </div>
   </div>
 
+  <div class="dash-grid" id="analytics-panel" hidden>
+    <div class="panel">
+      <h2>Video Views — Last 7 Days</h2>
+      <div class="bar-chart" id="video-views-chart"></div>
+    </div>
+    <div class="panel">
+      <h2>Your Videos &amp; Applications</h2>
+      <ul class="activity-list" id="video-stats-list"></ul>
+      <p class="activity-empty" id="video-stats-empty" hidden>Add a video in the <a href="videos.html">Outreach tab</a> and its views will show up here.</p>
+      <p class="analytics-apps" id="analytics-apps"></p>
+    </div>
+  </div>
+
   <div class="panel pipeline-panel" id="pipeline-panel">
     <h2 id="pipeline-heading">Deal Pipeline</h2>
     <div class="pipeline-row" id="pipeline-row"></div>
@@ -103,7 +117,7 @@
 
 <footer>
   &copy; 2026 THE INTROductory. Built with care by Andre Anderson &amp; team.
-  <span style="margin-left:10px;"><a href="terms.html" style="color:inherit;">Terms</a> &middot; <a href="privacy.html" style="color:inherit;">Privacy</a></span>
+  <span style="margin-left:10px;"><a href="terms.html" style="color:inherit;">Terms</a> &middot; <a href="privacy.html" style="color:inherit;">Privacy</a> &middot; <a href="help.html" style="color:inherit;">Help</a></span>
 </footer>
 
 
@@ -199,6 +213,33 @@
       tbaDismissChecklist();
       document.getElementById('checklist-panel').hidden = true;
     });
+  }
+
+  // --- Creator analytics ---
+  // Views are one per viewer per video per day, never your own.
+  if (!isBusiness) {
+    document.getElementById('analytics-panel').hidden = false;
+    var viewDays = tbaGetVideoViewsLast7Days(myUsername);
+    var viewMax = Math.max.apply(null, viewDays.map(function (d) { return d.count; }).concat([1]));
+    document.getElementById('video-views-chart').innerHTML = viewDays.map(function (d) {
+      var h = Math.max(6, Math.round((d.count / viewMax) * 100));
+      return '<div class="bar-col"><div class="bar" style="height: ' + h + '%;" data-tooltip="' + d.count + ' view' + (d.count === 1 ? '' : 's') + '"></div><span class="bar-label">' + d.label + '</span></div>';
+    }).join('');
+
+    var myVideos = tbaGetMyVideos();
+    var viewCounts = tbaGetVideoViewCounts(myUsername);
+    document.getElementById('video-stats-empty').hidden = myVideos.length > 0;
+    document.getElementById('video-stats-list').innerHTML = myVideos.map(function (v) {
+      var n = viewCounts[v.id] || 0;
+      return '<li><div class="activity-link"><div class="activity-title">' + escapeHtmlForActivity(v.title) + '</div>' +
+        '<div class="activity-meta">' + tbaVideoTypeLabel(v.type) + ' · ' + n + ' view' + (n === 1 ? '' : 's') + '</div></div></li>';
+    }).join('');
+
+    var myApps = tbaGetAllBriefApplications().filter(function (a) { return a.applicant === myUsername; });
+    var appCount = function (st) { return myApps.filter(function (a) { return a.status === st; }).length; };
+    document.getElementById('analytics-apps').textContent = myApps.length === 0
+      ? 'No brief applications yet.'
+      : 'Brief applications: ' + appCount('pending') + ' pending · ' + appCount('accepted') + ' accepted · ' + appCount('declined') + ' declined';
   }
 
   tbaMaybeShowOnboardingTour();

@@ -48,6 +48,11 @@
     <div id="open-list"></div>
   </div>
 
+  <div class="panel" id="support" style="margin-top: 20px;">
+    <h2>Support Requests <span id="support-count"></span></h2>
+    <div id="support-list"></div>
+  </div>
+
   <div class="panel" style="margin-top: 20px;">
     <h2>Suspended Accounts</h2>
     <ul class="verify-log-list" id="suspended-list"></ul>
@@ -80,7 +85,7 @@
     return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
   }
 
-  var TARGET_LABELS = { profile: 'Profile', video: 'Video', outreach: 'Outreach post' };
+  var TARGET_LABELS = { profile: 'Profile', video: 'Video', outreach: 'Outreach post', brief: 'Campaign brief' };
   var DECISION_LABELS = { dismissed: 'Dismissed', removed: 'Content removed', suspended: 'Account suspended' };
 
   function renderOpen() {
@@ -94,7 +99,7 @@
     }
 
     list.innerHTML = reports.map(function (r) {
-      var canRemove = r.targetType === 'video' || r.targetType === 'outreach';
+      var canRemove = r.targetType !== 'profile';
       return (
         '<div class="verify-request-card" data-id="' + escapeHtml(r.id) + '">' +
         '<div class="verify-request-info">' +
@@ -149,8 +154,31 @@
     }).join('');
   }
 
+  function renderSupport() {
+    var open = tbaGetSupportRequests().filter(function (r) { return !r.handled; }).reverse();
+    document.getElementById('support-count').textContent = '(' + open.length + ')';
+    var list = document.getElementById('support-list');
+    if (open.length === 0) { list.innerHTML = '<div class="admin-empty">✅ No open support requests.</div>'; return; }
+    list.innerHTML = open.map(function (r) {
+      return '<div class="verify-request-card" data-id="' + escapeHtml(r.id) + '">' +
+        '<div class="verify-request-info">' +
+        '<div class="verify-request-name">' + escapeHtml(TBA_SUPPORT_TOPICS[r.topic]) + '</div>' +
+        '<div class="verify-request-meta">' + (r.from ? '@' + escapeHtml(r.from) + ' · ' : '') + escapeHtml(r.email) + ' · ' + formatDate(r.createdAt) + '</div>' +
+        '<div class="verify-reason">' + escapeHtml(r.message) + '</div></div>' +
+        '<div class="verify-actions"><button type="button" class="btn-neutral" data-handled="' + escapeHtml(r.id) + '">Mark handled</button></div></div>';
+    }).join('');
+    list.querySelectorAll('[data-handled]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        tbaMarkSupportHandled(b.getAttribute('data-handled'));
+        renderSupport();
+        tbaShowToast('Marked handled', 'success');
+      });
+    });
+  }
+
   function renderAll() {
     renderOpen();
+    renderSupport();
     renderSuspended();
     renderResolved();
   }

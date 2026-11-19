@@ -32,6 +32,7 @@
       <a href="videos.html">Outreach</a>
       <a href="about.html">About</a>
       <a href="profile.html">Profile</a>
+      <a href="search.html" class="nav-search" aria-label="Search" title="Search"><svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="9" r="5.5"/><path d="M13.2 13.2L17 17"/></svg></a>
       <div class="notif-wrap" id="notif-wrap">
         <button type="button" class="notif-bell-btn" id="notif-bell-btn" aria-label="Notifications"></button>
       </div>
@@ -110,6 +111,7 @@
         <button type="button" class="net-filter-pill active" data-filter="all">All</button>
         <button type="button" class="net-filter-pill" data-filter="business">Business</button>
         <button type="button" class="net-filter-pill" data-filter="influencer">Influencer</button>
+        <button type="button" class="net-filter-pill" data-filter="saved">&#9733; Saved</button>
       </div>
     </div>
 
@@ -136,6 +138,14 @@
       </label>
     </div>
 
+    <div class="saved-search-bar" id="saved-search-bar">
+      <div class="saved-search-save">
+        <input type="text" id="saved-search-name" class="net-search-input" maxlength="40" placeholder="Name this search to save it..." autocomplete="off">
+        <button type="button" class="btn-save-search" id="save-search-btn">&#128278; Save this search</button>
+      </div>
+      <div class="saved-search-chips" id="saved-search-chips"></div>
+    </div>
+
     <div class="net-grid" id="directory-grid"></div>
     <p class="network-empty" id="directory-empty" hidden>No users found for that search.</p>
   </div>
@@ -144,7 +154,7 @@
 
 <footer>
   &copy; 2026 THE INTROductory. Built with care by Andre Anderson &amp; team.
-  <span style="margin-left:10px;"><a href="terms.html" style="color:inherit;">Terms</a> &middot; <a href="privacy.html" style="color:inherit;">Privacy</a></span>
+  <span style="margin-left:10px;"><a href="terms.html" style="color:inherit;">Terms</a> &middot; <a href="privacy.html" style="color:inherit;">Privacy</a> &middot; <a href="help.html" style="color:inherit;">Help</a></span>
 </footer>
 
 
@@ -323,31 +333,65 @@
     });
   })();
 
-  function renderDirectory() {
-    var term = directorySearch.trim().toLowerCase();
-    var followerRange = directoryFollowers === 'all' ? null : directoryFollowers.split('-').map(Number);
+  function currentFilters() {
+    return { search: directorySearch, role: directoryFilter, niche: directoryNiche, followers: directoryFollowers, sort: directorySort };
+  }
 
-    var visible = allUsers.filter(function (u) {
-      var matchesFilter = directoryFilter === 'all' || u.role === directoryFilter;
-      var matchesSearch = term === '' || u.username.toLowerCase().indexOf(term) !== -1;
-      var matchesNiche = directoryNiche === 'all' || u.niche === directoryNiche;
-      var matchesFollowers = !followerRange || (u.followers >= followerRange[0] && u.followers <= followerRange[1]);
-      return matchesFilter && matchesSearch && matchesNiche && matchesFollowers;
+  function applyFilters(f) {
+    directorySearch = f.search; directoryFilter = f.role; directoryNiche = f.niche;
+    directoryFollowers = f.followers; directorySort = f.sort;
+    document.getElementById('net-search').value = f.search;
+    document.getElementById('net-niche-filter').value = f.niche;
+    document.getElementById('net-followers-filter').value = f.followers;
+    document.getElementById('net-sort').value = f.sort;
+    document.querySelectorAll('.net-filter-pill').forEach(function (p) {
+      p.classList.toggle('active', p.getAttribute('data-filter') === f.role);
     });
+  }
 
-    if (directorySort === 'deals') {
-      visible = visible.slice().sort(function (a, b) {
-        return tbaGetDealsClosedCountFor(b.username) - tbaGetDealsClosedCountFor(a.username);
+  function renderSavedSearches() {
+    var searches = tbaGetSavedSearches();
+    document.getElementById('saved-search-chips').innerHTML = searches.map(function (ss) {
+      var fresh = tbaGetSavedSearchNewMatches(ss).length;
+      return '<span class="saved-chip"><button type="button" class="saved-chip-apply" data-apply="' + ss.id + '">' +
+        escapeNetHtml(ss.name) + (fresh ? ' <span class="saved-chip-new">' + fresh + ' new</span>' : '') + '</button>' +
+        '<button type="button" class="saved-chip-x" data-delete-search="' + ss.id + '" aria-label="Delete saved search ' + escapeNetHtml(ss.name) + '">&times;</button></span>';
+    }).join('');
+
+    document.querySelectorAll('[data-apply]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var ss = tbaGetSavedSearches().find(function (x) { return x.id === b.getAttribute('data-apply'); });
+        if (!ss) return;
+        applyFilters(ss.filters);
+        tbaMarkSavedSearchSeen(ss.id);
+        renderDirectory();
+        renderSavedSearches();
+        if (window.tbaRefreshNotificationBell) window.tbaRefreshNotificationBell();
       });
-    } else if (directorySort === 'rating') {
-      visible = visible.slice().sort(function (a, b) {
-        var bSummary = tbaGetRatingSummary(b.username);
-        var aSummary = tbaGetRatingSummary(a.username);
-        return (bSummary.avg || 0) - (aSummary.avg || 0) || bSummary.count - aSummary.count;
+    });
+    document.querySelectorAll('[data-delete-search]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        tbaDeleteSavedSearch(b.getAttribute('data-delete-search'));
+        renderSavedSearches();
+        if (window.tbaRefreshNotificationBell) window.tbaRefreshNotificationBell();
       });
-    } else if (directorySort === 'followers') {
-      visible = visible.slice().sort(function (a, b) { return (b.followers || 0) - (a.followers || 0); });
+    });
+  }
+
+  document.getElementById('save-search-btn').addEventListener('click', function () {
+    var nameInput = document.getElementById('saved-search-name');
+    var saved = tbaSaveSearch(nameInput.value, currentFilters());
+    if (!saved) {
+      tbaShowToast(nameInput.value.trim() ? 'You can keep up to 8 saved searches' : 'Give this search a name first', 'error');
+      return;
     }
+    nameInput.value = '';
+    renderSavedSearches();
+    tbaShowToast('Search saved — you\'ll be notified about new matches', 'success');
+  });
+
+  function renderDirectory() {
+    var visible = tbaFilterDirectory(allUsers, currentFilters());
 
     var grid = document.getElementById('directory-grid');
     var empty = document.getElementById('directory-empty');
@@ -359,9 +403,19 @@
         ? '<button type="button" class="btn-remove-net" data-username="' + u.username + '">Remove from Network</button>'
         : '<button type="button" class="btn-connect-net" data-username="' + u.username + '">Add to Network</button>';
 
-      return netCardShell(u, '<div class="net-actions">' + action + '</div>');
+      var fav = tbaIsFavorite(u.username);
+      var favBtn = '<button type="button" class="btn-fav-net' + (fav ? ' is-fav' : '') + '" data-fav="' + u.username + '" aria-label="' + (fav ? 'Remove from saved' : 'Save') + ' ' + escapeNetHtml(u.name) + '">' + (fav ? '\u2605' : '\u2606') + '</button>';
+
+      return netCardShell(u, '<div class="net-actions">' + action + favBtn + '</div>');
     }).join('');
 
+    grid.querySelectorAll('[data-fav]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var nowSaved = tbaToggleFavorite(btn.getAttribute('data-fav'));
+        tbaShowToast(nowSaved ? 'Saved to your favorites' : 'Removed from favorites', nowSaved ? 'success' : undefined);
+        renderDirectory();
+      });
+    });
     grid.querySelectorAll('.btn-connect-net').forEach(function (btn) {
       btn.addEventListener('click', function () {
         tbaSendNetworkRequest(btn.getAttribute('data-username'));
@@ -750,6 +804,20 @@
   });
 
   renderAll();
+  renderSavedSearches();
+
+  // Deep link from a saved-search notification: ?search=<id>
+  (function () {
+    var id = new URLSearchParams(window.location.search).get('search');
+    var ss = id && tbaGetSavedSearches().find(function (x) { return x.id === id; });
+    if (ss) {
+      applyFilters(ss.filters);
+      tbaMarkSavedSearchSeen(ss.id);
+      renderDirectory();
+      renderSavedSearches();
+      if (window.tbaRefreshNotificationBell) window.tbaRefreshNotificationBell();
+    }
+  })();
 </script>
 </body>
 </html>

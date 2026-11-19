@@ -398,3 +398,8 @@ footer {
 .notfound-link:hover { color: var(--terracotta-dark); }
 
 .notfound-footer { text-align: center; padding: 24px; color: var(--ink-soft); font-size: 12.5px; }
+
+.reset-result { margin-top: 16px; font-size: 13.5px; line-height: 1.5; }
+.reset-result p { margin: 0 0 10px; }
+.reset-demo { background: rgba(244,184,96,0.14); border-radius: 10px; padding: 10px 12px; }
+.reset-demo a { font-weight: 700; }

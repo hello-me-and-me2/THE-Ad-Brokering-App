@@ -427,6 +427,20 @@ a.activity-feed-link:hover { border-color: var(--terracotta); transform: transla
 }
 .profile-rating-badge .tba-star { font-size: 13px; }
 
+.profile-mediakit-section { margin-top: 28px; padding-top: 22px; border-top: 1px solid var(--border); text-align: left; }
+.profile-mediakit-section h3 { font-size: 15px; margin: 0 0 14px; font-weight: 700; color: var(--ink); }
+.mk-block { margin-bottom: 16px; }
+.mk-block h4 { font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--ink-soft); margin: 0 0 8px; }
+.mk-rates { list-style: none; margin: 0; padding: 0; }
+.mk-rates li { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+.mk-rates li:last-child { border-bottom: none; }
+.mk-rates strong { font-family: "Fraunces", serif; color: var(--terracotta-dark); }
+.mk-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.mk-chip { font-size: 12.5px; font-weight: 600; padding: 5px 12px; border-radius: 999px; background: var(--border); color: var(--ink); }
+.mk-audience { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 0; font-size: 14px; }
+.mk-audience dt { color: var(--ink-soft); font-weight: 600; }
+.mk-audience dd { margin: 0; color: var(--ink); }
+
 .profile-videos-section { margin-top: 28px; padding-top: 22px; border-top: 1px solid var(--border); text-align: left; }
 .profile-videos-section h3 { font-size: 15px; margin: 0 0 14px; font-weight: 700; color: var(--ink); }
 .profile-videos-manage { font-size: 12.5px; font-weight: 600; color: var(--terracotta-dark); margin-left: 8px; }
@@ -542,7 +556,8 @@ a.activity-feed-link:hover { border-color: var(--terracotta); transform: transla
 
 .profile-edit-form textarea,
 .profile-edit-form input[type="text"],
-.profile-edit-form input[type="url"] {
+.profile-edit-form input[type="url"],
+.profile-edit-form input[type="number"] {
   display: block;
   width: 100%;
   margin-top: 6px;

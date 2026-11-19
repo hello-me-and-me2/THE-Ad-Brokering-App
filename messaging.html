@@ -32,6 +32,7 @@
       <a href="videos.html">Outreach</a>
       <a href="about.html">About</a>
       <a href="profile.html">Profile</a>
+      <a href="search.html" class="nav-search" aria-label="Search" title="Search"><svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="9" r="5.5"/><path d="M13.2 13.2L17 17"/></svg></a>
       <div class="notif-wrap" id="notif-wrap">
         <button type="button" class="notif-bell-btn" id="notif-bell-btn" aria-label="Notifications"></button>
       </div>
@@ -124,7 +125,7 @@
 
 <footer>
   &copy; 2026 THE INTROductory. Built with care by Andre Anderson &amp; team.
-  <span style="margin-left:10px;"><a href="terms.html" style="color:inherit;">Terms</a> &middot; <a href="privacy.html" style="color:inherit;">Privacy</a></span>
+  <span style="margin-left:10px;"><a href="terms.html" style="color:inherit;">Terms</a> &middot; <a href="privacy.html" style="color:inherit;">Privacy</a> &middot; <a href="help.html" style="color:inherit;">Help</a></span>
 </footer>
 
 
@@ -533,6 +534,7 @@
         return (
           '<div class="contract-card" data-id="' + c.id + '">' +
           '<span class="contract-status status-' + c.status + '">' + contractStatusLabel(c.status) + '</span>' +
+          (c.status === 'signed' ? '<span class="payment-chip ' + tbaGetContractPayment(c).status + '">' + (tbaGetContractPayment(c).status === 'paid' ? 'Paid' : 'Awaiting payment') + '</span>' : '') +
           (c.participants.length > 1 ? '<span class="multi-badge">Multi-Party</span>' : '') +
           '<h3>' + escapeHtml(c.name) + '</h3>' +
           '<p class="contract-card-counterpart">With ' + escapeHtml(contractParticipantNames(c)) + '</p>' +
@@ -1051,6 +1053,7 @@
       '<pre class="contract-text-block" id="contract-text-block">' + escapeHtml(latest.text) + '</pre>' +
       '<div class="contract-actions-row">' + actionsHtml + '</div>' +
       renderSignatureSection(contract) +
+      renderPaymentSection(contract) +
       renderReviewSection(contract);
 
     contractsViewEl.innerHTML = html;
@@ -1084,6 +1087,43 @@
 
     wireSignatureForm(contract);
     wireReviewForms(contract);
+    wirePaymentSection(contract);
+  }
+
+  // A record of whether this deal has been paid — there's no real
+  // payment here, just the owner's own status and an optional note.
+  function renderPaymentSection(contract) {
+    if (contract.status !== 'signed') return '';
+    var payment = tbaGetContractPayment(contract);
+    var paid = payment.status === 'paid';
+    return '<div class="payment-section">' +
+      '<div class="payment-head"><h3>Payment</h3>' +
+      '<span class="payment-chip ' + payment.status + '">' + (paid ? 'Paid' : 'Awaiting payment') + '</span></div>' +
+      (paid && payment.at ? '<p class="payment-note">Marked paid ' + tbaFormatDateLong(payment.at) + (payment.note ? ' — ' + escapeHtml(payment.note) : '') + '</p>' : '') +
+      (paid
+        ? '<button type="button" class="btn-contract-action btn-download" id="mark-unpaid-btn">Mark as unpaid</button>'
+        : '<div class="payment-form"><input type="text" id="payment-note-input" maxlength="140" placeholder="Note (optional) — e.g. paid by bank transfer">' +
+          '<button type="button" class="btn-contract-action" id="mark-paid-btn">Mark as paid</button></div>') +
+      '<p class="payment-note">THE INTROductory doesn\'t move money — this is just your record of it.</p>' +
+      '</div>';
+  }
+
+  function wirePaymentSection(contract) {
+    var paidBtn = document.getElementById('mark-paid-btn');
+    if (paidBtn) {
+      paidBtn.addEventListener('click', function () {
+        tbaSetContractPayment(contract.id, 'paid', document.getElementById('payment-note-input').value);
+        tbaShowToast('Marked as paid', 'success');
+        renderContractViewer(contract.id);
+      });
+    }
+    var unpaidBtn = document.getElementById('mark-unpaid-btn');
+    if (unpaidBtn) {
+      unpaidBtn.addEventListener('click', function () {
+        tbaSetContractPayment(contract.id, 'unpaid', '');
+        renderContractViewer(contract.id);
+      });
+    }
   }
 
   // One block per participant, only once a contract is fully signed —

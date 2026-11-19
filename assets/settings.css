@@ -1,0 +1,38 @@
+/* Settings and Help — layered on profile.css */
+.settings-page { max-width: 640px; margin: 0 auto; }
+.settings-page h1 { font-size: 32px; margin: 0 0 6px; }
+.settings-lede { color: var(--ink-soft); margin: 0 0 28px; }
+.settings-card { background: var(--paper); border: 1px solid var(--border); border-radius: 20px; padding: 24px; margin-bottom: 20px; }
+.settings-card h2 { font-size: 17px; margin: 0 0 6px; }
+.settings-card.danger { border-color: #e6b8a8; }
+.settings-help { font-size: 13.5px; color: var(--ink-soft); margin: 0 0 16px; line-height: 1.5; }
+.settings-form { display: flex; flex-direction: column; gap: 14px; margin-bottom: 22px; }
+.settings-form:last-child { margin-bottom: 0; }
+.settings-form label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 700; color: var(--ink-soft); }
+.settings-hint { font-weight: 500; }
+.settings-form input, .settings-form select, .settings-form textarea {
+  padding: 11px 13px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--paper);
+  font-family: inherit; font-size: 14px; color: var(--ink);
+}
+.settings-form textarea { min-height: 110px; resize: vertical; }
+.settings-form input:focus, .settings-form select:focus, .settings-form textarea:focus { outline: none; border-color: var(--terracotta); }
+.settings-btn {
+  align-self: flex-start; background: var(--terracotta); color: #fff; border: none; font-family: inherit; font-weight: 700;
+  font-size: 13.5px; padding: 11px 22px; border-radius: 999px; cursor: pointer;
+}
+.settings-btn:hover { background: var(--terracotta-dark); }
+.settings-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.danger-btn { background: #b3402f; }
+.danger-btn:hover { background: #8f3022; }
+.settings-msg { font-size: 13px; margin: 0; }
+.settings-msg.ok { color: var(--olive); }
+.settings-msg.bad { color: #b3402f; }
+.settings-toggle { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; font-weight: 600; cursor: pointer; }
+.settings-toggle:last-child { border-bottom: none; }
+.settings-toggle input { width: 18px; height: 18px; accent-color: var(--terracotta); }
+.faq details { border-bottom: 1px solid var(--border); padding: 12px 0; }
+.faq details:last-child { border-bottom: none; }
+.faq summary { font-weight: 700; font-size: 14.5px; cursor: pointer; }
+.faq p { margin: 10px 0 0; font-size: 14px; color: var(--ink-soft); line-height: 1.6; }
+.faq a { color: var(--terracotta-dark); }
+@media (max-width: 640px) { .settings-page h1 { font-size: 26px; } .settings-card { padding: 18px; } }
