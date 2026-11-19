@@ -2204,6 +2204,65 @@ function tbaGetVideoViewsLast7Days(ownerUsername) {
   return days;
 }
 
+// --- Business analytics ---
+// Everything here is computed from what's already recorded: interest
+// on your outreach posts, applications to your briefs, your contracts
+// and their payment records, and reviews you've received.
+function tbaGetMyOutreachStats() {
+  var me = localStorage.getItem('tba_username');
+  return tbaGetOutreachPosts()
+    .filter(function (p) { return p.author === me; })
+    .map(function (p) { return { post: p, count: tbaGetOutreachInterested(p.id).length }; })
+    .sort(function (a, b) { return b.count - a.count; });
+}
+
+function tbaGetOutreachInterestLast7Days() {
+  var mine = {};
+  tbaGetMyOutreachStats().forEach(function (s) { mine[s.post.id] = true; });
+  var times = tbaGetOutreachInterestLog()
+    .filter(function (e) { return mine[e.postId]; })
+    .map(function (e) { return new Date(e.at); });
+  var days = [];
+  for (var i = 6; i >= 0; i--) {
+    var day = new Date();
+    day.setHours(0, 0, 0, 0);
+    day.setDate(day.getDate() - i);
+    var next = new Date(day);
+    next.setDate(next.getDate() + 1);
+    days.push({ label: day.toLocaleDateString(undefined, { weekday: 'short' }), count: times.filter(function (t) { return t >= day && t < next; }).length });
+  }
+  return days;
+}
+
+function tbaGetMyBriefStats() {
+  var me = localStorage.getItem('tba_username');
+  return tbaGetBriefs()
+    .filter(function (b) { return b.author === me; })
+    .map(function (b) {
+      var apps = tbaGetBriefApplications(b.id);
+      var count = function (st) { return apps.filter(function (a) { return a.status === st; }).length; };
+      return { brief: b, total: apps.length, pending: count('pending'), accepted: count('accepted'), declined: count('declined') };
+    });
+}
+
+// Your contracts by stage, plus how many signed ones are paid. The
+// "paid" record is the owner's own note (see tbaSetContractPayment).
+function tbaGetMyContractFunnel() {
+  var me = localStorage.getItem('tba_username');
+  var mine = tbaGetContracts().filter(function (c) { return c.owner === me; });
+  var count = function (st) { return mine.filter(function (c) { return c.status === st; }).length; };
+  var signed = mine.filter(function (c) { return c.status === 'signed'; });
+  var paid = signed.filter(function (c) { return tbaGetContractPayment(c).status === 'paid'; }).length;
+  return {
+    total: mine.length,
+    draft: count('draft'),
+    sent: count('sent') + count('revised'),
+    signed: signed.length,
+    paid: paid,
+    awaitingPayment: signed.length - paid
+  };
+}
+
 // --- Share links ---
 function tbaBuildShareUrl(page, query) {
   var dir = location.pathname.replace(/[^/]*$/, '');

@@ -97,6 +97,32 @@
     </div>
   </div>
 
+  <div id="business-analytics" hidden>
+    <div class="dash-grid">
+      <div class="panel">
+        <h2>Outreach Interest — Last 7 Days</h2>
+        <div class="bar-chart" id="interest-chart"></div>
+      </div>
+      <div class="panel">
+        <h2>Your Outreach Posts</h2>
+        <ul class="activity-list" id="outreach-stats-list"></ul>
+        <p class="activity-empty" id="outreach-stats-empty" hidden>Post a sponsorship call or event in the <a href="videos.html#outreach">Outreach tab</a> and the interest it gets shows up here.</p>
+      </div>
+    </div>
+    <div class="dash-grid">
+      <div class="panel">
+        <h2>Your Campaign Briefs</h2>
+        <ul class="activity-list" id="brief-stats-list"></ul>
+        <p class="activity-empty" id="brief-stats-empty" hidden>Post a brief in the <a href="videos.html#briefs">Campaign Briefs tab</a> and track applicants here.</p>
+      </div>
+      <div class="panel">
+        <h2>Contracts &amp; Payments</h2>
+        <div class="funnel-row" id="contract-funnel"></div>
+        <p class="analytics-apps" id="funnel-note"></p>
+      </div>
+    </div>
+  </div>
+
   <div class="panel pipeline-panel" id="pipeline-panel">
     <h2 id="pipeline-heading">Deal Pipeline</h2>
     <div class="pipeline-row" id="pipeline-row"></div>
@@ -191,6 +217,15 @@
     statCardHtml('deal-value', isBusiness ? 'Total Spend' : 'Total Earnings', '$' + dealValue.toLocaleString(),
       avgDealSize === null ? 'No deals settled yet' : 'Avg deal $' + avgDealSize.toLocaleString());
 
+  if (isBusiness) {
+    var rating = tbaGetRatingSummary(myUsername);
+    var funnel = tbaGetMyContractFunnel();
+    cardsHtml += statCardHtml('your-rating', 'Your Rating', rating.count ? rating.avg + ' \u2605' : '\u2014',
+      rating.count ? rating.count + ' review' + (rating.count === 1 ? '' : 's') : 'No reviews yet');
+    cardsHtml += statCardHtml('awaiting-payment', 'Awaiting Payment', funnel.awaitingPayment,
+      funnel.awaitingPayment === 0 ? 'Nothing outstanding' : 'Signed, not marked paid', funnel.awaitingPayment > 0);
+  }
+
   if (!isBusiness) {
     cardsHtml += statCardHtml('audience-reach', 'Audience Reach', followers ? followers.toLocaleString() : '—',
       followers ? 'Followers on file' : 'Add your follower count in Profile');
@@ -244,6 +279,48 @@
     document.getElementById('analytics-apps').textContent = myApps.length === 0
       ? 'No brief applications yet.'
       : 'Brief applications: ' + appCount('pending') + ' pending · ' + appCount('accepted') + ' accepted · ' + appCount('declined') + ' declined';
+  }
+
+  // --- Business analytics ---
+  if (isBusiness) {
+    document.getElementById('business-analytics').hidden = false;
+
+    var interestDays = tbaGetOutreachInterestLast7Days();
+    var interestMax = Math.max.apply(null, interestDays.map(function (d) { return d.count; }).concat([1]));
+    document.getElementById('interest-chart').innerHTML = interestDays.map(function (d) {
+      var h = Math.max(6, Math.round((d.count / interestMax) * 100));
+      return '<div class="bar-col"><div class="bar" style="height: ' + h + '%;" data-tooltip="' + d.count + ' interested"></div><span class="bar-label">' + d.label + '</span></div>';
+    }).join('');
+
+    var outreachStats = tbaGetMyOutreachStats();
+    document.getElementById('outreach-stats-empty').hidden = outreachStats.length > 0;
+    document.getElementById('outreach-stats-list').innerHTML = outreachStats.slice(0, 6).map(function (s) {
+      return '<li><a class="activity-link" href="videos.html?post=' + encodeURIComponent(s.post.id) + '#outreach">' +
+        '<div class="activity-title">' + escapeHtmlForActivity(s.post.title) + '</div>' +
+        '<div class="activity-meta">' + TBA_OUTREACH_KINDS[s.post.kind] + ' \u00B7 ' + s.count + ' interested</div></a></li>';
+    }).join('');
+
+    var briefStats = tbaGetMyBriefStats();
+    document.getElementById('brief-stats-empty').hidden = briefStats.length > 0;
+    document.getElementById('brief-stats-list').innerHTML = briefStats.slice(0, 6).map(function (s) {
+      return '<li><a class="activity-link" href="videos.html?brief=' + encodeURIComponent(s.brief.id) + '#briefs">' +
+        '<div class="activity-title">' + escapeHtmlForActivity(s.brief.title) + '</div>' +
+        '<div class="activity-meta">' + s.total + ' applicant' + (s.total === 1 ? '' : 's') +
+        (s.total ? ' \u00B7 ' + s.pending + ' pending \u00B7 ' + s.accepted + ' accepted \u00B7 ' + s.declined + ' declined' : '') + '</div></a></li>';
+    }).join('');
+
+    var f = tbaGetMyContractFunnel();
+    var funnelCols = [['Draft', f.draft, 'new'], ['Out for signature', f.sent, 'negotiating'], ['Signed', f.signed, 'accepted'], ['Paid', f.paid, 'closed']];
+    var funnelMax = Math.max.apply(null, funnelCols.map(function (c) { return c[1]; }).concat([1]));
+    document.getElementById('contract-funnel').innerHTML = funnelCols.map(function (c) {
+      var hp = Math.max(6, Math.round((c[1] / funnelMax) * 100));
+      return '<div class="pipeline-col"><div class="pipeline-count">' + c[1] + '</div>' +
+        '<div class="pipeline-bar-track"><div class="pipeline-bar ' + c[2] + '" style="height:' + hp + '%;"></div></div>' +
+        '<span class="pipeline-label">' + c[0] + '</span></div>';
+    }).join('');
+    document.getElementById('funnel-note').textContent = f.total === 0
+      ? 'No contracts yet.'
+      : f.signed + ' signed' + (f.awaitingPayment ? ' \u00B7 ' + f.awaitingPayment + ' awaiting payment' : ' \u00B7 all paid');
   }
 
   tbaMaybeShowOnboardingTour();
