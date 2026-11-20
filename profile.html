@@ -191,6 +191,48 @@
       ' <span>' + summary.avg + ' (' + summary.count + ' review' + (summary.count === 1 ? '' : 's') + ')</span></p>';
   }
 
+  // A company's details, what they look for, and how they want to be
+  // represented — what a creator wants to know before pitching.
+  function renderBrandSection(user) {
+    if (user.role !== 'business') return '';
+    var b = tbaGetBrandProfile(user.username);
+    if (tbaBrandProfileIsEmpty(b)) {
+      return user.isYou
+        ? '<div class="profile-brand-section"><h3>Company &amp; Brand Guidelines</h3><p class="no-links">Add your company details, what you look for in creators, and your brand guidelines in <strong>Edit Profile</strong> so creators know how to pitch you.</p></div>'
+        : '';
+    }
+
+    var c = b.company, w = b.work, g = b.guidelines;
+    var rows = [['Legal name', c.legalName], ['Industry', user.niche], ['Team size', c.size], ['Founded', c.founded], ['Based in', c.location]]
+      .filter(function (r) { return r[1]; })
+      .map(function (r) { return '<dt>' + r[0] + '</dt><dd>' + escapeHtml(r[1]) + '</dd>'; });
+    if (c.website) rows.push('<dt>Website</dt><dd><a href="' + escapeHtml(c.website) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(c.website.replace(/^https?:\/\//, '').replace(/\/$/, '')) + '</a></dd>');
+
+    var company = rows.length ? '<div class="mk-block"><h4>Company</h4><dl class="mk-audience">' + rows.join('') + '</dl></div>' : '';
+
+    var working = (w.lookingFor || w.budget)
+      ? '<div class="mk-block"><h4>Working with us</h4>' +
+        (w.lookingFor ? '<p class="brand-text">' + escapeHtml(w.lookingFor) + '</p>' : '') +
+        (w.budget ? '<p class="brand-budget">Typical budget: <strong>' + escapeHtml(w.budget) + '</strong></p>' : '') + '</div>'
+      : '';
+
+    var list = function (title, items, cls) {
+      return items.length ? '<div class="brand-list ' + cls + '"><h5>' + title + '</h5><ul>' + items.map(function (i) { return '<li>' + escapeHtml(i) + '</li>'; }).join('') + '</ul></div>' : '';
+    };
+    var hasGuidelines = g.tone || g.dos.length || g.donts.length || g.hashtags || g.assets.length;
+    var guidelines = hasGuidelines
+      ? '<div class="mk-block"><h4>Brand guidelines</h4>' +
+        (g.tone ? '<p class="brand-text"><strong>Tone:</strong> ' + escapeHtml(g.tone) + '</p>' : '') +
+        '<div class="brand-lists">' + list('Do', g.dos, 'do') + list('Don\'t', g.donts, 'dont') + '</div>' +
+        (g.hashtags ? '<p class="brand-text"><strong>Hashtags &amp; mentions:</strong> ' + escapeHtml(g.hashtags) + '</p>' : '') +
+        (g.assets.length ? '<div class="profile-links">' + g.assets.map(function (a) {
+          return '<a class="profile-link-pill" href="' + escapeHtml(a.url) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(a.label) + '</a>';
+        }).join('') + '</div>' : '') + '</div>'
+      : '';
+
+    return '<div class="profile-brand-section"><h3>Company &amp; Brand Guidelines</h3>' + company + working + guidelines + '</div>';
+  }
+
   // Rate card, past partners, and audience — what a business wants to
   // see before messaging a creator.
   function renderMediaKitSection(user) {
@@ -331,6 +373,35 @@
     );
   }
 
+  function renderBrandEditFields() {
+    var b = tbaGetBrandProfile(localStorage.getItem('tba_username'));
+    var c = b.company, w = b.work, g = b.guidelines;
+    var assetRows = '';
+    for (var i = 0; i < 4; i++) {
+      var a = g.assets[i] || { label: '', url: '' };
+      assetRows += '<div class="link-row"><input type="text" class="brand-asset-label" maxlength="40" placeholder="Label (e.g. Logo pack)" value="' + escapeHtml(a.label) + '">' +
+        '<input type="url" class="brand-asset-url" placeholder="https://..." value="' + escapeHtml(a.url) + '"></div>';
+    }
+    var sizeOptions = '<option value="">Select…</option>' + TBA_COMPANY_SIZES.map(function (s) {
+      return '<option value="' + s + '"' + (c.size === s ? ' selected' : '') + '>' + s + '</option>';
+    }).join('');
+    return '<div class="edit-section-title">Company</div>' +
+      '<label class="edit-field">Legal business name<input type="text" id="brand-legal" maxlength="80" value="' + escapeHtml(c.legalName) + '"></label>' +
+      '<label class="edit-field">Team size<select id="brand-size">' + sizeOptions + '</select></label>' +
+      '<label class="edit-field">Year founded<input type="number" id="brand-founded" min="1800" step="1" placeholder="e.g. 2015" value="' + escapeHtml(c.founded) + '"></label>' +
+      '<label class="edit-field">Based in<input type="text" id="brand-location" maxlength="60" placeholder="City, State" value="' + escapeHtml(c.location) + '"></label>' +
+      '<label class="edit-field">Website<input type="text" id="brand-website" maxlength="200" placeholder="yourcompany.com" value="' + escapeHtml(c.website) + '"></label>' +
+      '<div class="edit-section-title">Working with creators</div>' +
+      '<label class="edit-field">What you look for in creators<textarea id="brand-looking" maxlength="240" placeholder="The kind of creators and content that fit your brand.">' + escapeHtml(w.lookingFor) + '</textarea></label>' +
+      '<label class="edit-field">Typical budget per deal<input type="text" id="brand-budget" maxlength="40" placeholder="e.g. $500–$3,000" value="' + escapeHtml(w.budget) + '"></label>' +
+      '<div class="edit-section-title">Brand guidelines</div>' +
+      '<label class="edit-field">Tone &amp; voice<input type="text" id="brand-tone" maxlength="200" placeholder="How should creators sound?" value="' + escapeHtml(g.tone) + '"></label>' +
+      '<label class="edit-field">Do <span class="link-hint">(one per line, up to 6)</span><textarea id="brand-dos" maxlength="600">' + escapeHtml(g.dos.join('\n')) + '</textarea></label>' +
+      '<label class="edit-field">Don\'t <span class="link-hint">(one per line, up to 6)</span><textarea id="brand-donts" maxlength="600">' + escapeHtml(g.donts.join('\n')) + '</textarea></label>' +
+      '<label class="edit-field">Required hashtags &amp; mentions<input type="text" id="brand-hashtags" maxlength="100" placeholder="#YourBrand @yourbrand" value="' + escapeHtml(g.hashtags) + '"></label>' +
+      '<div class="edit-field">Brand asset links <span class="link-hint">(up to 4)</span><div>' + assetRows + '</div></div>';
+  }
+
   function renderMediaKitEditFields() {
     var kit = tbaGetMediaKit(localStorage.getItem('tba_username'));
     var rows = '';
@@ -389,6 +460,7 @@
       '<input type="number" id="followers-input" min="0" step="1" placeholder="0" value="' + (user.followers || '') + '">' +
       '</label>' +
       (user.role === 'influencer' ? renderMediaKitEditFields() : '') +
+      (user.role === 'business' ? renderBrandEditFields() : '') +
       '<div class="edit-field">Links <span class="link-hint">(up to 7)</span>' +
       '<div id="link-rows">' + rows.join('') + '</div>' +
       '</div>' +
@@ -472,6 +544,7 @@
       '</div>' +
       renderNetworkSection(user) +
       renderMediaKitSection(user) +
+      renderBrandSection(user) +
       renderVideosSection(user) +
       renderReviewsSection(user) +
       renderActivitySection(user) +
@@ -637,6 +710,29 @@
         newLinks = newLinks.slice(0, 7);
         tbaSaveMyProfile(newBio, newLinks);
         tbaSaveMyProfilePic(pendingAvatar);
+        if (document.getElementById('brand-legal')) {
+          var assetLabels = editForm.querySelectorAll('.brand-asset-label');
+          var assetUrls = editForm.querySelectorAll('.brand-asset-url');
+          var assets = [];
+          for (var ai = 0; ai < assetLabels.length; ai++) assets.push({ label: assetLabels[ai].value, url: assetUrls[ai].value });
+          tbaSaveBrandProfile({
+            company: {
+              legalName: document.getElementById('brand-legal').value,
+              size: document.getElementById('brand-size').value,
+              founded: document.getElementById('brand-founded').value,
+              location: document.getElementById('brand-location').value,
+              website: document.getElementById('brand-website').value
+            },
+            work: { lookingFor: document.getElementById('brand-looking').value, budget: document.getElementById('brand-budget').value },
+            guidelines: {
+              tone: document.getElementById('brand-tone').value,
+              dos: document.getElementById('brand-dos').value,
+              donts: document.getElementById('brand-donts').value,
+              hashtags: document.getElementById('brand-hashtags').value,
+              assets: assets
+            }
+          });
+        }
         if (document.getElementById('mk-partners')) {
           var rateItems = editForm.querySelectorAll('.mk-rate-item');
           var ratePrices = editForm.querySelectorAll('.mk-rate-price');

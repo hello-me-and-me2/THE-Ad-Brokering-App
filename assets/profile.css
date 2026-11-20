@@ -557,7 +557,8 @@ a.activity-feed-link:hover { border-color: var(--terracotta); transform: transla
 .profile-edit-form textarea,
 .profile-edit-form input[type="text"],
 .profile-edit-form input[type="url"],
-.profile-edit-form input[type="number"] {
+.profile-edit-form input[type="number"],
+.profile-edit-form select {
   display: block;
   width: 100%;
   margin-top: 6px;
@@ -640,3 +641,16 @@ footer { padding: 30px 24px; text-align: center; color: var(--ink-soft); font-si
 
 .open-badge { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 700; color: var(--olive); background: #eef1e6; border-radius: 999px; padding: 4px 12px; margin: 0 0 12px; }
 .open-badge span { width: 7px; height: 7px; border-radius: 50%; background: var(--olive); }
+
+.profile-brand-section { margin-top: 28px; padding-top: 22px; border-top: 1px solid var(--border); text-align: left; }
+.profile-brand-section h3 { font-size: 15px; margin: 0 0 14px; font-weight: 700; color: var(--ink); }
+.profile-brand-section .mk-audience a { color: var(--terracotta-dark); font-weight: 600; }
+.brand-text { margin: 0 0 8px; font-size: 14px; color: var(--ink); line-height: 1.55; }
+.brand-budget { margin: 0; font-size: 14px; color: var(--ink-soft); }
+.brand-budget strong { color: var(--terracotta-dark); }
+.brand-lists { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin: 10px 0 12px; }
+.brand-list h5 { margin: 0 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+.brand-list.do h5 { color: var(--olive); }
+.brand-list.dont h5 { color: #b3402f; }
+.brand-list ul { margin: 0; padding-left: 18px; font-size: 13.5px; color: var(--ink); line-height: 1.55; }
+.edit-section-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--terracotta-dark); margin: 24px 0 12px; padding-top: 16px; border-top: 1px solid var(--border); }

@@ -5,7 +5,7 @@
 var TBA_SEED_USERS = [
   {
     username: "skylinecoffee", name: "Skyline Coffee Co.", role: "business", daysAgoJoined: 20,
-    niche: "Coffee & Food", followers: 0,
+    niche: "Coffee & Food", followers: 0, brand: { company: { legalName: "Skyline Coffee Company LLC", size: "11–50", founded: "2014", location: "Seattle, WA", website: "https://skylinecoffee.com" }, work: { lookingFor: "Coffee, lifestyle, and morning-routine creators with an honest voice and an engaged audience.", budget: "$800–$3,000 per deal" }, guidelines: { tone: "Warm, unhurried, a little nerdy about coffee. Never pushy.", dos: ["Show the coffee actually being made and tasted", "Be honest about flavor", "Mention the roast name"], donts: ["No health claims", "No comparisons to named competitors"], hashtags: "#SkylineCoffee #SlowMornings", assets: [{ label: "Logo pack", url: "https://skylinecoffee.com/press" }, { label: "Product photos", url: "https://skylinecoffee.com/media" }] } },
     tagline: "Small-batch coffee brand, Pacific Northwest.",
     bio: "Small-batch coffee roaster based in the Pacific Northwest, partnering with creators who love a good cup and an honest story.",
     links: [
@@ -15,7 +15,7 @@ var TBA_SEED_USERS = [
   },
   {
     username: "riversidegear", name: "Riverside Outdoor Gear", role: "business", daysAgoJoined: 15,
-    niche: "Outdoor & Adventure", followers: 0,
+    niche: "Outdoor & Adventure", followers: 0, brand: { company: { legalName: "Riverside Outdoor Gear Inc.", size: "51–200", founded: "2009", location: "Portland, OR", website: "https://riversidegear.com" }, work: { lookingFor: "Outdoor and adventure creators who really use gear on real trips and film it well.", budget: "$1,000–$5,000 per deal" }, guidelines: { tone: "Practical and adventurous. Real conditions, real opinions.", dos: ["Test gear on an actual trip", "Show wear and tear honestly", "Tag the specific product"], donts: ["No staged-in-a-studio shots", "No unsafe stunts"], hashtags: "#RiversideGear #RealTrips", assets: [{ label: "Brand kit", url: "https://riversidegear.com/brand" }] } },
     tagline: "Outdoor apparel and camping gear.",
     bio: "Outdoor apparel and camping gear built for real trips, not just photos. We work with adventure creators who actually use our stuff.",
     links: [
@@ -25,7 +25,7 @@ var TBA_SEED_USERS = [
   },
   {
     username: "pearandco", name: "Pear & Co. Skincare", role: "business", daysAgoJoined: 9,
-    niche: "Beauty & Skincare", followers: 0,
+    niche: "Beauty & Skincare", followers: 0, brand: { company: { legalName: "Pear & Co. Skincare Ltd.", size: "11–50", founded: "2018", location: "Brooklyn, NY", website: "https://pearandco.com" }, work: { lookingFor: "Skincare and beauty reviewers who care about ingredients and will say so when something doesn't work.", budget: "$600–$2,500 per deal" }, guidelines: { tone: "Clean, calm, and evidence-minded.", dos: ["Show your real routine over at least a week", "Disclose that it's a partnership", "Mention it's cruelty-free"], donts: ["No before/after retouching", "No medical claims"], hashtags: "#PearAndCo #CleanSkin", assets: [{ label: "Press kit", url: "https://pearandco.com/press" }] } },
     tagline: "Clean skincare, cruelty-free.",
     bio: "Clean, cruelty-free skincare made in small batches. We love collaborating with creators who care about what goes on their skin.",
     links: [
@@ -35,7 +35,7 @@ var TBA_SEED_USERS = [
   },
   {
     username: "thecraftedtable", name: "The Crafted Table", role: "business", daysAgoJoined: 5,
-    niche: "Home & Design", followers: 0,
+    niche: "Home & Design", followers: 0, brand: { company: { legalName: "The Crafted Table Co.", size: "1–10", founded: "2020", location: "Asheville, NC", website: "https://thecraftedtable.com" }, work: { lookingFor: "Home, food, and slow-living creators who like handmade goods and good design.", budget: "$400–$1,500 per deal" }, guidelines: { tone: "Quiet, tactile, and a little bit romantic about everyday rituals.", dos: ["Style the pieces in a real home", "Credit the maker when named"], donts: ["No heavy filters that change the glaze colors"], hashtags: "#TheCraftedTable #SlowLiving", assets: [{ label: "Maker stories", url: "https://thecraftedtable.com/makers" }] } },
     tagline: "Artisan home goods & tableware.",
     bio: "Artisan home goods and tableware, handmade by independent makers. Looking for creators who love slow living and good design.",
     links: [
@@ -45,7 +45,7 @@ var TBA_SEED_USERS = [
   },
   {
     username: "brightlinestudio", name: "Brightline Studio", role: "business", daysAgoJoined: 3,
-    niche: "Home & Design", followers: 0,
+    niche: "Home & Design", followers: 0, brand: { company: { legalName: "Brightline Studio LLC", size: "1–10", founded: "2017", location: "Austin, TX", website: "https://brightlinestudio.co" }, work: { lookingFor: "Creators who talk about small business, design, and branding, and can tell a story on video.", budget: "$1,000–$4,000 per project" }, guidelines: { tone: "Smart, friendly, and plain-spoken. No jargon.", dos: ["Lead with the client's story", "Show the before and after of the brand"], donts: ["No bashing other studios"], hashtags: "#BrightlineStudio", assets: [{ label: "Case studies", url: "https://brightlinestudio.co/work" }] } },
     tagline: "Independent design & branding studio.",
     bio: "Independent design and branding studio helping small businesses look as good as they are. Open to creator collabs on case studies.",
     links: [
@@ -2031,6 +2031,85 @@ function tbaSaveMediaKit(kit) {
   localStorage.setItem(tbaAccountKey('tba_mediakit'), JSON.stringify(clean));
 }
 
+// --- Brand profile (business accounts) ---
+// What a creator wants to know before pitching a company: who they
+// are, what they look for and spend, and how they want to be
+// represented. Stored per account like the media kit.
+function tbaEmptyBrandProfile() {
+  return {
+    company: { legalName: '', size: '', founded: '', location: '', website: '' },
+    work: { lookingFor: '', budget: '' },
+    guidelines: { tone: '', dos: [], donts: [], hashtags: '', assets: [] }
+  };
+}
+
+var TBA_COMPANY_SIZES = ['1–10', '11–50', '51–200', '201–1,000', '1,000+'];
+
+function tbaGetBrandProfile(forUsername) {
+  var empty = tbaEmptyBrandProfile();
+  try {
+    var stored = JSON.parse(localStorage.getItem(tbaAccountKey('tba_brand', forUsername)) || 'null');
+    if (stored) {
+      return {
+        company: Object.assign({}, empty.company, stored.company || {}),
+        work: Object.assign({}, empty.work, stored.work || {}),
+        guidelines: Object.assign({}, empty.guidelines, stored.guidelines || {})
+      };
+    }
+  } catch (e) { /* fall through */ }
+  var seed = TBA_SEED_USERS.find(function (u) { return forUsername && u.username.toLowerCase() === forUsername.toLowerCase(); });
+  return seed && seed.brand ? seed.brand : empty;
+}
+
+function tbaBrandProfileIsEmpty(b) {
+  var c = b.company, w = b.work, g = b.guidelines;
+  return !(c.legalName || c.size || c.founded || c.location || c.website || w.lookingFor || w.budget ||
+    g.tone || g.dos.length || g.donts.length || g.hashtags || g.assets.length);
+}
+
+// Only business accounts have one; everything is trimmed and capped,
+// and only http(s) links are kept.
+function tbaSaveBrandProfile(input) {
+  if (!tbaIsMyRole('business')) return false;
+  var text = function (v, n) { return String(v || '').trim().slice(0, n); };
+  var lines = function (v) {
+    return (Array.isArray(v) ? v : String(v || '').split('\n')).map(function (l) { return text(l, 100); }).filter(Boolean).slice(0, 6);
+  };
+  var safeUrl = function (v) {
+    var u = text(v, 200);
+    if (!u || /\s/.test(u)) return '';
+    if (/^[a-z][a-z0-9+.-]*:(?!\d)/i.test(u) && !/^https?:\/\//i.test(u)) return '';
+    if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
+    try {
+      var parsed = new URL(u);
+      return parsed.hostname.indexOf('.') === -1 ? '' : parsed.href;
+    } catch (e) { return ''; }
+  };
+  var c = input.company || {}, w = input.work || {}, g = input.guidelines || {};
+  var year = parseInt(c.founded, 10);
+
+  var clean = {
+    company: {
+      legalName: text(c.legalName, 80),
+      size: TBA_COMPANY_SIZES.indexOf(c.size) !== -1 ? c.size : '',
+      founded: year >= 1800 && year <= new Date().getFullYear() ? String(year) : '',
+      location: text(c.location, 60),
+      website: safeUrl(c.website)
+    },
+    work: { lookingFor: text(w.lookingFor, 240), budget: text(w.budget, 40) },
+    guidelines: {
+      tone: text(g.tone, 200),
+      dos: lines(g.dos),
+      donts: lines(g.donts),
+      hashtags: text(g.hashtags, 100),
+      assets: (g.assets || []).map(function (a) { return { label: text(a.label, 40), url: safeUrl(a.url) }; })
+        .filter(function (a) { return a.url; }).map(function (a) { return { label: a.label || a.url, url: a.url }; }).slice(0, 4)
+    }
+  };
+  localStorage.setItem(tbaAccountKey('tba_brand'), JSON.stringify(clean));
+  return true;
+}
+
 // --- Favorites and saved searches ---
 function tbaGetFavorites() {
   try {
@@ -2767,6 +2846,7 @@ function tbaGetProfileChecklist() {
     items.push({ label: 'Add a video', done: tbaGetMyVideos().length > 0, href: 'videos.html' });
     items.push({ label: 'Fill in your media kit', done: !tbaMediaKitIsEmpty(tbaGetMediaKit(me)), href: 'profile.html' });
   } else {
+    items.push({ label: 'Fill in your company details', done: !tbaBrandProfileIsEmpty(tbaGetBrandProfile(me)), href: 'profile.html' });
     items.push({
       label: 'Post an outreach opportunity',
       done: tbaGetOutreachPosts().some(function (p) { return p.author === me; }),

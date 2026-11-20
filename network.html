@@ -192,6 +192,10 @@
     var bits = [];
     if (u.role === 'influencer' && u.openToWork) bits.push('<span class="net-stat-tag net-stat-open">Open to work</span>');
     if (u.niche) bits.push('<span class="net-stat-tag">' + escapeNetHtml(u.niche) + '</span>');
+    if (u.role === 'business') {
+      var budget = tbaGetBrandProfile(u.username).work.budget;
+      if (budget) bits.push('<span class="net-stat-tag">' + escapeNetHtml(budget) + '</span>');
+    }
     if (u.followers) bits.push('<span class="net-stat-tag">' + formatFollowers(u.followers) + '</span>');
     if (deals > 0) bits.push('<span class="net-stat-tag">' + deals + ' deal' + (deals === 1 ? '' : 's') + ' closed</span>');
     if (rating.count > 0) {
