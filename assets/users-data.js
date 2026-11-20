@@ -1806,7 +1806,7 @@ function tbaRestoreAccount(username) {
   var me = localStorage.getItem('tba_username');
   if (!me || !localStorage.getItem('tba_authed') || !tbaIsSuspended(me)) return;
   var page = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
-  if (page === 'index.html' || page === '' || page.indexOf('admin') === 0) return;
+  if (tbaIsPreAuthPage() || page.indexOf('admin') === 0) return;
   localStorage.removeItem('tba_authed');
   location.replace('index.html');
 })();
@@ -2704,7 +2704,7 @@ function tbaSetOpenToWork(open) {
 // someone creates an account through it, it's recorded so the inviter
 // can see who joined.
 function tbaGetInviteLink() {
-  return tbaBuildShareUrl('index.html', '?invite=' + encodeURIComponent(localStorage.getItem('tba_username') || ''));
+  return tbaBuildShareUrl('signup.html', '?invite=' + encodeURIComponent(localStorage.getItem('tba_username') || ''));
 }
 
 function tbaGetReferrals() {
@@ -2752,6 +2752,30 @@ window.addEventListener('beforeinstallprompt', function (e) {
 
 function tbaIsInstalledApp() {
   return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+}
+
+// --- Subscription plan ---
+// Every account is on the one plan, and it's free for now. The price
+// lives here so the landing pages, sign-up form, and Settings all show
+// the same number — change monthlyPrice (in dollars) when pricing is
+// decided and every one of them follows.
+var TBA_PLAN = { name: 'Standard', monthlyPrice: 0 };
+
+function tbaFormatPlanPrice() {
+  return TBA_PLAN.monthlyPrice > 0 ? '$' + TBA_PLAN.monthlyPrice.toLocaleString() + '/month' : 'Free';
+}
+
+function tbaSetMyPlan() {
+  localStorage.setItem(tbaAccountKey('tba_plan'), JSON.stringify({ name: TBA_PLAN.name, monthlyPrice: TBA_PLAN.monthlyPrice, since: new Date().toISOString() }));
+}
+
+// Accounts created before plans existed are on the same plan, free.
+function tbaGetMyPlan() {
+  try {
+    var stored = JSON.parse(localStorage.getItem(tbaAccountKey('tba_plan')) || 'null');
+    if (stored) return stored;
+  } catch (e) { /* fall through */ }
+  return { name: TBA_PLAN.name, monthlyPrice: 0, since: null };
 }
 
 function tbaEnsureReportStyles() {
@@ -3158,7 +3182,7 @@ function tbaGetNetworkFor(username) {
 // never renders there regardless of what's stored, no matter whose.
 function tbaIsPreAuthPage() {
   var path = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
-  return path === '' || path === 'index.html' || path === 'admin-signin.html';
+  return ['', 'index.html', 'login.html', 'signup.html', 'influencers.html', 'businesses.html', 'admin-signin.html'].indexOf(path) !== -1;
 }
 
 // Scoped per account (tbaAccountKey), except on the pre-auth screens,

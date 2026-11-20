@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script>if("scrollRestoration" in history){history.scrollRestoration="manual";}</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Log in — THE INTROductory</title>
+<meta name="description" content="THE INTROductory — where brands and influencers meet, message, and work out a sponsorship deal, honestly and in the open.">
+<meta property="og:title" content="THE INTROductory">
+<meta property="og:description" content="Where brands and creators sit down at the same table — deals made the honest way.">
+<meta property="og:image" content="assets/profile-picture.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="assets/profile-picture.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#c1652c">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
+<link rel="stylesheet" href="assets/signin.css">
+<script src="assets/users-data.js"></script>
+</head>
+<body>
+
+<a class="admin-tab" href="admin-signin.html">ADMIN</a>
+<a class="back-home" href="index.html">&larr; Home</a>
+<button type="button" class="theme-toggle-standalone" id="theme-toggle-btn"></button>
+
+<div class="landing-wrap">
+  <div class="landing-grid">
+
+    <div class="pitch-panel">
+      <img src="assets/profile-picture.png" alt="THE INTROductory" class="pitch-logo">
+      <div class="eyebrow">Influencer &amp; Business Deals, Under One Roof</div>
+      <h1>Where brands and creators sit down at the same table.</h1>
+      <p class="lede">
+        THE INTROductory is the place brands and influencers meet, message,
+        and work out a deal that feels fair to everyone — no cold DMs, no
+        guesswork, no disappearing acts.
+      </p>
+
+      <div class="pitch-stats">
+        <h3>On the platform right now</h3>
+        <div class="stat-row">
+          <div class="stat">
+            <span class="num" id="stat-brands">—</span>
+            <span class="label">Businesses</span>
+          </div>
+          <div class="stat">
+            <span class="num" id="stat-creators">—</span>
+            <span class="label">Influencers</span>
+          </div>
+          <div class="stat">
+            <span class="num" id="stat-deals">—</span>
+            <span class="label">Deals Closed</span>
+          </div>
+          <div class="stat">
+            <span class="num" id="stat-contracts">—</span>
+            <span class="label">Contracts Signed</span>
+          </div>
+        </div>
+        <p class="pitch-stats-note">The real directory on this device — this demo has no shared backend, so these numbers are what's actually here, not platform-wide marketing figures.</p>
+      </div>
+    </div>
+
+    <div class="auth-panel">
+      <div class="signin-card">
+
+        <div class="auth-tabs">
+          <button type="button" class="auth-tab active" data-tab="login">Log In</button>
+          <a class="auth-tab" href="signup.html">Sign Up</a>
+        </div>
+
+        <div class="auth-tab-panel" id="tab-login">
+          <h2>Welcome back</h2>
+          <p class="signin-sub">Log in to pick up where you left off.</p>
+
+          <form id="login-form" novalidate>
+            <label class="field">
+              Username
+              <input type="text" id="login-username" required placeholder="your username" autocomplete="username" autocapitalize="off" spellcheck="false">
+            </label>
+            <p class="field-error" id="login-error" hidden></p>
+
+            <label class="field">
+              Password
+              <input type="password" id="login-password" required placeholder="Your password" autocomplete="current-password">
+            </label>
+
+            <button type="submit" class="btn-submit">Log In</button>
+          </form>
+
+          <p class="signin-foot"><a href="#" data-switch-to="forgot">Forgot your password?</a></p>
+
+          <p class="signin-foot">New here? <a href="signup.html">Create an account</a></p>
+        </div>
+
+        <div class="auth-tab-panel" id="tab-forgot" hidden>
+          <h2>Reset your password</h2>
+          <p class="signin-sub">Enter your username or email and we'll send a reset link.</p>
+
+          <form id="forgot-form" novalidate>
+            <label class="field">
+              Username or email
+              <input type="text" id="forgot-identifier" placeholder="your username or email" autocomplete="username" autocapitalize="off" spellcheck="false">
+            </label>
+            <p class="field-error" id="forgot-error" hidden></p>
+            <button type="submit" class="btn-submit">Send reset link</button>
+          </form>
+
+          <div class="reset-result" id="forgot-result" hidden>
+            <p>If an account matches, a reset link is on its way to that email.</p>
+            <p class="reset-demo" id="forgot-demo" hidden>
+              <strong>Demo only:</strong> this site can't send email, so here's the link it would have sent —
+              <a id="forgot-demo-link" href="#">Choose a new password</a>
+            </p>
+          </div>
+
+          <p class="signin-foot"><a href="#" data-switch-to="login">Back to log in</a></p>
+        </div>
+
+        <div class="auth-tab-panel" id="tab-resetpw" hidden>
+          <h2>Choose a new password</h2>
+          <p class="signin-sub" id="resetpw-sub"></p>
+
+          <form id="resetpw-form" novalidate>
+            <label class="field">
+              New password
+              <input type="password" id="resetpw-input" placeholder="At least 8 characters" autocomplete="new-password">
+            </label>
+            <p class="field-error" id="resetpw-error" hidden></p>
+            <button type="submit" class="btn-submit">Save new password</button>
+          </form>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  &copy; 2026 THE INTROductory. Built with care by Andre Anderson &amp; team.
+  <span style="margin-left:10px;"><a href="terms.html" style="color:inherit;">Terms</a> &middot; <a href="privacy.html" style="color:inherit;">Privacy</a></span>
+</footer>
+
+<script>
+  tbaWireThemeToggle('theme-toggle-btn', 'light');
+
+  // The directory and deal activity actually on this device — no
+  // shared backend means no real platform-wide numbers to report, so
+  // this shows what's genuinely here rather than an invented figure.
+  // Updates live via the storage event, which fires whenever another
+  // tab or window on this device changes localStorage (e.g. you sign
+  // a contract in a Messaging tab while this page is still open).
+  function renderLandingStats() {
+    var allUsers = tbaGetAllUsers();
+    var brands = allUsers.filter(function (u) { return u.role === 'business'; }).length;
+    var creators = allUsers.filter(function (u) { return u.role === 'influencer'; }).length;
+    var dealsClosed = tbaGetDealsClosedCount();
+    var contractsSigned = tbaGetContracts().filter(function (c) { return c.status === 'signed'; }).length;
+
+    document.getElementById('stat-brands').textContent = brands;
+    document.getElementById('stat-creators').textContent = creators;
+    document.getElementById('stat-deals').textContent = dealsClosed;
+    document.getElementById('stat-contracts').textContent = contractsSigned;
+  }
+
+  renderLandingStats();
+  window.addEventListener('storage', renderLandingStats);
+
+  // Tab switching between Log In and Sign Up
+  var tabButtons = document.querySelectorAll('.auth-tab');
+  function showTab(name) {
+    tabButtons.forEach(function (b) { b.classList.toggle('active', b.dataset.tab === name); });
+    document.getElementById('tab-login').hidden = name !== 'login';
+    document.getElementById('tab-forgot').hidden = name !== 'forgot';
+    document.getElementById('tab-resetpw').hidden = name !== 'resetpw';
+  }
+  tabButtons.forEach(function (btn) {
+    btn.addEventListener('click', function () { showTab(btn.dataset.tab); });
+  });
+  document.querySelectorAll('[data-switch-to]').forEach(function (link) {
+    link.addEventListener('click', function (e) {
+      e.preventDefault();
+      showTab(link.dataset.switchTo);
+    });
+  });
+
+  // Forgot password. No email can be sent from a static site, so when
+  // an account matches, the page shows the reset link itself (clearly
+  // labelled demo-only); a backend would email it and show nothing.
+  document.getElementById('forgot-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var identifier = document.getElementById('forgot-identifier').value;
+    var errorEl = document.getElementById('forgot-error');
+    if (!identifier.trim()) {
+      errorEl.textContent = 'Enter your username or email.';
+      errorEl.hidden = false;
+      return;
+    }
+    errorEl.hidden = true;
+    var token = tbaCreateResetToken(identifier);
+    document.getElementById('forgot-result').hidden = false;
+    document.getElementById('forgot-demo').hidden = !token;
+    if (token) document.getElementById('forgot-demo-link').href = 'login.html?reset=' + token;
+  });
+
+  var resetToken = new URLSearchParams(window.location.search).get('reset');
+  if (resetToken) {
+    var resetUser = tbaGetResetTokenUser(resetToken);
+    showTab('resetpw');
+    document.getElementById('resetpw-sub').textContent = resetUser
+      ? 'For @' + resetUser + '.'
+      : 'This reset link has expired or was already used. Request a new one from the log in screen.';
+    if (!resetUser) document.getElementById('resetpw-form').hidden = true;
+  }
+
+  document.getElementById('resetpw-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var errorEl = document.getElementById('resetpw-error');
+    tbaCompleteReset(resetToken, document.getElementById('resetpw-input').value).then(function (r) {
+      if (!r.ok) {
+        errorEl.textContent = r.error === 'too-short' ? 'Choose a password that\'s at least 8 characters.' : 'This reset link has expired.';
+        errorEl.hidden = false;
+        return;
+      }
+      history.replaceState(null, '', 'login.html');
+      showTab('login');
+      document.getElementById('login-username').value = r.username;
+      tbaShowToast('Password updated — log in with your new one', 'success');
+    });
+  });
+
+  // Log in — matches against the current browser's own signup, or
+  // against the seed directory. Any account actually created through
+  // signup has its own saved password hash, so logging back into one
+  // of those requires the matching password; the seed demo accounts
+  // were never signed up with a password, so they stay unchecked.
+  document.getElementById('login-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    var usernameInput = document.getElementById('login-username');
+    var passwordInput = document.getElementById('login-password');
+    var loginError = document.getElementById('login-error');
+    var username = usernameInput.value.trim();
+    var password = passwordInput.value;
+
+    var matchedUsername = null;
+    var matchedRole = null;
+
+    var localMatch = tbaFindLocalAccount(username);
+    if (localMatch) {
+      matchedUsername = localMatch.username;
+      matchedRole = localMatch.role;
+    } else {
+      var seedMatch = TBA_SEED_USERS.find(function (u) {
+        return u.username.toLowerCase() === username.toLowerCase();
+      });
+      if (seedMatch) {
+        matchedUsername = seedMatch.username;
+        matchedRole = seedMatch.role;
+      }
+    }
+
+    if (!matchedUsername) {
+      loginError.textContent = "We couldn't find an account with that username.";
+      loginError.hidden = false;
+      usernameInput.focus();
+      return;
+    }
+
+    if (tbaIsSuspended(matchedUsername)) {
+      loginError.textContent = 'This account has been suspended.';
+      loginError.hidden = false;
+      return;
+    }
+
+    function completeLogin() {
+      loginError.hidden = true;
+      localStorage.setItem('tba_authed', '1');
+      localStorage.setItem('tba_username', matchedUsername);
+      localStorage.setItem('tba_role', matchedRole);
+      tbaRegisterLocalAccount(matchedUsername, matchedRole);
+
+      // Blur the focused field first — on mobile, navigating away
+      // while an input is still focused can leave the next page
+      // scrolled down to wherever the on-screen keyboard had pushed
+      // the viewport.
+      document.activeElement.blur();
+      window.scrollTo(0, 0);
+      tbaNavigateTo('home.html');
+    }
+
+    var storedHash = tbaGetMyPasswordHash(matchedUsername);
+    if (!storedHash) {
+      completeLogin();
+      return;
+    }
+
+    var submitBtn = document.querySelector('#login-form button[type="submit"]');
+    submitBtn.disabled = true;
+
+    tbaSha256Hex(password).then(function (enteredHash) {
+      submitBtn.disabled = false;
+      if (enteredHash !== storedHash) {
+        loginError.textContent = 'Incorrect username or password.';
+        loginError.hidden = false;
+        passwordInput.focus();
+        return;
+      }
+      completeLogin();
+    }).catch(function () {
+      submitBtn.disabled = false;
+      loginError.textContent = 'Something went wrong logging in — try again.';
+      loginError.hidden = false;
+    });
+  });
+</script>
+
+</body>
+</html>

@@ -406,3 +406,10 @@ footer {
 
 .invite-note { background: rgba(110,231,216,0.14); border-radius: 10px; padding: 9px 12px; font-size: 13px; font-weight: 600; margin: 0 0 14px; }
 .invite-note[hidden] { display: none; }
+
+a.auth-tab { text-decoration: none; display: inline-block; }
+.back-home {
+  position: fixed; top: 18px; left: 64px; z-index: 10; font-size: 13px; font-weight: 700; text-decoration: none;
+  color: var(--ink-soft); background: var(--paper); border: 1px solid var(--border); border-radius: 999px; padding: 8px 14px;
+}
+.back-home:hover { color: var(--terracotta-dark); border-color: var(--terracotta); }

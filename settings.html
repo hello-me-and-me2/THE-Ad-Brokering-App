@@ -54,6 +54,12 @@
 
     <section class="settings-card" id="account-card"></section>
 
+    <section class="settings-card" id="plan-card">
+      <h2>Your plan</h2>
+      <div class="plan-line"><span id="plan-name"></span><strong id="plan-price"></strong></div>
+      <p class="settings-help" id="plan-note"></p>
+    </section>
+
     <section class="settings-card" id="invite-card">
       <h2>Invite friends</h2>
       <p class="settings-help">Share your personal link. When someone signs up through it, you'll see them here and get a notification.</p>
@@ -206,6 +212,14 @@
       location.href = 'index.html';
     });
   }
+
+  // Plan
+  var plan = tbaGetMyPlan();
+  document.getElementById('plan-name').textContent = plan.name + ' plan \u00B7 monthly subscription';
+  document.getElementById('plan-price').textContent = tbaFormatPlanPrice();
+  document.getElementById('plan-note').textContent = TBA_PLAN.monthlyPrice > 0
+    ? 'Billed monthly.'
+    : 'Free for now. Nothing is charged.';
 
   // Invite link
   document.getElementById('invite-link').value = tbaGetInviteLink();

@@ -5,10 +5,10 @@
 <script>if("scrollRestoration" in history){history.scrollRestoration="manual";}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>THE INTROductory — Where brands and creators make the deal</title>
-<meta name="description" content="THE INTROductory — where brands and influencers meet, message, and work out a sponsorship deal, honestly and in the open.">
+<meta name="description" content="Where brands and creators meet, negotiate, and sign sponsorship deals in one place — no cold DMs, no guesswork.">
 <meta property="og:title" content="THE INTROductory">
-<meta property="og:description" content="Where brands and creators sit down at the same table — deals made the honest way.">
-<meta property="og:image" content="assets/profile-picture.png">
+<meta property="og:description" content="Where brands and creators meet, negotiate, and sign sponsorship deals in one place — no cold DMs, no guesswork.">
+<meta property="og:image" content="assets/icon-512.png">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,455 +18,139 @@
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#c1652c">
 <link rel="apple-touch-icon" href="assets/icon-180.png">
-<link rel="stylesheet" href="assets/signin.css">
+<link rel="stylesheet" href="assets/landing.css">
 <script src="assets/users-data.js"></script>
+<script src="assets/auth.js"></script>
 </head>
 <body>
-
-<a class="admin-tab" href="admin-signin.html">ADMIN</a>
-<button type="button" class="theme-toggle-standalone" id="theme-toggle-btn"></button>
-
-<div class="landing-wrap">
-  <div class="landing-grid">
-
-    <div class="pitch-panel">
-      <img src="assets/profile-picture.png" alt="THE INTROductory" class="pitch-logo">
-      <div class="eyebrow">Influencer &amp; Business Deals, Under One Roof</div>
-      <h1>Where brands and creators sit down at the same table.</h1>
-      <p class="lede">
-        THE INTROductory is the place brands and influencers meet, message,
-        and work out a deal that feels fair to everyone — no cold DMs, no
-        guesswork, no disappearing acts.
-      </p>
-
-      <div class="pitch-stats">
-        <h3>On the platform right now</h3>
-        <div class="stat-row">
-          <div class="stat">
-            <span class="num" id="stat-brands">—</span>
-            <span class="label">Businesses</span>
-          </div>
-          <div class="stat">
-            <span class="num" id="stat-creators">—</span>
-            <span class="label">Influencers</span>
-          </div>
-          <div class="stat">
-            <span class="num" id="stat-deals">—</span>
-            <span class="label">Deals Closed</span>
-          </div>
-          <div class="stat">
-            <span class="num" id="stat-contracts">—</span>
-            <span class="label">Contracts Signed</span>
-          </div>
-        </div>
-        <p class="pitch-stats-note">The real directory on this device — this demo has no shared backend, so these numbers are what's actually here, not platform-wide marketing figures.</p>
-      </div>
+<header class="l-header">
+  <div class="l-header-inner">
+    <a class="l-brand" href="index.html"><img src="assets/icon-192.png" alt=""><span>THE INTROductory</span></a>
+    <nav class="l-nav" aria-label="Page sections"><a href="#how">How it works</a><a href="#audience">Who it's for</a><a href="#features">Features</a><a href="#pricing">Pricing</a></nav>
+    <div class="l-header-right">
+      <button type="button" id="theme-toggle-btn"></button>
+      <div id="l-auth-buttons"><a class="l-btn" href="login.html">Log in</a><a class="l-btn primary" href="signup.html">Sign up</a></div>
     </div>
+  </div>
+</header>
 
-    <div class="auth-panel">
-      <div class="signin-card">
+<main>
 
-        <div class="auth-tabs">
-          <button type="button" class="auth-tab active" data-tab="login">Log In</button>
-          <button type="button" class="auth-tab" data-tab="signup">Sign Up</button>
-        </div>
-
-        <div class="auth-tab-panel" id="tab-login">
-          <h2>Welcome back</h2>
-          <p class="signin-sub">Log in to pick up where you left off.</p>
-
-          <form id="login-form" novalidate>
-            <label class="field">
-              Username
-              <input type="text" id="login-username" required placeholder="your username" autocomplete="username" autocapitalize="off" spellcheck="false">
-            </label>
-            <p class="field-error" id="login-error" hidden></p>
-
-            <label class="field">
-              Password
-              <input type="password" id="login-password" required placeholder="Your password" autocomplete="current-password">
-            </label>
-
-            <button type="submit" class="btn-submit">Log In</button>
-          </form>
-
-          <p class="signin-foot"><a href="#" data-switch-to="forgot">Forgot your password?</a></p>
-
-          <p class="signin-foot">New here? <a href="#" data-switch-to="signup">Create an account</a></p>
-        </div>
-
-        <div class="auth-tab-panel" id="tab-forgot" hidden>
-          <h2>Reset your password</h2>
-          <p class="signin-sub">Enter your username or email and we'll send a reset link.</p>
-
-          <form id="forgot-form" novalidate>
-            <label class="field">
-              Username or email
-              <input type="text" id="forgot-identifier" placeholder="your username or email" autocomplete="username" autocapitalize="off" spellcheck="false">
-            </label>
-            <p class="field-error" id="forgot-error" hidden></p>
-            <button type="submit" class="btn-submit">Send reset link</button>
-          </form>
-
-          <div class="reset-result" id="forgot-result" hidden>
-            <p>If an account matches, a reset link is on its way to that email.</p>
-            <p class="reset-demo" id="forgot-demo" hidden>
-              <strong>Demo only:</strong> this site can't send email, so here's the link it would have sent —
-              <a id="forgot-demo-link" href="#">Choose a new password</a>
-            </p>
-          </div>
-
-          <p class="signin-foot"><a href="#" data-switch-to="login">Back to log in</a></p>
-        </div>
-
-        <div class="auth-tab-panel" id="tab-resetpw" hidden>
-          <h2>Choose a new password</h2>
-          <p class="signin-sub" id="resetpw-sub"></p>
-
-          <form id="resetpw-form" novalidate>
-            <label class="field">
-              New password
-              <input type="password" id="resetpw-input" placeholder="At least 8 characters" autocomplete="new-password">
-            </label>
-            <p class="field-error" id="resetpw-error" hidden></p>
-            <button type="submit" class="btn-submit">Save new password</button>
-          </form>
-        </div>
-
-        <div class="auth-tab-panel" id="tab-signup" hidden>
-          <h2>Create your account</h2>
-          <p class="signin-sub">Join THE INTROductory and start making deals.</p>
-          <p class="invite-note" id="invite-note" hidden></p>
-
-          <form id="signin-form" novalidate>
-            <label class="field">
-              Email
-              <input type="email" name="email" id="signup-email" required placeholder="you@example.com" autocomplete="email">
-            </label>
-            <p class="field-error" id="signup-email-error" hidden></p>
-
-            <label class="field">
-              Username
-              <input type="text" name="username" id="username-input" required placeholder="how people will find you" pattern="[a-zA-Z0-9_]{3,20}" autocomplete="username" autocapitalize="off" spellcheck="false">
-            </label>
-            <p class="field-error" id="username-error" hidden></p>
-
-            <label class="field">
-              Password
-              <input type="password" name="password" id="signup-password" required placeholder="Create a password" minlength="8" autocomplete="new-password">
-            </label>
-            <p class="field-error" id="signup-password-error" hidden></p>
-
-            <div class="role-select">
-              <span class="role-label">I am a...</span>
-              <div class="role-options">
-                <label class="role-option">
-                  <input type="radio" name="role" value="business" checked>
-                  <span>Business</span>
-                </label>
-                <label class="role-option">
-                  <input type="radio" name="role" value="influencer">
-                  <span>Influencer</span>
-                </label>
-              </div>
-            </div>
-
-            <label class="terms-check">
-              <input type="checkbox" id="signup-terms-checkbox" required>
-              <span>I agree to the <a href="terms.html" target="_blank" rel="noopener">Terms of Service</a> and <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>, including that this app is not legal advice and that signing a contract here does not make it legally binding.</span>
-            </label>
-            <p class="field-error" id="signup-terms-error" hidden>Please agree to the Terms of Service to continue.</p>
-
-            <button type="submit" class="btn-submit">Create Account</button>
-          </form>
-
-          <p class="signin-foot">Already have an account? <a href="#" data-switch-to="login">Log in</a></p>
-        </div>
-
-      </div>
+<section class="l-hero">
+  <div>
+    <span class="l-eyebrow">Brands &times; Creators</span>
+    <h1>Where brands and creators make the deal.</h1>
+    <p class="l-lede">Find each other, negotiate in one place, sign a contract, and get the work done. No cold DMs, no guesswork, no disappearing acts.</p>
+    <div class="l-cta-row">
+      <a class="l-btn primary large" href="signup.html">Sign up</a>
+      <a class="l-btn large" href="login.html">Log in</a>
     </div>
+    <p class="l-cta-note"><span data-plan-price>Free</span> to join &middot; no card needed</p>
+  </div>
+  <div class="l-visual" aria-hidden="true">
+    <div class="l-sample s1"><small>New offer</small><strong>$1,800</strong><p>2 IG Reels + 1 TikTok &middot; 3 weeks</p></div>
+    <div class="l-sample s2"><small>Contract</small><strong class="ok">Signed &#10003;</strong><p>Both sides signed electronically</p></div>
+    <div class="l-sample s3"><small>Campaign brief</small><strong>12 applicants</strong><p>Pick the creator who fits</p></div>
+    <span class="l-visual-note">Illustration</span>
+  </div>
+</section>
 
+<section class="l-section" id="how">
+  <div class="l-section-head">
+    <h2>From hello to signed in three steps</h2>
+    <p>Everything a sponsorship needs, in one place.</p>
+  </div>
+  <div class="l-steps">
+    <div class="l-step"><h3>Find the right match</h3><p>Browse by niche, audience size, ratings, and who&rsquo;s open to work. Creators show their best videos and a media kit; businesses show what they look for and what they spend.</p></div>
+    <div class="l-step"><h3>Negotiate in one place</h3><p>Send offers and counter-offers right next to the conversation. When you agree, start a contract from a template with the terms already filled in.</p></div>
+    <div class="l-step"><h3>Sign and track</h3><p>Sign electronically, keep a record of payment, and leave each other reviews so the next deal starts with trust.</p></div>
+  </div>
+</section>
+
+<section class="l-section" id="audience">
+  <div class="l-section-head">
+    <h2>Built for both sides of the deal</h2>
+    <p>Pick the one that sounds like you.</p>
+  </div>
+  <div class="l-audience">
+    <div class="l-card">
+      <span class="l-icon">&#127916;</span>
+      <h3>For creators</h3>
+      <ul>
+        <li>Show your three best videos, long or short form</li>
+        <li>Share your rates and audience in a media kit</li>
+        <li>Apply to campaign briefs and say you&rsquo;re open to work</li>
+        <li>See how your videos and applications are doing</li>
+      </ul>
+      <a class="l-btn primary" href="influencers.html">Join as a creator</a>
+    </div>
+    <div class="l-card">
+      <span class="l-icon">&#127970;</span>
+      <h3>For businesses</h3>
+      <ul>
+        <li>Filter creators by niche, audience, rating, and availability</li>
+        <li>Post outreach and campaign briefs, and review applicants</li>
+        <li>Negotiate, contract, and record payment in one thread</li>
+        <li>Track your outreach, briefs, and contracts</li>
+      </ul>
+      <a class="l-btn primary" href="businesses.html">Join as a business</a>
+    </div>
+  </div>
+</section>
+
+<section class="l-section" id="features">
+  <div class="l-section-head">
+    <h2>Everything in one app</h2>
+    <p>The tools that usually live in six different tabs.</p>
+  </div>
+  <div class="l-grid">
+    <div class="l-card"><span class="l-icon">&#128172;</span><h3>Messaging &amp; negotiation</h3><p>Offers, counter-offers, and accepting terms, right in the conversation.</p></div>
+    <div class="l-card"><span class="l-icon">&#128221;</span><h3>Contracts &amp; e-signatures</h3><p>Templates for single posts, campaigns, events, and retainers. Not legal advice.</p></div>
+    <div class="l-card"><span class="l-icon">&#127909;</span><h3>Creator videos</h3><p>Three video slots per creator so businesses can see what they actually make.</p></div>
+    <div class="l-card"><span class="l-icon">&#128227;</span><h3>Outreach &amp; briefs</h3><p>Sponsorship calls, events, and specific jobs creators can apply to.</p></div>
+    <div class="l-card"><span class="l-icon">&#128269;</span><h3>The Network</h3><p>Search, filter, save creators, and get alerted to new matches.</p></div>
+    <div class="l-card"><span class="l-icon">&#11088;</span><h3>Reviews &amp; ratings</h3><p>Rate each other after a deal closes, so good partners stand out.</p></div>
+    <div class="l-card"><span class="l-icon">&#128202;</span><h3>Dashboards</h3><p>Analytics built for creators and for businesses, not one generic view.</p></div>
+    <div class="l-card"><span class="l-icon">&#128737;&#65039;</span><h3>Safety tools</h3><p>Verification badges, reporting, and blocking when something isn&rsquo;t right.</p></div>
+  </div>
+</section>
+
+<section class="l-section" id="pricing">
+  <div class="l-section-head">
+    <h2>Simple pricing</h2>
+    <p>One plan, everything included.</p>
+  </div>
+  <div class="l-pricing-card">
+    <div class="plan">Standard</div>
+    <p class="l-pricing-label">Monthly subscription</p>
+    <div class="l-price" data-plan-price>Free</div>
+    <ul>
+      <li>Messaging, contracts, videos, outreach, briefs, and analytics</li>
+    </ul>
+    <a class="l-btn primary l-btn-block large" href="signup.html">Sign up</a>
+    <p class="l-pricing-fine" data-plan-free-only>Free while we get started. No card needed.</p>
+  </div>
+</section>
+
+<div class="l-cta-band">
+  <div class="l-cta-inner">
+    <h2>Ready to make your next deal?</h2>
+    <p>Join as a creator or a business in about a minute.</p>
+    <div class="l-cta-row">
+      <a class="l-btn primary large" href="signup.html">Sign up</a>
+      <a class="l-btn large" href="login.html">Log in</a>
+    </div>
   </div>
 </div>
 
-<footer>
+</main>
+<footer class="l-footer">
   &copy; 2026 THE INTROductory. Built with care by Andre Anderson &amp; team.
-  <span style="margin-left:10px;"><a href="terms.html" style="color:inherit;">Terms</a> &middot; <a href="privacy.html" style="color:inherit;">Privacy</a></span>
+  <span style="margin-left:10px;"><a href="terms.html">Terms</a> &middot; <a href="privacy.html">Privacy</a></span>
+  <a class="l-admin" href="admin-signin.html">ADMIN</a>
 </footer>
-
 <script>
-  tbaWireThemeToggle('theme-toggle-btn', 'light');
-
-  // The directory and deal activity actually on this device — no
-  // shared backend means no real platform-wide numbers to report, so
-  // this shows what's genuinely here rather than an invented figure.
-  // Updates live via the storage event, which fires whenever another
-  // tab or window on this device changes localStorage (e.g. you sign
-  // a contract in a Messaging tab while this page is still open).
-  function renderLandingStats() {
-    var allUsers = tbaGetAllUsers();
-    var brands = allUsers.filter(function (u) { return u.role === 'business'; }).length;
-    var creators = allUsers.filter(function (u) { return u.role === 'influencer'; }).length;
-    var dealsClosed = tbaGetDealsClosedCount();
-    var contractsSigned = tbaGetContracts().filter(function (c) { return c.status === 'signed'; }).length;
-
-    document.getElementById('stat-brands').textContent = brands;
-    document.getElementById('stat-creators').textContent = creators;
-    document.getElementById('stat-deals').textContent = dealsClosed;
-    document.getElementById('stat-contracts').textContent = contractsSigned;
-  }
-
-  renderLandingStats();
-  window.addEventListener('storage', renderLandingStats);
-
-  // Tab switching between Log In and Sign Up
-  var tabButtons = document.querySelectorAll('.auth-tab');
-  function showTab(name) {
-    tabButtons.forEach(function (b) { b.classList.toggle('active', b.dataset.tab === name); });
-    document.getElementById('tab-login').hidden = name !== 'login';
-    document.getElementById('tab-signup').hidden = name !== 'signup';
-    document.getElementById('tab-forgot').hidden = name !== 'forgot';
-    document.getElementById('tab-resetpw').hidden = name !== 'resetpw';
-  }
-  tabButtons.forEach(function (btn) {
-    btn.addEventListener('click', function () { showTab(btn.dataset.tab); });
-  });
-  document.querySelectorAll('[data-switch-to]').forEach(function (link) {
-    link.addEventListener('click', function (e) {
-      e.preventDefault();
-      showTab(link.dataset.switchTo);
-    });
-  });
-
-  // Invite link: ?invite=<username> opens sign-up and remembers who invited you.
-  var inviteParam = new URLSearchParams(window.location.search).get('invite');
-  if (inviteParam) {
-    var inviter = tbaGetUserByUsername(inviteParam);
-    if (inviter) {
-      var note = document.getElementById('invite-note');
-      note.textContent = 'You were invited by ' + inviter.name + '.';
-      note.hidden = false;
-      showTab('signup');
-    } else {
-      inviteParam = null;
-    }
-  }
-
-  // Forgot password. No email can be sent from a static site, so when
-  // an account matches, the page shows the reset link itself (clearly
-  // labelled demo-only); a backend would email it and show nothing.
-  document.getElementById('forgot-form').addEventListener('submit', function (e) {
-    e.preventDefault();
-    var identifier = document.getElementById('forgot-identifier').value;
-    var errorEl = document.getElementById('forgot-error');
-    if (!identifier.trim()) {
-      errorEl.textContent = 'Enter your username or email.';
-      errorEl.hidden = false;
-      return;
-    }
-    errorEl.hidden = true;
-    var token = tbaCreateResetToken(identifier);
-    document.getElementById('forgot-result').hidden = false;
-    document.getElementById('forgot-demo').hidden = !token;
-    if (token) document.getElementById('forgot-demo-link').href = 'index.html?reset=' + token;
-  });
-
-  var resetToken = new URLSearchParams(window.location.search).get('reset');
-  if (resetToken) {
-    var resetUser = tbaGetResetTokenUser(resetToken);
-    showTab('resetpw');
-    document.getElementById('resetpw-sub').textContent = resetUser
-      ? 'For @' + resetUser + '.'
-      : 'This reset link has expired or was already used. Request a new one from the log in screen.';
-    if (!resetUser) document.getElementById('resetpw-form').hidden = true;
-  }
-
-  document.getElementById('resetpw-form').addEventListener('submit', function (e) {
-    e.preventDefault();
-    var errorEl = document.getElementById('resetpw-error');
-    tbaCompleteReset(resetToken, document.getElementById('resetpw-input').value).then(function (r) {
-      if (!r.ok) {
-        errorEl.textContent = r.error === 'too-short' ? 'Choose a password that\'s at least 8 characters.' : 'This reset link has expired.';
-        errorEl.hidden = false;
-        return;
-      }
-      history.replaceState(null, '', 'index.html');
-      showTab('login');
-      document.getElementById('login-username').value = r.username;
-      tbaShowToast('Password updated — log in with your new one', 'success');
-    });
-  });
-
-  // Log in — matches against the current browser's own signup, or
-  // against the seed directory. Any account actually created through
-  // signup has its own saved password hash, so logging back into one
-  // of those requires the matching password; the seed demo accounts
-  // were never signed up with a password, so they stay unchecked.
-  document.getElementById('login-form').addEventListener('submit', function (e) {
-    e.preventDefault();
-
-    var usernameInput = document.getElementById('login-username');
-    var passwordInput = document.getElementById('login-password');
-    var loginError = document.getElementById('login-error');
-    var username = usernameInput.value.trim();
-    var password = passwordInput.value;
-
-    var matchedUsername = null;
-    var matchedRole = null;
-
-    var localMatch = tbaFindLocalAccount(username);
-    if (localMatch) {
-      matchedUsername = localMatch.username;
-      matchedRole = localMatch.role;
-    } else {
-      var seedMatch = TBA_SEED_USERS.find(function (u) {
-        return u.username.toLowerCase() === username.toLowerCase();
-      });
-      if (seedMatch) {
-        matchedUsername = seedMatch.username;
-        matchedRole = seedMatch.role;
-      }
-    }
-
-    if (!matchedUsername) {
-      loginError.textContent = "We couldn't find an account with that username.";
-      loginError.hidden = false;
-      usernameInput.focus();
-      return;
-    }
-
-    if (tbaIsSuspended(matchedUsername)) {
-      loginError.textContent = 'This account has been suspended.';
-      loginError.hidden = false;
-      return;
-    }
-
-    function completeLogin() {
-      loginError.hidden = true;
-      localStorage.setItem('tba_authed', '1');
-      localStorage.setItem('tba_username', matchedUsername);
-      localStorage.setItem('tba_role', matchedRole);
-      tbaRegisterLocalAccount(matchedUsername, matchedRole);
-
-      // Blur the focused field first — on mobile, navigating away
-      // while an input is still focused can leave the next page
-      // scrolled down to wherever the on-screen keyboard had pushed
-      // the viewport.
-      document.activeElement.blur();
-      window.scrollTo(0, 0);
-      tbaNavigateTo('home.html');
-    }
-
-    var storedHash = tbaGetMyPasswordHash(matchedUsername);
-    if (!storedHash) {
-      completeLogin();
-      return;
-    }
-
-    var submitBtn = document.querySelector('#login-form button[type="submit"]');
-    submitBtn.disabled = true;
-
-    tbaSha256Hex(password).then(function (enteredHash) {
-      submitBtn.disabled = false;
-      if (enteredHash !== storedHash) {
-        loginError.textContent = 'Incorrect username or password.';
-        loginError.hidden = false;
-        passwordInput.focus();
-        return;
-      }
-      completeLogin();
-    }).catch(function () {
-      submitBtn.disabled = false;
-      loginError.textContent = 'Something went wrong logging in — try again.';
-      loginError.hidden = false;
-    });
-  });
-
-  // Sign up
-  document.getElementById('signin-form').addEventListener('submit', function (e) {
-    e.preventDefault();
-
-    var emailInput = document.getElementById('signup-email');
-    var emailError = document.getElementById('signup-email-error');
-    var email = emailInput.value.trim();
-
-    var usernameInput = document.getElementById('username-input');
-    var usernameError = document.getElementById('username-error');
-    var username = usernameInput.value.trim();
-
-    var passwordInput = document.getElementById('signup-password');
-    var passwordError = document.getElementById('signup-password-error');
-    var password = passwordInput.value;
-
-    // Email, username, and password are all required to create an
-    // account — checked here (rather than relying on the inputs'
-    // own `required`/`pattern` attributes) because the form has
-    // novalidate set, so the browser's native validation never runs.
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      emailError.textContent = 'Enter a valid email address.';
-      emailError.hidden = false;
-      emailInput.focus();
-      return;
-    }
-    emailError.hidden = true;
-
-    if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
-      usernameError.textContent = 'Usernames are 3–20 characters: letters, numbers, and underscores only.';
-      usernameError.hidden = false;
-      usernameInput.focus();
-      return;
-    }
-
-    if (tbaUsernameTaken(username)) {
-      usernameError.textContent = 'That username is already taken — try another.';
-      usernameError.hidden = false;
-      usernameInput.focus();
-      return;
-    }
-
-    usernameError.hidden = true;
-
-    if (!password || password.length < 8) {
-      passwordError.textContent = 'Choose a password that\'s at least 8 characters.';
-      passwordError.hidden = false;
-      passwordInput.focus();
-      return;
-    }
-    passwordError.hidden = true;
-
-    var termsCheckbox = document.getElementById('signup-terms-checkbox');
-    var termsError = document.getElementById('signup-terms-error');
-    if (!termsCheckbox.checked) {
-      termsError.hidden = false;
-      termsCheckbox.focus();
-      return;
-    }
-    termsError.hidden = true;
-    tbaAcceptTerms();
-
-    var role = document.querySelector('input[name="role"]:checked').value;
-    var submitBtn = document.querySelector('#signin-form button[type="submit"]');
-    submitBtn.disabled = true;
-
-    tbaSha256Hex(password).then(function (passwordHash) {
-      localStorage.setItem('tba_authed', '1');
-      localStorage.setItem('tba_username', username);
-      localStorage.setItem('tba_role', role);
-      tbaRegisterLocalAccount(username, role, new Date().toISOString());
-      if (inviteParam) tbaRecordReferral(inviteParam, username);
-      tbaSaveMyEmail(email);
-      tbaSaveMyPasswordHash(passwordHash);
-
-      document.activeElement.blur();
-      window.scrollTo(0, 0);
-      tbaNavigateTo('home.html');
-    }).catch(function () {
-      submitBtn.disabled = false;
-      passwordError.textContent = 'Something went wrong creating your account — try again.';
-      passwordError.hidden = false;
-    });
-  });
+  tbaWireLandingHeader();
 </script>
-
 </body>
 </html>

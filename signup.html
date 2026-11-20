@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script>if("scrollRestoration" in history){history.scrollRestoration="manual";}</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign up — THE INTROductory</title>
+<meta name="description" content="Choose how you'll use THE INTROductory: as a creator or as a business.">
+<meta property="og:title" content="Sign up — THE INTROductory">
+<meta property="og:description" content="Choose how you'll use THE INTROductory: as a creator or as a business.">
+<meta property="og:image" content="assets/icon-512.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="assets/profile-picture.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#c1652c">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
+<link rel="stylesheet" href="assets/landing.css">
+<script src="assets/users-data.js"></script>
+<script src="assets/auth.js"></script>
+</head>
+<body>
+<header class="l-header">
+  <div class="l-header-inner">
+    <a class="l-brand" href="index.html"><img src="assets/icon-192.png" alt=""><span>THE INTROductory</span></a>
+    <nav class="l-nav" aria-label="Page sections"><a href="index.html">Home</a></nav>
+    <div class="l-header-right">
+      <button type="button" id="theme-toggle-btn"></button>
+      <div id="l-auth-buttons"><a class="l-btn" href="login.html">Log in</a><a class="l-btn primary" href="signup.html">Sign up</a></div>
+    </div>
+  </div>
+</header>
+
+<main class="l-choose">
+  <span class="l-eyebrow">Sign up</span>
+  <h1>How will you use THE INTROductory?</h1>
+  <p class="l-lede">Pick the account that fits. Each one comes with tools made for it.</p>
+  <p class="l-invite-note" id="invite-note" hidden></p>
+
+  <div class="l-choose-grid">
+    <a class="l-choose-card" id="choose-influencer" href="influencers.html">
+      <span class="l-icon">&#127916;</span>
+      <h2>I&rsquo;m an influencer</h2>
+      <p>Show your content, share your rates, and get hired by brands that fit.</p>
+      <span class="go">Continue as a creator &rarr;</span>
+    </a>
+    <a class="l-choose-card" id="choose-business" href="businesses.html">
+      <span class="l-icon">&#127970;</span>
+      <h2>I&rsquo;m a business</h2>
+      <p>Find creators, post opportunities, and close sponsorship deals.</p>
+      <span class="go">Continue as a business &rarr;</span>
+    </a>
+  </div>
+
+  <p class="l-choose-foot">Already have an account? <a href="login.html">Log in</a></p>
+</main>
+<footer class="l-footer">
+  &copy; 2026 THE INTROductory. Built with care by Andre Anderson &amp; team.
+  <span style="margin-left:10px;"><a href="terms.html">Terms</a> &middot; <a href="privacy.html">Privacy</a></span>
+  <a class="l-admin" href="admin-signin.html">ADMIN</a>
+</footer>
+<script>
+  tbaWireLandingHeader();
+
+  // An invite link carries through to whichever account type they pick.
+  var invite = new URLSearchParams(window.location.search).get('invite');
+  if (invite) {
+    var inviter = tbaGetUserByUsername(invite);
+    if (inviter) {
+      var note = document.getElementById('invite-note');
+      note.textContent = 'You were invited by ' + inviter.name + '.';
+      note.hidden = false;
+      ['choose-influencer', 'choose-business'].forEach(function (id) {
+        var a = document.getElementById(id);
+        a.href += '?invite=' + encodeURIComponent(invite);
+      });
+    }
+  }
+</script>
+</body>
+</html>
