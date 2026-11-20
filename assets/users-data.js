@@ -4203,10 +4203,12 @@ function tbaEnsureButtonPressStyles() {
   var tags = [
     'button', '.auth-tab', '.role-option', '.theme-toggle-standalone', '[role="button"]',
     'a.admin-btn', 'a.share-btn', 'a.nav-logout', 'a.signout', 'a.admin-back-link', 'a.contracts-back',
-    'nav.main-nav a', '.admin-header nav a', 'a.brand', 'a.diagram-node', 'a.admin-tab', 'a.admin-table-link'
+    'nav.main-nav a', '.admin-header nav a', 'a.brand', 'a.diagram-node', 'a.admin-tab', 'a.admin-table-link',
+    'a.l-btn', '.l-nav a', 'a.l-brand'
   ];
   var bigger = [
     '.btn-submit', '.notfound-btn', 'a.notfound-btn', 'a.btn-primary',
+    '.l-btn.large', '.l-btn-block', 'a.l-choose-card',
     '.thread-item', '.contract-card', '.thread-select-card', 'a.admin-user-card', 'a.activity-link'
   ];
   var all = tags.concat(bigger);
