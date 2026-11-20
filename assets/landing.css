@@ -41,6 +41,11 @@ body {
 h1, h2, h3 { font-family: "Fraunces", Georgia, serif; line-height: 1.15; margin: 0; }
 a { color: inherit; }
 
+/* ---------- blurred scene behind the page ---------- */
+.l-bg { position: fixed; inset: -60px; z-index: -2; background-size: cover; background-position: center; background-repeat: no-repeat; filter: blur(12px) saturate(1.1); pointer-events: none; }
+.l-bg-tint { position: fixed; inset: 0; z-index: -1; background: color-mix(in srgb, var(--cream) 46%, transparent); pointer-events: none; }
+:root[data-theme="dark"] .l-bg-tint { background: color-mix(in srgb, var(--cream) 72%, transparent); }
+
 /* ---------- header ---------- */
 .l-header { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--cream) 90%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); }
 .l-header-inner { max-width: 1120px; margin: 0 auto; padding: 12px 24px; display: flex; align-items: center; gap: 22px; }
@@ -194,3 +199,7 @@ a { color: inherit; }
   .l-btn { padding: 9px 15px; font-size: 13.5px; }
   .l-price { font-size: 52px; }
 }
+
+/* Text sitting directly on the blurred scene needs more contrast than on plain cream. */
+.l-lede, .l-cta-note, .l-section-head p, .l-choose-foot { color: color-mix(in srgb, var(--ink) 80%, transparent); }
+.l-cta-inner p { color: inherit; }

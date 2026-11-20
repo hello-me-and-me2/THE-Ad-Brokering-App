@@ -2,7 +2,7 @@
 // installs, and every same-origin request goes network-first (so a
 // deploy is picked up right away) with the cache as the fallback when
 // there's no connection. Bump CACHE to drop everything cached before.
-var CACHE = 'tba-v2';
+var CACHE = 'tba-v3';
 var CORE = [
   "404.html",
   "about.html",
@@ -41,6 +41,10 @@ var CORE = [
   "assets/settings.css",
   "assets/signin.css",
   "assets/videos.css",
+  "assets/bg/business.svg",
+  "assets/bg/creator.svg",
+  "assets/bg/landing.svg",
+  "assets/bg/signup.svg",
   "assets/users-data.js",
   "assets/auth.js",
   "assets/icon-192.png",
